@@ -2,4 +2,4 @@
 
 The project is inspired by [the simplicity](https://blockstream.com/simplicity.pdf) and the [ivy-bitcoin](https://github.com/ivy-lang/ivy-bitcoin).
 
-The project is to create a high-level language that has `more expressions` than the bitcoin script.
+The koa project is to create a high-level language that has `more expressions` than the bitcoin script.
