@@ -16,8 +16,8 @@
 
 package parse
 
-type Lexer struct{
-	tokench  chan Token
+type Lexer struct {
+	tokench chan Token
 }
 
 func New(input string) *Lexer {
@@ -30,12 +30,12 @@ func New(input string) *Lexer {
 	return l
 }
 
-func (l *Lexer) run(input string){
+func (l *Lexer) run(input string) {
 
 	state := newState(input)
 	var token Token
 
- 	for stateFn := DefaultStateFn; stateFn != nil; {
+	for stateFn := DefaultStateFn; stateFn != nil; {
 		stateFn, state, token = stateFn(state)
 		l.tokench <- token
 	}
@@ -51,30 +51,29 @@ func (l *Lexer) Next() Token {
 	return <-l.tokench
 }
 
-type state struct{
-	input    string
-	start    int
-	pos      int
-	line     int
+type state struct {
+	input string
+	start int
+	pos   int
+	line  int
 }
 
-func (s *state) emit(t TokenType) Token{
+func (s *state) emit(t TokenType) Token {
 	return Token{t, s.input[s.start:s.pos], s.start, s.pos, s.line}
 }
 
-func newState(input string) state{
+func newState(input string) state {
 	return state{
-		input:input,
+		input: input,
 	}
 }
 
-
-func DefaultStateFn(s state) (stateFn, state, Token){
+func DefaultStateFn(s state) (stateFn, state, Token) {
 
 	return DefaultStateFn, state{}, Token{}
 }
 
-func NumberStateFN(s state) (stateFn, state, Token){
+func NumberStateFN(s state) (stateFn, state, Token) {
 
 	return DefaultStateFn, state{}, Token{}
 }

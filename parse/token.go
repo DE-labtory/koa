@@ -26,6 +26,4 @@ type Token struct {
 	Line   int
 }
 
-const (
-
-)
+const ()
