@@ -1,4 +1,4 @@
-# koa
+# koa [![Build Status](https://travis-ci.org/DE-labtory/koa.svg?branch=master)](https://travis-ci.org/DE-labtory/koa)
 
 The project is inspired by [the simplicity](https://blockstream.com/simplicity.pdf) and the [ivy-bitcoin](https://github.com/ivy-lang/ivy-bitcoin).
 

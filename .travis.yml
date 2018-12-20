@@ -1,0 +1,24 @@
+language: go
+
+go:
+- '1.11'
+
+notifications:
+  email: false
+
+env:
+- GO111MODULE=on
+
+git:
+  depth: 1
+
+os: linux
+
+install:
+- go get golang.org/x/tools/cmd/goimports
+- go get golang.org/x/tools/cmd/cover
+- go mod vendor
+
+script:
+- 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash ./travis/run_on_pull_requests.sh; fi'
+- 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./travis/run_on_non_pull_requests.sh; fi'
