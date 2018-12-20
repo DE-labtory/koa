@@ -26,6 +26,11 @@ type Token struct {
 	Line   int
 }
 
+// String print token value
+func (t Token) String() string {
+	return ""
+}
+
 const (
 
 )
