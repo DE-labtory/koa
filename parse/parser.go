@@ -15,3 +15,27 @@
  */
 
 package parse
+
+import (
+	"github.com/DE-labtory/koa/ast"
+)
+
+// The parser holds a lexer.
+type Parser struct {
+	l         *Lexer
+	errors    []string
+	curToken  Token
+	nextToken Token
+}
+
+func NewParser(l *Lexer) *Parser {
+	return &Parser{
+		l:      l,
+		errors: []string{},
+	}
+}
+
+// Parse function create an abstract syntax tree
+func (p *Parser) Parse() ast.Program {
+	return ast.Program{}
+}
