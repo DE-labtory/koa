@@ -22,7 +22,6 @@ type Token struct {
 	Type   TokenType
 	Val    string
 	Column int
-	Offset int
 	Line   int
 }
 
