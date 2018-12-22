@@ -20,22 +20,47 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
-// The parser holds a lexer.
-type Parser struct {
-	l         *Lexer
-	errors    []string
-	curToken  Token
-	nextToken Token
+type TokenBuffer interface {
+	Read() Token
+	Peek() Token
 }
 
-func NewParser(l *Lexer) *Parser {
+// The parser holds a lexer.
+type Parser struct {
+	errors []string
+}
+
+func NewParser() *Parser {
 	return &Parser{
-		l:      l,
 		errors: []string{},
 	}
 }
 
 // Parse function create an abstract syntax tree
-func (p *Parser) Parse() ast.Program {
-	return ast.Program{}
+func (p *Parser) Parse(buf TokenBuffer) *ast.Program {
+	prog := &ast.Program{}
+	prog.Statements = []ast.Statement{}
+
+	// TODO: need to break out for-loop when EOF
+	for {
+		stmt := parseStatement(buf)
+		if stmt != nil {
+			prog.Statements = append(prog.Statements, stmt)
+		}
+	}
+
+	return prog
+}
+
+func parseStatement(buf TokenBuffer) ast.Statement {
+	switch buf.Peek().Type {
+	case LET:
+		return parseLetStatement(buf)
+	default:
+		return nil
+	}
+}
+
+func parseLetStatement(buf TokenBuffer) ast.Statement {
+	return nil
 }
