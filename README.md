@@ -15,6 +15,15 @@ The koa project is to create a high-level language that has `more expressions` t
 - Compiler
 - VM
 
+### Contribution
+Contribution Guide
+[CONTRIBUTION](CONTRIBUTING.md)
+
+### License
+
+Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the [LICENSE](LICENSE).
+
+
 ### CLA Hub
 
 To get started, <a href="https://www.clahub.com/agreements/DE-labtory/koa">sign the Contributor License Agreement</a>.
