@@ -19,7 +19,6 @@ package translate
 import "github.com/DE-labtory/koa/ast"
 
 type Compiler struct {
-
 }
 
 func NewCompiler() *Compiler {
@@ -29,4 +28,3 @@ func NewCompiler() *Compiler {
 func (c *Compiler) Compile(program ast.Program) {
 
 }
-
