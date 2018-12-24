@@ -20,19 +20,44 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
+// TokenBuffer provide tokenized token, we can read from this buffer
+// or just peek the token
 type TokenBuffer interface {
-	Read() Token
+	// Read retrieve token from buffer and we can choose how many
+	// token we're going to read from this buffer
+	Read(amount int) []Token
+
+	// Peek just take token from buffer but not change the
+	// buffer states
 	Peek() Token
 }
 
+// TODO: implement me w/ test cases :-)
+func peekTokenTypeIs(buf TokenBuffer, t TokenType) bool {
+	return buf.Peek().Type == t
+}
+
+// nextTokenIs helps to check whether peek token type
+// if peek token type is what we want return it
+// TODO: implement me w/ test cases :-)
+func nextTokenIs(buf TokenBuffer, t TokenType) (bool, Token, error) {
+	return false, Token{}, nil
+}
+
+// parseError contains error which happened during
+// parsing tokens
+type parseError struct{}
+
+func (e *parseError) Error() string { return "" }
+
 // The parser holds a lexer.
 type Parser struct {
-	errors []string
+	errors []error
 }
 
 func NewParser() *Parser {
 	return &Parser{
-		errors: []string{},
+		errors: make([]error, 0),
 	}
 }
 
@@ -43,7 +68,7 @@ func (p *Parser) Parse(buf TokenBuffer) *ast.Program {
 
 	// TODO: need to break out for-loop when EOF
 	for {
-		stmt := parseStatement(buf)
+		stmt := p.parseStatement(buf)
 		if stmt != nil {
 			prog.Statements = append(prog.Statements, stmt)
 		}
@@ -52,15 +77,21 @@ func (p *Parser) Parse(buf TokenBuffer) *ast.Program {
 	return prog
 }
 
-func parseStatement(buf TokenBuffer) ast.Statement {
+func (p *Parser) parseStatement(buf TokenBuffer) ast.Statement {
 	switch buf.Peek().Type {
 	case LET:
-		return parseLetStatement(buf)
+		return p.parseLetStatement(buf)
 	default:
-		return nil
+		return p.parseExpressionStatement(buf)
 	}
 }
 
-func parseLetStatement(buf TokenBuffer) ast.Statement {
+// TODO: implement me w/ test cases :-)
+func (p *Parser) parseLetStatement(buf TokenBuffer) ast.Statement {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func (p *Parser) parseExpressionStatement(buf TokenBuffer) *ast.Statement {
 	return nil
 }
