@@ -14,25 +14,4 @@
  * limitations under the License.
  */
 
-package parse
-
-type TokenType int
-
-type Token struct {
-	Type   TokenType
-	Val    string
-	Column Pos
-	Line   int
-}
-
-// End of file
-const Eof = -1
-
-const (
-	// ILLEGAL Token
-	Illegal TokenType = iota
-
-	// Identifiers + literals
-	Ident // add, foobar, x, y, ...
-	Int   // 1343456
-)
+package parse_test
