@@ -16,6 +16,8 @@
 
 package parse
 
+import "unicode/utf8"
+
 // emitter is the interface to emit the token to the client(parser).
 type emitter interface {
 	emit(t Token)
@@ -98,17 +100,39 @@ func (l *Lexer) NextToken() Token {
 // state has the input(codes) as a string and has the current position and the line.
 type state struct {
 	input string
-	start int
-	pos   int
+	start Pos
+	end   Pos
 	line  int
+	width Pos
 }
+
+// Pos represents a byte position in the original input text from which
+// this template was parsed.
+type Pos int
 
 // cut return a token and set start position to pos
 func (s *state) cut(t TokenType) Token {
-	token := Token{t, s.input[s.start:s.pos], s.pos, s.line}
-	s.start = s.pos
+	token := Token{t, s.input[s.start:s.end], s.end, s.line}
+	s.start = s.end
 
 	return token
+}
+
+// next returns the next rune in the input.
+func (s *state) next() rune {
+	if int(s.end) >= len(s.input) {
+		s.width = 0
+		return Eof
+	}
+
+	r, w := utf8.DecodeRuneInString(s.input[s.end:])
+	s.width = Pos(w)
+	s.end += s.width
+
+	if r == '\n' {
+		s.line++
+	}
+	return r
 }
 
 func DefaultStateFn(s *state, e emitter) stateFn {
