@@ -23,9 +23,8 @@ import (
 // TokenBuffer provide tokenized token, we can read from this buffer
 // or just peek the token
 type TokenBuffer interface {
-	// Read retrieve token from buffer and we can choose how many
-	// token we're going to read from this buffer
-	Read(amount int) []Token
+	// Read retrieve token from buffer
+	Read() Token
 
 	// Peek just take token from buffer but not change the
 	// buffer states
@@ -50,48 +49,46 @@ type parseError struct{}
 
 func (e *parseError) Error() string { return "" }
 
-// The parser holds a lexer.
-type Parser struct {
-	errors []error
-}
+type (
+	prefixParseFn func(TokenBuffer) (ast.Expression, []error)
+	infixParseFn  func(TokenBuffer, ast.Expression) (ast.Expression, []error)
+)
 
-func NewParser() *Parser {
-	return &Parser{
-		errors: make([]error, 0),
-	}
-}
+var prefixParseFnMap = map[TokenType]prefixParseFn{}
+var infixParseFnMap = map[TokenType]infixParseFn{}
 
 // Parse function create an abstract syntax tree
-func (p *Parser) Parse(buf TokenBuffer) *ast.Program {
+func Parse(buf TokenBuffer) (*ast.Program, []error) {
+	errs := []error{}
 	prog := &ast.Program{}
 	prog.Statements = []ast.Statement{}
 
-	// TODO: need to break out for-loop when EOF
-	for {
-		stmt := p.parseStatement(buf)
-		if stmt != nil {
-			prog.Statements = append(prog.Statements, stmt)
+	for buf.Peek().Type != Eof {
+		stmt, e := parseStatement(buf)
+		if len(errs) != 0 {
+			errs = append(errs, e...)
+			break
 		}
+
+		prog.Statements = append(prog.Statements, stmt)
 	}
 
-	return prog
+	return prog, errs
 }
 
-func (p *Parser) parseStatement(buf TokenBuffer) ast.Statement {
+func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 	switch buf.Peek().Type {
-	case LET:
-		return p.parseLetStatement(buf)
 	default:
-		return p.parseExpressionStatement(buf)
+		return parseExpressionStatement(buf)
 	}
 }
 
 // TODO: implement me w/ test cases :-)
-func (p *Parser) parseLetStatement(buf TokenBuffer) ast.Statement {
-	return nil
+func parseExpressionStatement(buf TokenBuffer) (*ast.Statement, []error) {
+	return nil, nil
 }
 
 // TODO: implement me w/ test cases :-)
-func (p *Parser) parseExpressionStatement(buf TokenBuffer) *ast.Statement {
-	return nil
+func parseExpression(buf TokenBuffer, pre int) (ast.Expression, []error) {
+	return nil, nil
 }
