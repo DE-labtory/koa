@@ -20,27 +20,65 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
+type precedence int
+
+const (
+	_ precedence = iota
+)
+
+var precedenceMap = map[TokenType]precedence{}
+
+// peekNumber restrict peek count from the TokenBuffer
+type peekNumber int
+
+const (
+	CURRENT peekNumber = iota
+	NEXT
+)
+
+// TODO: implement me w/ test cases :-)
+func (p peekNumber) isValid() bool {
+	return false
+}
+
 // TokenBuffer provide tokenized token, we can read from this buffer
 // or just peek the token
 type TokenBuffer interface {
-	// Read retrieve token from buffer
+	// Read retrieve token from buffer. and change the
+	// buffer states
 	Read() Token
 
-	// Peek just take token from buffer but not change the
+	// Peek take token as many as n from buffer but not change the
 	// buffer states
-	Peek() Token
+	Peek(n peekNumber) Token
 }
 
 // TODO: implement me w/ test cases :-)
-func peekTokenTypeIs(buf TokenBuffer, t TokenType) bool {
-	return buf.Peek().Type == t
+func curTokenIs(buf TokenBuffer, t TokenType) bool {
+	return false
 }
 
-// nextTokenIs helps to check whether peek token type
-// if peek token type is what we want return it
 // TODO: implement me w/ test cases :-)
-func nextTokenIs(buf TokenBuffer, t TokenType) (bool, Token, error) {
+func nextTokenIs(buf TokenBuffer, t TokenType) bool {
+	return false
+}
+
+// expectNext helps to check whether next token is
+// type of token we want, and if true then return it
+// otherwise return with error
+// TODO: implement me w/ test cases :-)
+func expectNext(buf TokenBuffer, t TokenType) (bool, Token, error) {
 	return false, Token{}, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func curPrecedence(buf TokenBuffer) precedence {
+	return 0
+}
+
+// TODO: implement me w/ test cases :-)
+func nextPrecedence(buf TokenBuffer) precedence {
+	return 0
 }
 
 // parseError contains error which happened during
@@ -63,7 +101,7 @@ func Parse(buf TokenBuffer) (*ast.Program, []error) {
 	prog := &ast.Program{}
 	prog.Statements = []ast.Statement{}
 
-	for buf.Peek().Type != Eof {
+	for buf.Peek(CURRENT).Type != Eof {
 		stmt, e := parseStatement(buf)
 		if len(errs) != 0 {
 			errs = append(errs, e...)
@@ -77,7 +115,7 @@ func Parse(buf TokenBuffer) (*ast.Program, []error) {
 }
 
 func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
-	switch buf.Peek().Type {
+	switch buf.Peek(CURRENT).Type {
 	default:
 		return parseExpressionStatement(buf)
 	}
