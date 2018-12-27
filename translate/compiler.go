@@ -16,7 +16,7 @@
 
 package translate
 
-import "github.com/DE-labtory/koa/ast"
+import "github.com/DE-labtory/koa/parse"
 
 type Compiler struct {
 }
@@ -25,6 +25,6 @@ func NewCompiler() *Compiler {
 	return nil
 }
 
-func (c *Compiler) Compile(program ast.Program) {
+func (c *Compiler) Compile(program parse.Program) {
 
 }
