@@ -33,6 +33,36 @@ const (
 	Illegal TokenType = iota
 
 	// Identifiers + literals
-	Ident // add, foobar, x, y, ...
-	Int   // 1343456
+	Ident  // add, foobar, x, y, ...
+	Int    // 1343456
+	String // "hello world"
+	Bool   // true, false
+
+	Assign   // =
+	Plus     // +
+	Minus    // -
+	Bang     // !
+	Asterisk // *
+	Slash    // /
+	Mod      // %
+
+	LT     // <
+	GT     // >
+	LTE    // <=
+	GTE    // >=
+	EQ     // ==
+	NOT_EQ // !=
+
+	Comma // ,
+
+	Lparen // (
+	Rparen // )
+	Lbrace // {
+	Rbrace // }
+
+	True   // true
+	False  // false
+	If     // if
+	Else   // else
+	Return // return
 )
