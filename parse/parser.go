@@ -22,9 +22,47 @@ type precedence int
 
 const (
 	_ precedence = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // function(X)
 )
 
-var precedenceMap = map[TokenType]precedence{}
+var precedenceMap = map[TokenType]precedence{
+	Assign:   LOWEST,
+	Plus:     SUM,
+	Minus:    SUM,
+	Bang:     PREFIX,
+	Asterisk: PRODUCT,
+	Slash:    PRODUCT,
+	Mod:      PRODUCT,
+
+	LT:     LESSGREATER,
+	GT:     LESSGREATER,
+	LTE:    LESSGREATER,
+	GTE:    LESSGREATER,
+	EQ:     EQUALS,
+	NOT_EQ: EQUALS,
+
+	Comma: LOWEST,
+
+	Lparen: LOWEST,
+	Rparen: LOWEST,
+	Lbrace: LOWEST,
+	Rbrace: LOWEST,
+
+	True:   LOWEST,
+	False:  LOWEST,
+	If:     LOWEST,
+	Else:   LOWEST,
+	Return: LOWEST,
+
+	Int:   LOWEST,
+	Ident: LOWEST,
+}
 
 // PeekNumber restrict peek count from the TokenBuffer
 type peekNumber int
@@ -67,14 +105,12 @@ func expectNext(buf TokenBuffer, t TokenType) (bool, Token, error) {
 	return false, Token{}, nil
 }
 
-// TODO: implement me w/ test cases :-)
 func curPrecedence(buf TokenBuffer) precedence {
-	return 0
+	return precedenceMap[buf.Peek(CURRENT).Type]
 }
 
-// TODO: implement me w/ test cases :-)
 func nextPrecedence(buf TokenBuffer) precedence {
-	return 0
+	return precedenceMap[buf.Peek(NEXT).Type]
 }
 
 // ParseError contains error which happened during
