@@ -17,6 +17,42 @@ The koa project is to create a high-level language that has `more expressions` t
 - Compiler
 - VM
 
+### Language Specification
+
+#### Primitive Type
+- Integer
+
+  It is expressed in `int`. Integer size is 32 bytes.
+
+- String
+
+  It is expressed in `string`.
+
+- Boolean
+
+  It is expressed in `true` or `false`.
+
+#### Operators
+- Arithmetic
+
+  We support `+, -, *, /, %` only for integer.
+
+- Comparison
+
+  We support `==, !=, >, <, >=, <=` for comparsion.
+
+- Prefix
+
+  We support `!, -` for prefix operator.
+
+#### Condition
+It is expressed in `if(){}` or `if(){}else{}`.
+
+#### Etc
+- `return`
+- `\n` : All statements should end in `\n`.
+- Assign : It is expressed in `=`.
+
 ### Contribution
 Contribution Guide
 [CONTRIBUTION](CONTRIBUTING.md)
