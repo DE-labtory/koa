@@ -16,9 +16,7 @@
 
 package parse
 
-import (
-	"github.com/DE-labtory/koa/ast"
-)
+import "github.com/DE-labtory/koa/ast"
 
 type precedence int
 
