@@ -51,14 +51,12 @@ type TokenBuffer interface {
 	Peek(n peekNumber) Token
 }
 
-// TODO: implement me w/ test cases :-)
 func curTokenIs(buf TokenBuffer, t TokenType) bool {
-	return false
+	return buf.Peek(CURRENT).Type == t
 }
 
-// TODO: implement me w/ test cases :-)
 func nextTokenIs(buf TokenBuffer, t TokenType) bool {
-	return false
+	return buf.Peek(NEXT).Type == t
 }
 
 // ExpectNext helps to check whether next token is
