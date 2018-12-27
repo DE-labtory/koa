@@ -28,7 +28,7 @@ const (
 
 var precedenceMap = map[TokenType]precedence{}
 
-// peekNumber restrict peek count from the TokenBuffer
+// PeekNumber restrict peek count from the TokenBuffer
 type peekNumber int
 
 const (
@@ -38,7 +38,7 @@ const (
 
 // TODO: implement me w/ test cases :-)
 func (p peekNumber) isValid() bool {
-	return false
+	return p == CURRENT || p == NEXT
 }
 
 // TokenBuffer provide tokenized token, we can read from this buffer
@@ -63,7 +63,7 @@ func nextTokenIs(buf TokenBuffer, t TokenType) bool {
 	return false
 }
 
-// expectNext helps to check whether next token is
+// ExpectNext helps to check whether next token is
 // type of token we want, and if true then return it
 // otherwise return with error
 // TODO: implement me w/ test cases :-)
@@ -81,7 +81,7 @@ func nextPrecedence(buf TokenBuffer) precedence {
 	return 0
 }
 
-// parseError contains error which happened during
+// ParseError contains error which happened during
 // parsing tokens
 type parseError struct{}
 
@@ -114,16 +114,12 @@ func Parse(buf TokenBuffer) (*ast.Program, []error) {
 	return prog, errs
 }
 
+// TODO: implement me w/ test cases :-)
 func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 	switch buf.Peek(CURRENT).Type {
 	default:
-		return parseExpressionStatement(buf)
+		return nil, nil
 	}
-}
-
-// TODO: implement me w/ test cases :-)
-func parseExpressionStatement(buf TokenBuffer) (*ast.Statement, []error) {
-	return nil, nil
 }
 
 // TODO: implement me w/ test cases :-)
