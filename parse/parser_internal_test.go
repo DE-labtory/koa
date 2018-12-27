@@ -16,7 +16,9 @@
 
 package parse
 
-import "testing"
+import (
+	"testing"
+)
 
 type MockTokenBuffer struct {
 	buf []Token
@@ -33,8 +35,8 @@ func (m *MockTokenBuffer) Peek(n peekNumber) Token {
 	return m.buf[m.sp+int(n)]
 }
 
-func TestParse_curTokenIs_nextTokenIs(t *testing.T) {
-	tokenBuf := MockTokenBuffer{
+func makeMockTokenBuffer() MockTokenBuffer {
+	return MockTokenBuffer{
 		buf: []Token{
 			{
 				Type:   Int,
@@ -48,17 +50,154 @@ func TestParse_curTokenIs_nextTokenIs(t *testing.T) {
 				Column: 2,
 				Line:   8,
 			},
+			{
+				Type:   Plus,
+				Val:    "+",
+				Column: 11,
+				Line:   15,
+			},
+			{
+				Type:   Asterisk,
+				Val:    "*",
+				Column: 14,
+				Line:   10,
+			},
+			{
+				Type:   Lbrace,
+				Val:    "(",
+				Column: 22,
+				Line:   15,
+			},
+		},
+	}
+}
+
+func TestParse_curTokenIs(t *testing.T) {
+	tokenBuf := makeMockTokenBuffer()
+	tests := []struct {
+		tokenType TokenType
+		expected  bool
+	}{
+		{
+			tokenType: Int,
+			expected:  true,
+		},
+		{
+			tokenType: Ident,
+			expected:  true,
+		},
+		{
+			tokenType: Mod,
+			expected:  false,
+		},
+		{
+			tokenType: Rbrace,
+			expected:  false,
+		},
+		{
+			tokenType: Lbrace,
+			expected:  true,
 		},
 	}
 
-	ret := curTokenIs(&tokenBuf, Int)
-	if !ret {
-		t.Errorf("Expected value is true")
+	for i, test := range tests {
+		ret := curTokenIs(&tokenBuf, test.tokenType)
+		if ret != test.expected {
+			t.Fatalf("test[%d] - curTokenIs() result wrong. expected=%t, got=%t", i, test.expected, ret)
+		}
+		tokenBuf.Read()
+	}
+}
+
+func TestParse_nextTokenIs(t *testing.T) {
+	tokenBuf := makeMockTokenBuffer()
+	tests := []struct {
+		tokenType TokenType
+		expected  bool
+	}{
+		{
+			tokenType: Ident,
+			expected:  true,
+		},
+		{
+			tokenType: Plus,
+			expected:  true,
+		},
+		{
+			tokenType: Minus,
+			expected:  false,
+		},
+		{
+			tokenType: Rbrace,
+			expected:  false,
+		},
 	}
 
-	ret = nextTokenIs(&tokenBuf, Ident)
-	if !ret {
-		t.Errorf("Expected value is true")
+	for i, test := range tests {
+		ret := nextTokenIs(&tokenBuf, test.tokenType)
+		if ret != test.expected {
+			t.Fatalf("test[%d] - nextTokenIs() result wrong. expected=%t, got=%t", i, test.expected, ret)
+		}
+		tokenBuf.Read()
+	}
+}
+
+func TestParse_curPrecedence(t *testing.T) {
+	tokenBuf := makeMockTokenBuffer()
+	tests := []struct {
+		expected precedence
+	}{
+		{
+			expected: LOWEST,
+		},
+		{
+			expected: LOWEST,
+		},
+		{
+			expected: SUM,
+		},
+		{
+			expected: PRODUCT,
+		},
+		{
+			expected: LOWEST,
+		},
+	}
+
+	for i, test := range tests {
+		ret := curPrecedence(&tokenBuf)
+		if ret != test.expected {
+			t.Fatalf("test[%d] - curPrecedence() result wrong. expected=%d, got=%d", i, test.expected, ret)
+		}
+		tokenBuf.Read()
+	}
+}
+
+func TestParsr_nextPrecedence(t *testing.T) {
+	tokenBuf := makeMockTokenBuffer()
+	tests := []struct {
+		expected precedence
+	}{
+		{
+			expected: LOWEST,
+		},
+		{
+			expected: SUM,
+		},
+		{
+			expected: PRODUCT,
+		},
+		{
+			expected: LOWEST,
+		},
+	}
+
+	for i, test := range tests {
+		ret := nextPrecedence(&tokenBuf)
+		if ret != test.expected {
+			t.Fatalf("test[%d] - curPrecedence() result wrong. expected=%d, got=%d", i, test.expected, ret)
+		}
+		tokenBuf.Read()
 	}
 }
 
