@@ -18,12 +18,9 @@ package encoding
 
 import (
 	"encoding/hex"
-	"strconv"
-	"errors"
 	"log"
+	"strconv"
 )
-
-var StringToHexErr = errors.New("String to hexadecimal encoding error")
 
 // In koa, we use hexadecimal encoding
 
@@ -36,7 +33,7 @@ func Encode(operand interface{}) []byte {
 		return nil
 	case bool:
 		b, err := encodeBool(op)
-		if err!=nil {
+		if err != nil {
 			log.Fatal(err)
 			return nil
 		}
@@ -59,7 +56,7 @@ func encodeInt(operand int) ([]byte, error) {
 
 	b, err := hex.DecodeString(s)
 	if err != nil {
-		return nil, StringToHexErr
+		return nil, err
 	}
 
 	return b, nil
