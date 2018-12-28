@@ -38,6 +38,10 @@ const (
 	String // "hello world"
 	Bool   // true, false
 
+	IntType
+	StringType
+	BoolType
+
 	Assign   // =
 	Plus     // +
 	Minus    // -

@@ -16,10 +16,6 @@
 
 package ast
 
-import (
-	"github.com/DE-labtory/koa/parse"
-)
-
 // Node represent ast node
 type Node interface {
 	String() string
@@ -54,29 +50,61 @@ func (i *Identifier) String() string {
 
 func (i *Identifier) produce() {}
 
+type OperatorType int
+
+const (
+	_        OperatorType = iota
+	Plus                  // +
+	Minus                 // -
+	Bang                  // !
+	Asterisk              // *
+	Slash                 // /
+	Mod                   // %
+	LT                    // <
+	GT                    // >
+	LTE                   // <=
+	GTE                   // >=
+	EQ                    // ==
+	NOT_EQ                // !=
+)
+
+type OperatorVal string
+
+// Operator represent operator between expression
+type Operator struct {
+	Type OperatorType
+	Val  OperatorVal
+}
+
+type DataStructureType int
+
+const (
+	_ DataStructureType = iota
+	Int
+	String
+	Bool
+)
+
+type DataStructureVal string
+
+// DataStructure represent identifier's data structure
+// e.g. string, int, bool
+type DataStructure struct {
+	Type DataStructureType
+	Val  DataStructureVal
+}
+
 // Represent assign statement
 type AssignStatement struct {
-	Type  parse.Token
-	Name  *Identifier
-	Value Expression
+	Type     DataStructure
+	Variable *Identifier
+	Value    Expression
 }
 
 func (as *AssignStatement) do() {}
 
 // TODO: implement me w/ test cases :-)
 func (as *AssignStatement) String() string {
-	return ""
-}
-
-// Represent return statement
-type ReturnStatement struct {
-	ReturnValue Expression
-}
-
-func (rs *ReturnStatement) do() {}
-
-// TODO: implement me w/ test cases :-)
-func (rs *ReturnStatement) String() string {
 	return ""
 }
 
@@ -92,78 +120,15 @@ func (sl *StringLiteral) String() string {
 	return ""
 }
 
-// Represent integer literal
-type IntegerLiteral struct {
-	Value int64
-}
-
-func (il *IntegerLiteral) produce() {}
-func (il *IntegerLiteral) String() string {
-	return string(il.Value)
-}
-
-// Represent boolean literal
-type Boolean struct {
-	Value bool
-}
-
-func (b *Boolean) produce() {}
-
-// TODO: implement me w/ test cases :-)
-func (b *Boolean) String() string {
-	return ""
-}
-
 // Represent prefix expression
 type PrefixExpression struct {
-	Operator parse.Token
-	Right    Expression
+	Operator
+	Right Expression
 }
 
 func (pe *PrefixExpression) produce() {}
 
 // TODO: implement me w/ test cases :-)
 func (pe *PrefixExpression) String() string {
-	return ""
-}
-
-// Represent infix expression
-type InfixExpression struct {
-	Left     Expression
-	Operator parse.Token
-	Right    Expression
-}
-
-func (ie *InfixExpression) produce() {}
-
-// TODO: implement me w/ test cases :-)
-func (ie *InfixExpression) String() string {
-	return ""
-}
-
-// Represent if, else expression
-type IfExpression struct {
-	Condition   Expression
-	Consequence *BlockStatement
-	Alternative *BlockStatement
-}
-
-func (ie *IfExpression) do() {}
-
-// TODO: implement me w/ test cases :-)
-func (ie *IfExpression) String() string {
-	return ""
-}
-
-// Represent block statements, statements contained between
-// right brace, left brace
-type BlockStatement struct {
-	Statements []Statement
-}
-
-func (bs *BlockStatement) do() {}
-
-// TODO: implement me w/ test cases :-)
-func (bs *BlockStatement) String() string {
 	return ""
 }
