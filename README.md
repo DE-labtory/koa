@@ -57,6 +57,18 @@ It is expressed in `if(){}` or `if(){}else{}`.
 Contribution Guide
 [CONTRIBUTION](CONTRIBUTING.md)
 
+ #### Example Code
+ ```
+ func Sig(sig1: string){
+   string pubkey1 = fvfidBGruUYC+mTw7CusaCOQbBuZBiYduFgH8hRW97KLmHn0xzB1FV++KI7syo8qXGo8Un24WP40IT78XjKO
+   
+   if checkSig(pubkey1, sig1){
+     return True
+   }
+   return False
+ }
+ ```
+
 ### License
 
 Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the [LICENSE](LICENSE).
