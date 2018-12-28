@@ -53,6 +53,18 @@ It is expressed in `if(){}` or `if(){}else{}`.
 - `\n` : All statements should end in `\n`.
 - Assign : It is expressed in `=`.
 
+#### Example Code
+  ```
+  func Sig(sig1: string){
+    string pubkey1 = fvfidBGruUYC+mTw7CusaCOQbBuZBiYduFgH8hRW97KLmHn0xzB1FV++KI7syo8qXGo8Un24WP40IT78XjKO
+    
+    if checkSig(pubkey1, sig1){
+      return True
+    }
+    return False
+  }
+  ```
+
 ### Contribution
 Contribution Guide
 [CONTRIBUTION](CONTRIBUTING.md)
