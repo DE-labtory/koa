@@ -148,10 +148,10 @@ func TestParse_curPrecedence(t *testing.T) {
 		expected precedence
 	}{
 		{
-			expected: LOWEST,
+			expected: 0,
 		},
 		{
-			expected: LOWEST,
+			expected: 0,
 		},
 		{
 			expected: SUM,
@@ -179,7 +179,7 @@ func TestParsr_nextPrecedence(t *testing.T) {
 		expected precedence
 	}{
 		{
-			expected: LOWEST,
+			expected: 0,
 		},
 		{
 			expected: SUM,
