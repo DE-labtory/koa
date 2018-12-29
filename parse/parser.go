@@ -53,15 +53,6 @@ var precedenceMap = map[TokenType]precedence{
 	Rparen: LOWEST,
 	Lbrace: LOWEST,
 	Rbrace: LOWEST,
-
-	True:   LOWEST,
-	False:  LOWEST,
-	If:     LOWEST,
-	Else:   LOWEST,
-	Return: LOWEST,
-
-	Int:   LOWEST,
-	Ident: LOWEST,
 }
 
 // PeekNumber restrict peek count from the TokenBuffer
