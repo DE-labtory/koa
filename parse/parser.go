@@ -63,7 +63,6 @@ const (
 	NEXT
 )
 
-// TODO: implement me w/ test cases :-)
 func (p peekNumber) isValid() bool {
 	return p == CURRENT || p == NEXT
 }
@@ -147,5 +146,25 @@ func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 
 // TODO: implement me w/ test cases :-)
 func parseExpression(buf TokenBuffer, pre int) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseStringLiteral(buf TokenBuffer) (ast.Expression, []error) {
 	return nil, nil
 }
