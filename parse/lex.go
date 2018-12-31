@@ -16,7 +16,9 @@
 
 package parse
 
-import "unicode/utf8"
+import (
+	"unicode/utf8"
+)
 
 // emitter is the interface to emit the token to the client(parser).
 type emitter interface {
@@ -97,7 +99,7 @@ func (l *Lexer) NextToken() Token {
 	return <-l.tokench
 }
 
-// state has the input(codes) as a string and has the current position and the line.
+// State has the input(codes) as a string and has the current position and the line.
 type state struct {
 	input string
 	start Pos
@@ -110,7 +112,7 @@ type state struct {
 // this template was parsed.
 type Pos int
 
-// cut return a token and set start position to pos
+// Cut return a token and set start position to pos
 func (s *state) cut(t TokenType) Token {
 	token := Token{t, s.input[s.start:s.end], s.end, s.line}
 	s.start = s.end
@@ -118,7 +120,7 @@ func (s *state) cut(t TokenType) Token {
 	return token
 }
 
-// next returns the next rune in the input.
+// Next returns the next rune in the input.
 func (s *state) next() rune {
 	if int(s.end) >= len(s.input) {
 		s.width = 0
@@ -135,12 +137,53 @@ func (s *state) next() rune {
 	return r
 }
 
+// Peek returns but does not consume the next byte in the input.
+func (s *state) peek() rune {
+	return 0
+}
+
+// Backup steps back one rune. Can only be called once per call of next.
+func (s *state) backup() rune {
+	return 0
+}
+
+// Accept consumes the next byte if it's from the valid set.
+func (s *state) accept(valid string) bool {
+	return false
+}
+
+// AcceptRun consumes a run of byte from the valid set.
+func (s *state) acceptRun(valid string) {
+
+}
+
 func DefaultStateFn(s *state, e emitter) stateFn {
 
 	return DefaultStateFn
 }
 
+// NumberStateFn scans an alphanumeric. ex) 123, 4001, 232
+// After reading Number, it returns DefaultStateFn.
 func NumberStateFn(s *state, e emitter) stateFn {
+
+	return DefaultStateFn
+}
+
+// IdentifierStateFn scans an identifiers. ex) a, b, add
+// After reading a identifier, it returns DefaultStateFn.
+//
+// when a input of a state is "int abc = 5" and start of state is 4,
+// IdentifierStateFn should emit "abc" and return DefaultStateFn
+//
+func IdentifierStateFn(s *state, e emitter) stateFn {
+
+	return DefaultStateFn
+}
+
+// SpaceStateFn scans an space. ex) `\t`, `" "`
+// After ignoring all spaces, it returns DefaultStateFn.
+//
+func SpaceStateFn(s *state, e emitter) stateFn {
 
 	return DefaultStateFn
 }
