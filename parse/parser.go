@@ -144,8 +144,33 @@ func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 	}
 }
 
+// TODO: create test cases :-)
+// ParseExpression parse expression in two ways, first
+// by considering expression as prefix, next as infix
+func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) {
+	errs := make([]error, 0)
+	exp, es := parseExpAsPrefix(buf)
+	if len(es) != 0 {
+		errs = append(errs, es...)
+		return exp, errs
+	}
+
+	exp, es = parseExpAsInfix(buf, exp, pre)
+	if len(es) != 0 {
+		errs = append(errs, es...)
+		return exp, errs
+	}
+
+	return exp, errs
+}
+
 // TODO: implement me w/ test cases :-)
-func parseExpression(buf TokenBuffer, pre int) (ast.Expression, []error) {
+func parseExpAsPrefix(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseExpAsInfix(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
 	return nil, nil
 }
 
