@@ -102,3 +102,144 @@ func TestState_next(t *testing.T) {
 			s.line)
 	}
 }
+
+func TestState_backup(t *testing.T) {
+	input := "hello\n"
+
+	tests := []struct {
+		expectedPeekCh rune
+	}{
+		{rune('h')},
+		{rune('e')},
+		{rune('l')},
+		{rune('l')},
+		{rune('o')},
+		{rune('\n')},
+		{rune(-1)},
+	}
+
+	s := state{
+		input: input,
+	}
+
+	s.next()
+	for i, test := range tests {
+		s.backup()
+		ch := s.next()
+
+		if ch != test.expectedPeekCh {
+			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
+				i, test.expectedPeekCh, ch)
+		}
+
+		if ch == rune('\n') {
+			if s.line != 1 {
+				t.Errorf("line is not 1. got=%d",
+					s.line)
+			}
+		}
+
+		s.next()
+	}
+}
+
+func TestState_peek(t *testing.T) {
+	input := "hello"
+
+	tests := []struct {
+		expectedPeekCh rune
+	}{
+		{rune('h')},
+		{rune('e')},
+		{rune('l')},
+		{rune('l')},
+		{rune('o')},
+		{rune(eof)},
+	}
+
+	s := state{
+		input: input,
+	}
+
+	for i, test := range tests {
+		ch := s.peek()
+		if ch != test.expectedPeekCh {
+			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
+				i, test.expectedPeekCh, ch)
+		}
+		s.next()
+	}
+}
+
+type MockEmitter struct {
+	emitFunc func(t Token)
+}
+
+func (m MockEmitter) emit(t Token) {
+	m.emitFunc(t)
+}
+
+// TODO: LTE, GTE, spaceStateFn, numberStateFn, identifierStateFn case
+func TestLex_defaultStateFn(t *testing.T) {
+
+	//	Bang     // !
+	//  Assign   // =
+	//
+	//	Plus     // +
+	//	Minus    // -
+	//	Asterisk // *
+	//	Slash    // /
+	//	Mod      // %
+	//
+	//	LT     // <
+	//	GT     // >
+	//	LTE    // <=
+	//	GTE    // >=
+	//	EQ     // ==
+	//	NOT_EQ // !=
+	//
+	//	Comma // ,
+	//
+	//	Lparen // (
+	//	Rparen // )
+	//	Lbrace // {
+	//	Rbrace // }
+	tests := []struct {
+		input             string
+		expectedTokenType TokenType
+	}{
+		{"!", Bang},
+		{"=", Assign},
+		{"+", Plus},
+		{"-", Minus},
+		{"/", Slash},
+		{"%", Mod},
+		{"<", LT},
+		{">", GT},
+		{"==", EQ},
+		{"!=", NOT_EQ},
+		{",", Comma},
+		{"(", Lparen},
+		{")", Rparen},
+		{"{", Lbrace},
+		{"}", Rbrace},
+		{"", Eof},
+	}
+
+	for i, test := range tests {
+
+		s := &state{
+			input: test.input,
+		}
+
+		e := MockEmitter{}
+		e.emitFunc = func(tok Token) {
+			if tok.Type != test.expectedTokenType {
+				t.Errorf("tests[%d] - wrong token type. expected=%s, got=%s",
+					i, TokenTypeMap[test.expectedTokenType], TokenTypeMap[tok.Type])
+			}
+		}
+
+		defaultStateFn(s, e)
+	}
+}

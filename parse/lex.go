@@ -46,7 +46,7 @@ func (l *Lexer) run(input string) {
 		input: input,
 	}
 
-	for stateFn := DefaultStateFn; stateFn != nil; {
+	for stateFn := defaultStateFn; stateFn != nil; {
 		stateFn = stateFn(state, l)
 	}
 
@@ -124,7 +124,7 @@ func (s *state) cut(t TokenType) Token {
 func (s *state) next() rune {
 	if int(s.end) >= len(s.input) {
 		s.width = 0
-		return Eof
+		return eof
 	}
 
 	r, w := utf8.DecodeRuneInString(s.input[s.end:])
@@ -140,13 +140,20 @@ func (s *state) next() rune {
 // TODO: implement me w/ test cases :-)
 // Peek returns but does not consume the next byte in the input.
 func (s *state) peek() rune {
-	return 0
+	ch := s.next()
+	s.backup()
+
+	return ch
 }
 
 // TODO: implement me w/ test cases :-)
 // Backup steps back one rune. Can only be called once per call of next.
-func (s *state) backup() rune {
-	return 0
+func (s *state) backup() {
+	s.end -= s.width
+	// Correct newline count.
+	if s.width == 1 && s.input[s.end] == '\n' {
+		s.line--
+	}
 }
 
 // TODO: implement me w/ test cases :-)
@@ -161,17 +168,93 @@ func (s *state) acceptRun(valid string) {
 
 }
 
-func DefaultStateFn(s *state, e emitter) stateFn {
+//
+//	Bang     // !
+//  Assign   // =
+//
+//	Plus     // +
+//	Minus    // -
+//	Asterisk // *
+//	Slash    // /
+//	Mod      // %
+//
+//	LT     // <
+//	GT     // >
+//	LTE    // <=
+//	GTE    // >=
+//	EQ     // ==
+//	NOT_EQ // !=
+//
+//	Comma // ,
+//
+//	Lparen // (
+//	Rparen // )
+//	Lbrace // {
+//	Rbrace // }
+//
+// TODO: LTE, GTE, spaceStateFn, numberStateFn, identifierStateFn case
+func defaultStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	switch ch := s.next(); {
+
+	case ch == '!':
+		if s.peek() == '=' {
+			s.next()
+			e.emit(s.cut(NOT_EQ))
+		} else {
+			e.emit(s.cut(Bang))
+		}
+	case ch == '=':
+		if s.peek() == '=' {
+			s.next()
+			// ==
+			e.emit(s.cut(EQ))
+		} else {
+			// =
+			e.emit(s.cut(Assign))
+		}
+
+	case ch == '+':
+		e.emit(s.cut(Plus))
+	case ch == '-':
+		e.emit(s.cut(Minus))
+	case ch == '/':
+		e.emit(s.cut(Slash))
+	case ch == '*':
+		e.emit(s.cut(Asterisk))
+	case ch == '%':
+		e.emit(s.cut(Mod))
+
+	case ch == '<':
+		e.emit(s.cut(LT))
+	case ch == '>':
+		e.emit(s.cut(GT))
+
+	case ch == ')':
+		e.emit(s.cut(Rparen))
+	case ch == '(':
+		e.emit(s.cut(Lparen))
+	case ch == '}':
+		e.emit(s.cut(Rbrace))
+	case ch == '{':
+		e.emit(s.cut(Lbrace))
+	case ch == ',':
+		e.emit(s.cut(Comma))
+	case ch == eof:
+		e.emit(s.cut(Eof))
+	default:
+		e.emit(s.cut(Illegal))
+	}
+
+	return defaultStateFn
 }
 
 // TODO: implement me w/ test cases :-)
 // NumberStateFn scans an alphanumeric. ex) 123, 4001, 232
 // After reading Number, it returns DefaultStateFn.
-func NumberStateFn(s *state, e emitter) stateFn {
+func numberStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
 }
 
 // TODO: implement me w/ test cases :-)
@@ -181,16 +264,16 @@ func NumberStateFn(s *state, e emitter) stateFn {
 // when a input of a state is "int abc = 5" and start of state is 4,
 // IdentifierStateFn should emit "abc" and return DefaultStateFn
 //
-func IdentifierStateFn(s *state, e emitter) stateFn {
+func identifierStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
 }
 
 // TODO: implement me w/ test cases :-)
 // SpaceStateFn scans an space. ex) `\t`, `" "`
 // After ignoring all spaces, it returns DefaultStateFn.
 //
-func SpaceStateFn(s *state, e emitter) stateFn {
+func spaceStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
 }
