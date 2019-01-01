@@ -17,6 +17,7 @@
 package parse
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -229,5 +230,46 @@ func TestPeekNumber_IsValid(t *testing.T) {
 		if n.isValid() != test.expected {
 			t.Fatalf("test[%d] - isValid() result wrong. expected=%t, got=%t", i, test.expected, n.isValid())
 		}
+	}
+}
+
+func TestExpectNext(t *testing.T) {
+	err := errors.New("expectNext() : expecting token and next token are different")
+	tokenBuf := makeMockTokenBuffer()
+	tests := []struct {
+		token         TokenType
+		expectedBool  bool
+		expectedError error
+	}{
+		{
+			token:         Ident,
+			expectedBool:  true,
+			expectedError: nil,
+		},
+		{
+			token:         Minus,
+			expectedBool:  false,
+			expectedError: err,
+		},
+		{
+			token:         Asterisk,
+			expectedBool:  true,
+			expectedError: nil,
+		},
+		{
+			token:         Rbrace,
+			expectedBool:  false,
+			expectedError: err,
+		},
+	}
+
+	for i, test := range tests {
+		retBool, retError := expectNext(&tokenBuf, test.token)
+		if retBool != test.expectedBool {
+			t.Fatalf("test[%d] - expectNext() result wrong.\n"+
+				"expected bool: %t, error: %d\n"+
+				"got bool: %t, error: %d", i, test.expectedBool, test.expectedError, retBool, retError)
+		}
+		tokenBuf.Read()
 	}
 }
