@@ -137,21 +137,25 @@ func (s *state) next() rune {
 	return r
 }
 
+// TODO: implement me w/ test cases :-)
 // Peek returns but does not consume the next byte in the input.
 func (s *state) peek() rune {
 	return 0
 }
 
+// TODO: implement me w/ test cases :-)
 // Backup steps back one rune. Can only be called once per call of next.
 func (s *state) backup() rune {
 	return 0
 }
 
+// TODO: implement me w/ test cases :-)
 // Accept consumes the next byte if it's from the valid set.
 func (s *state) accept(valid string) bool {
 	return false
 }
 
+// TODO: implement me w/ test cases :-)
 // AcceptRun consumes a run of byte from the valid set.
 func (s *state) acceptRun(valid string) {
 
@@ -162,6 +166,7 @@ func DefaultStateFn(s *state, e emitter) stateFn {
 	return DefaultStateFn
 }
 
+// TODO: implement me w/ test cases :-)
 // NumberStateFn scans an alphanumeric. ex) 123, 4001, 232
 // After reading Number, it returns DefaultStateFn.
 func NumberStateFn(s *state, e emitter) stateFn {
@@ -169,6 +174,7 @@ func NumberStateFn(s *state, e emitter) stateFn {
 	return DefaultStateFn
 }
 
+// TODO: implement me w/ test cases :-)
 // IdentifierStateFn scans an identifiers. ex) a, b, add
 // After reading a identifier, it returns DefaultStateFn.
 //
@@ -180,6 +186,7 @@ func IdentifierStateFn(s *state, e emitter) stateFn {
 	return DefaultStateFn
 }
 
+// TODO: implement me w/ test cases :-)
 // SpaceStateFn scans an space. ex) `\t`, `" "`
 // After ignoring all spaces, it returns DefaultStateFn.
 //
