@@ -26,7 +26,7 @@ type Token struct {
 }
 
 // End of file
-const Eof = -1
+const eof = -1
 
 const (
 	// ILLEGAL Token
@@ -69,6 +69,7 @@ const (
 	If     // if
 	Else   // else
 	Return // return
+	Eof
 )
 
 // TokenTypeMap mapping TokenType with its
