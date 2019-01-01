@@ -173,7 +173,7 @@ func TestParse_curPrecedence(t *testing.T) {
 	}
 }
 
-func TestParsr_nextPrecedence(t *testing.T) {
+func TestParse_nextPrecedence(t *testing.T) {
 	tokenBuf := makeMockTokenBuffer()
 	tests := []struct {
 		expected precedence
