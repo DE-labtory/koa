@@ -34,30 +34,25 @@ func newStack() *stack {
 	return &stack{items: make([]item, 0, stackMaxSize)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (s *stack) push(d item) {
 	s.items = append(s.items, d)
 }
 
-// TODO: implement me w/ test cases :-)
 // Push n number of data([]data) to stack
 func (s *stack) pushN(ds ...item) {
-
+	s.items = append(s.items, ds...)
 }
 
-// TODO: implement me w/ test cases :-)
 func (s *stack) pop() item {
 	item := s.items[len(s.items)-1]
 	s.items = s.items[:len(s.items)-1]
 	return item
 }
 
-// TODO: implement me w/ test cases :-)
 func (s *stack) len() int {
 	return len(s.items)
 }
 
-// TODO: implement me w/ test cases :-)
 // Print dumps the content of the stack
 func (s *stack) print() {
 	fmt.Println("### stack ###")
