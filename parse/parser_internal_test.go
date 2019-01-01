@@ -19,6 +19,8 @@ package parse
 import (
 	"errors"
 	"testing"
+
+	"github.com/DE-labtory/koa/ast"
 )
 
 type mockTokenBuffer struct {
@@ -269,5 +271,63 @@ func TestExpectNext(t *testing.T) {
 				"got bool: %t, error: %d", i, test.expectedBool, test.expectedError, retBool, retError)
 		}
 		tokenBuf.Read()
+	}
+}
+
+func TestParseIdentifier(t *testing.T) {
+	tokens := []Token{
+		{Type: Int, Val: "1"},
+		{Type: Ident, Val: "ADD"},
+		{Type: Plus, Val: "+"},
+		{Type: Asterisk, Val: "*"},
+		{Type: Lparen, Val: "("},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
+	tests := []struct {
+		expected     ast.Expression
+		expectedErrs string
+	}{
+		{
+			expected:     nil,
+			expectedErrs: "parseIdentifier() - 1 is not a identifier",
+		},
+		{
+			expected: &ast.Identifier{
+				Value: "ADD",
+			},
+		},
+		{
+			expected:     nil,
+			expectedErrs: "parseIdentifier() - + is not a identifier",
+		},
+		{
+			expected:     nil,
+			expectedErrs: "parseIdentifier() - * is not a identifier",
+		},
+		{
+			expected:     nil,
+			expectedErrs: "parseIdentifier() - ( is not a identifier",
+		},
+	}
+
+	for i, test := range tests {
+
+		exp, errs := parseIdentifier(&tokenBuf)
+
+		if errs != nil && errs[0].Error() != test.expectedErrs {
+			t.Fatalf("test[%d] - wrong error. expected=%s, got=%s", i, test.expectedErrs, errs[0])
+		}
+
+		switch exp {
+		case nil:
+			if test.expected != nil {
+				t.Fatalf("test[%d] - wrong result. expected=%s, got=%s", i, test.expected.String(), exp.String())
+			}
+			tokenBuf.Read()
+		case &ast.Identifier{Value: exp.String()}:
+			if exp.String() != exp.String() {
+				t.Fatalf("test[%d] - wrong result. expected=%s, got=%s", i, test.expected.String(), exp.String())
+			}
+		}
 	}
 }
