@@ -21,60 +21,30 @@ import (
 	"testing"
 )
 
-type MockTokenBuffer struct {
+type mockTokenBuffer struct {
 	buf []Token
 	sp  int
 }
 
-func (m *MockTokenBuffer) Read() Token {
+func (m *mockTokenBuffer) Read() Token {
 	ret := m.buf[m.sp]
 	m.sp++
 	return ret
 }
 
-func (m *MockTokenBuffer) Peek(n peekNumber) Token {
+func (m *mockTokenBuffer) Peek(n peekNumber) Token {
 	return m.buf[m.sp+int(n)]
 }
 
-func makeMockTokenBuffer() MockTokenBuffer {
-	return MockTokenBuffer{
-		buf: []Token{
-			{
-				Type:   Int,
-				Val:    "1",
-				Column: 1,
-				Line:   5,
-			},
-			{
-				Type:   Ident,
-				Val:    "ADD",
-				Column: 2,
-				Line:   8,
-			},
-			{
-				Type:   Plus,
-				Val:    "+",
-				Column: 11,
-				Line:   15,
-			},
-			{
-				Type:   Asterisk,
-				Val:    "*",
-				Column: 14,
-				Line:   10,
-			},
-			{
-				Type:   Lbrace,
-				Val:    "(",
-				Column: 22,
-				Line:   15,
-			},
-		},
-	}
-}
-
 func TestParse_curTokenIs(t *testing.T) {
-	tokenBuf := makeMockTokenBuffer()
+	tokens := []Token{
+		{Type: Int, Val: "1"},
+		{Type: Ident, Val: "ADD"},
+		{Type: Plus, Val: "+"},
+		{Type: Asterisk, Val: "*"},
+		{Type: Lparen, Val: "("},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
 	tests := []struct {
 		tokenType TokenType
 		expected  bool
@@ -96,7 +66,7 @@ func TestParse_curTokenIs(t *testing.T) {
 			expected:  false,
 		},
 		{
-			tokenType: Lbrace,
+			tokenType: Lparen,
 			expected:  true,
 		},
 	}
@@ -111,7 +81,14 @@ func TestParse_curTokenIs(t *testing.T) {
 }
 
 func TestParse_nextTokenIs(t *testing.T) {
-	tokenBuf := makeMockTokenBuffer()
+	tokens := []Token{
+		{Type: Int, Val: "1"},
+		{Type: Ident, Val: "ADD"},
+		{Type: Plus, Val: "+"},
+		{Type: Asterisk, Val: "*"},
+		{Type: Lparen, Val: "("},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
 	tests := []struct {
 		tokenType TokenType
 		expected  bool
@@ -144,7 +121,14 @@ func TestParse_nextTokenIs(t *testing.T) {
 }
 
 func TestParse_curPrecedence(t *testing.T) {
-	tokenBuf := makeMockTokenBuffer()
+	tokens := []Token{
+		{Type: Int, Val: "1"},
+		{Type: Ident, Val: "ADD"},
+		{Type: Plus, Val: "+"},
+		{Type: Asterisk, Val: "*"},
+		{Type: Lparen, Val: "("},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
 	tests := []struct {
 		expected precedence
 	}{
@@ -175,7 +159,14 @@ func TestParse_curPrecedence(t *testing.T) {
 }
 
 func TestParse_nextPrecedence(t *testing.T) {
-	tokenBuf := makeMockTokenBuffer()
+	tokens := []Token{
+		{Type: Int, Val: "1"},
+		{Type: Ident, Val: "ADD"},
+		{Type: Plus, Val: "+"},
+		{Type: Asterisk, Val: "*"},
+		{Type: Lparen, Val: "("},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
 	tests := []struct {
 		expected precedence
 	}{
@@ -235,7 +226,14 @@ func TestPeekNumber_IsValid(t *testing.T) {
 
 func TestExpectNext(t *testing.T) {
 	err := errors.New("expectNext() : expecting token and next token are different")
-	tokenBuf := makeMockTokenBuffer()
+	tokens := []Token{
+		{Type: Int, Val: "1"},
+		{Type: Ident, Val: "ADD"},
+		{Type: Plus, Val: "+"},
+		{Type: Asterisk, Val: "*"},
+		{Type: Lparen, Val: "("},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
 	tests := []struct {
 		token         TokenType
 		expectedBool  bool
