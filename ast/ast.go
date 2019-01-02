@@ -16,16 +16,119 @@
 
 package ast
 
+// Node represent ast node
+type Node interface {
+	String() string
+}
+
 // Represent Statement
 type Statement interface {
+	Node
+	do()
 }
 
 // Represent Expression
 type Expression interface {
+	Node
+	produce()
 }
 
 // Represent Program.
 // Program consists of multiple statements.
 type Program struct {
 	Statements []Statement
+}
+
+// Represent identifier
+type Identifier struct {
+	Value string
+}
+
+func (i *Identifier) String() string {
+	return i.Value
+}
+
+func (i *Identifier) produce() {}
+
+type OperatorType int
+
+const (
+	_        OperatorType = iota
+	Plus                  // +
+	Minus                 // -
+	Bang                  // !
+	Asterisk              // *
+	Slash                 // /
+	Mod                   // %
+	LT                    // <
+	GT                    // >
+	LTE                   // <=
+	GTE                   // >=
+	EQ                    // ==
+	NOT_EQ                // !=
+)
+
+type OperatorVal string
+
+// Operator represent operator between expression
+type Operator struct {
+	Type OperatorType
+	Val  OperatorVal
+}
+
+type DataStructureType int
+
+const (
+	_ DataStructureType = iota
+	Int
+	String
+	Bool
+)
+
+type DataStructureVal string
+
+// DataStructure represent identifier's data structure
+// e.g. string, int, bool
+type DataStructure struct {
+	Type DataStructureType
+	Val  DataStructureVal
+}
+
+// Represent assign statement
+type AssignStatement struct {
+	Type     DataStructure
+	Variable *Identifier
+	Value    Expression
+}
+
+func (as *AssignStatement) do() {}
+
+// TODO: implement me w/ test cases :-)
+func (as *AssignStatement) String() string {
+	return ""
+}
+
+// Represent string literal
+type StringLiteral struct {
+	Value string
+}
+
+func (sl *StringLiteral) produce() {}
+
+// TODO: implement me w/ test cases :-)
+func (sl *StringLiteral) String() string {
+	return ""
+}
+
+// Represent prefix expression
+type PrefixExpression struct {
+	Operator
+	Right Expression
+}
+
+func (pe *PrefixExpression) produce() {}
+
+// TODO: implement me w/ test cases :-)
+func (pe *PrefixExpression) String() string {
+	return ""
 }

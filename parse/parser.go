@@ -17,6 +17,8 @@
 package parse
 
 import (
+	"errors"
+
 	"github.com/DE-labtory/koa/ast"
 )
 
@@ -24,11 +26,40 @@ type precedence int
 
 const (
 	_ precedence = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // function(X)
 )
 
-var precedenceMap = map[TokenType]precedence{}
+var precedenceMap = map[TokenType]precedence{
+	Assign:   LOWEST,
+	Plus:     SUM,
+	Minus:    SUM,
+	Bang:     PREFIX,
+	Asterisk: PRODUCT,
+	Slash:    PRODUCT,
+	Mod:      PRODUCT,
 
-// peekNumber restrict peek count from the TokenBuffer
+	LT:     LESSGREATER,
+	GT:     LESSGREATER,
+	LTE:    LESSGREATER,
+	GTE:    LESSGREATER,
+	EQ:     EQUALS,
+	NOT_EQ: EQUALS,
+
+	Comma: LOWEST,
+
+	Lparen: LOWEST,
+	Rparen: LOWEST,
+	Lbrace: LOWEST,
+	Rbrace: LOWEST,
+}
+
+// PeekNumber restrict peek count from the TokenBuffer
 type peekNumber int
 
 const (
@@ -36,9 +67,8 @@ const (
 	NEXT
 )
 
-// TODO: implement me w/ test cases :-)
 func (p peekNumber) isValid() bool {
-	return false
+	return p == CURRENT || p == NEXT
 }
 
 // TokenBuffer provide tokenized token, we can read from this buffer
@@ -53,35 +83,33 @@ type TokenBuffer interface {
 	Peek(n peekNumber) Token
 }
 
-// TODO: implement me w/ test cases :-)
 func curTokenIs(buf TokenBuffer, t TokenType) bool {
-	return false
+	return buf.Peek(CURRENT).Type == t
 }
 
-// TODO: implement me w/ test cases :-)
 func nextTokenIs(buf TokenBuffer, t TokenType) bool {
-	return false
+	return buf.Peek(NEXT).Type == t
 }
 
-// expectNext helps to check whether next token is
+// ExpectNext helps to check whether next token is
 // type of token we want, and if true then return it
 // otherwise return with error
-// TODO: implement me w/ test cases :-)
-func expectNext(buf TokenBuffer, t TokenType) (bool, Token, error) {
-	return false, Token{}, nil
+func expectNext(buf TokenBuffer, t TokenType) (bool, error) {
+	if buf.Peek(NEXT).Type != t {
+		return false, errors.New("expectNext() : expecting token and next token are different")
+	}
+	return true, nil
 }
 
-// TODO: implement me w/ test cases :-)
 func curPrecedence(buf TokenBuffer) precedence {
-	return 0
+	return precedenceMap[buf.Peek(CURRENT).Type]
 }
 
-// TODO: implement me w/ test cases :-)
 func nextPrecedence(buf TokenBuffer) precedence {
-	return 0
+	return precedenceMap[buf.Peek(NEXT).Type]
 }
 
-// parseError contains error which happened during
+// ParseError contains error which happened during
 // parsing tokens
 type parseError struct{}
 
@@ -114,19 +142,60 @@ func Parse(buf TokenBuffer) (*ast.Program, []error) {
 	return prog, errs
 }
 
+// TODO: implement me w/ test cases :-)
 func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 	switch buf.Peek(CURRENT).Type {
 	default:
-		return parseExpressionStatement(buf)
+		return nil, nil
 	}
 }
 
+// TODO: create test cases :-)
+// ParseExpression parse expression in two ways, first
+// by considering expression as prefix, next as infix
+func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) {
+	errs := make([]error, 0)
+	exp, es := parseExpAsPrefix(buf)
+	if len(es) != 0 {
+		errs = append(errs, es...)
+		return exp, errs
+	}
+
+	exp, es = parseExpAsInfix(buf, exp, pre)
+	if len(es) != 0 {
+		errs = append(errs, es...)
+		return exp, errs
+	}
+
+	return exp, errs
+}
+
 // TODO: implement me w/ test cases :-)
-func parseExpressionStatement(buf TokenBuffer) (*ast.Statement, []error) {
+func parseExpAsPrefix(buf TokenBuffer) (ast.Expression, []error) {
 	return nil, nil
 }
 
 // TODO: implement me w/ test cases :-)
-func parseExpression(buf TokenBuffer, pre int) (ast.Expression, []error) {
+func parseExpAsInfix(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseStringLiteral(buf TokenBuffer) (ast.Expression, []error) {
 	return nil, nil
 }
