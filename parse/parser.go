@@ -181,6 +181,11 @@ func parseExpAsInfix(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.E
 	return nil, nil
 }
 
+// TODO: implement me w/ test cases :-)
+func parseInfixExpression(buf TokenBuffer, exp ast.Expression) (ast.Expression, []error) {
+	return nil, nil
+}
+
 func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
 	errs := make([]error, 0)
 	token := buf.Peek(CURRENT)
@@ -240,4 +245,19 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, []error) {
 	}
 
 	return &ast.StringLiteral{Value: token.Val}, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseReturnStatement(buf TokenBuffer) (ast.Expression, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
+	return nil, nil
+}
+
+// TODO: implement me w/ test cases :-) (This used for calling built-in function)
+func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, []error) {
+	return nil, nil
 }
