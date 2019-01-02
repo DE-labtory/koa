@@ -17,6 +17,8 @@
 package parse
 
 import (
+	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -249,31 +251,83 @@ func defaultStateFn(s *state, e emitter) stateFn {
 	return defaultStateFn
 }
 
-// TODO: implement me w/ test cases :-)
 // NumberStateFn scans an alphanumeric. ex) 123, 4001, 232
 // After reading Number, it returns DefaultStateFn.
+// number = { decimal_digit }
 func numberStateFn(s *state, e emitter) stateFn {
+	r := s.peek()
+	if r == '+' || r == '-' { //number can get a sign
+		s.next()
+	}
 
+	if !isDigit(s.peek()) {
+		e.emit(Token{Illegal, "Invalid function call: numberStateFn", s.end, s.line})
+		return defaultStateFn
+	}
+
+	//accept first digit
+	s.next()
+
+	for isDigit(s.peek()) {
+		s.next()
+	}
+
+	e.emit(s.cut(Int))
 	return defaultStateFn
 }
 
-// TODO: implement me w/ test cases :-)
+// TODO: Need to check Keyword
 // IdentifierStateFn scans an identifiers. ex) a, b, add
 // After reading a identifier, it returns DefaultStateFn.
 //
 // when a input of a state is "int abc = 5" and start of state is 4,
 // IdentifierStateFn should emit "abc" and return DefaultStateFn
 //
+// identifier = letter { letter | unicode_digit }.
 func identifierStateFn(s *state, e emitter) stateFn {
+	if !(unicode.IsLetter(s.peek()) || s.peek() == '_') {
+		errToken := Token{Illegal, "Invalid function call: identifierStateFn", s.end, s.line}
+		e.emit(errToken)
+		return defaultStateFn
+	}
 
+	s.next() // accept first letter
+	for isAlphaNumeric(s.peek()) {
+		s.next()
+	}
+
+	e.emit(s.cut(Ident))
 	return defaultStateFn
 }
 
-// TODO: implement me w/ test cases :-)
 // SpaceStateFn scans an space. ex) `\t`, `" "`
 // After ignoring all spaces, it returns DefaultStateFn.
 //
 func spaceStateFn(s *state, e emitter) stateFn {
+	if !isSpace(s.peek()) {
+		errToken := Token{Illegal, "Invalid function call: spaceStateFn", s.end, s.line}
+		e.emit(errToken)
+		return defaultStateFn
+	}
 
+	for isSpace(s.peek()) {
+		s.next()
+	}
+
+	//absorb..
+	s.cut(Illegal)
 	return defaultStateFn
+}
+
+func isSpace(r rune) bool {
+	return r == ' ' || r == '\t'
+}
+
+func isAlphaNumeric(r rune) bool {
+	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
+func isDigit(r rune) bool {
+	digits := "0123456789"
+	return strings.ContainsRune(digits, r)
 }

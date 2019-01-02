@@ -243,3 +243,164 @@ func TestLex_defaultStateFn(t *testing.T) {
 		defaultStateFn(s, e)
 	}
 }
+
+func TestNumberStateFn(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedType TokenType
+		expectedVal  string
+	}{
+		{"1", Int, "1"},
+		{"0", Int, "0"},
+		{"123", Int, "123"},
+		{"9990909", Int, "9990909"},
+		{"+909", Int, "+909"},
+		{"-909", Int, "-909"},
+		{"-012", Int, "-012"}, //accept 0122
+		{"_121", Illegal, "Invalid function call: numberStateFn"},
+		{"+-121", Illegal, "Invalid function call: numberStateFn"},
+		{"+_11", Illegal, "Invalid function call: numberStateFn"},
+	}
+
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+		e.emitFunc = func(tok Token) {
+			if tok.Type != test.expectedType {
+				t.Errorf("tests[%d] - Wrong token type", i)
+			}
+			if tok.Val != test.expectedVal {
+				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.expectedVal, tok.Val)
+			}
+		}
+		numberStateFn(s, e)
+	}
+}
+
+func TestIdentifierStateFn(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedType TokenType
+		expectedVal  string
+	}{
+		{"abc", Ident, "abc"},
+		{"_abc", Ident, "_abc"},
+		{"a1", Ident, "a1"},
+		{"a1123", Ident, "a1123"},
+		{"_var123", Ident, "_var123"},
+		{"_var_123", Ident, "_var_123"},
+	}
+
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+		e.emitFunc = func(tok Token) {
+			if tok.Type != Ident {
+				t.Errorf("tests[%d] - Wrong token type", i)
+			}
+			if tok.Val != test.expectedVal {
+				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.expectedVal, tok.Val)
+			}
+		}
+		identifierStateFn(s, e)
+	}
+}
+
+func TestSpaceStateFn(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{" "},
+		{"         "},
+		{"\t"},
+		{"\t\t\t\t\t"},
+		{"\t \t    \t    \t        \t\t\t"},
+	}
+
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+
+		spaceStateFn(s, e)
+		if ch := s.next(); ch != rune(eof) {
+			t.Errorf("tests[%d] - not fully absorbed", i)
+		}
+	}
+}
+
+func TestIsSpace(t *testing.T) {
+	tests := []struct {
+		input rune
+	}{
+		{' '},
+		{'\t'},
+	}
+
+	for i, test := range tests {
+		if !isSpace(test.input) {
+			t.Errorf("tests[%d] - error occur", i)
+		}
+	}
+}
+
+func TestIsAlphaNumeric(t *testing.T) {
+	tests := []struct {
+		input rune
+	}{
+		{'a'},
+		{'A'},
+		{'_'},
+		{'1'},
+		{'2'},
+		{'0'},
+		{'z'},
+		{'Z'},
+	}
+
+	errortests := []struct {
+		input rune
+	}{
+		{'&'},
+		{'*'},
+		{'^'},
+		{'%'},
+		{'$'},
+		{'#'},
+		{'@'},
+		{'!'},
+	}
+
+	for i, test := range tests {
+		if !isAlphaNumeric(test.input) {
+			t.Errorf("tests[%d] - %q is not an alphanumeric", i, test.input)
+		}
+	}
+	for i, test := range errortests {
+		if isAlphaNumeric(test.input) {
+			t.Errorf("error tests[%d] - %q is alphanumeric", i, test.input)
+		}
+	}
+}
+
+func TestIsDigit(t *testing.T) {
+	tests := []struct {
+		input rune
+	}{
+		{'1'},
+		{'2'},
+		{'3'},
+		{'4'},
+		{'5'},
+		{'6'},
+		{'7'},
+		{'8'},
+		{'9'},
+		{'0'},
+	}
+
+	for i, test := range tests {
+		if !isDigit(test.input) {
+			t.Errorf("tests[%d] - %q is not alphanumeric", i, test.input)
+		}
+	}
+}
