@@ -17,6 +17,7 @@
 package parse
 
 import (
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -46,7 +47,7 @@ func (l *Lexer) run(input string) {
 		input: input,
 	}
 
-	for stateFn := DefaultStateFn; stateFn != nil; {
+	for stateFn := defaultStateFn; stateFn != nil; {
 		stateFn = stateFn(state, l)
 	}
 
@@ -137,10 +138,14 @@ func (s *state) next() rune {
 	return r
 }
 
-// TODO: implement me w/ test cases :-)
 // Peek returns but does not consume the next byte in the input.
 func (s *state) peek() rune {
-	return 0
+	if int(s.end) >= len(s.input) {
+		return Eof
+	}
+
+	r, _ := utf8.DecodeRuneInString(s.input[s.end:])
+	return r
 }
 
 // TODO: implement me w/ test cases :-)
@@ -161,36 +166,44 @@ func (s *state) acceptRun(valid string) {
 
 }
 
-func DefaultStateFn(s *state, e emitter) stateFn {
+func defaultStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
 }
 
-// TODO: implement me w/ test cases :-)
+// TODO: 1) extend to accept case like decimal has a sign "+/-" or not
+//		  2) handle error case. panic isn't enough
 // NumberStateFn scans an alphanumeric. ex) 123, 4001, 232
-// After reading Number, it returns DefaultStateFn.
-func NumberStateFn(s *state, e emitter) stateFn {
-
-	return DefaultStateFn
+// After reading Number, it returns defaultStateFn.
+// if state is not available, return err message
+func numberStateFn(s *state, e emitter) stateFn {
+	if !unicode.IsDigit(s.peek()) {
+		panic("Invalid Function call : numberStateFn")
+	}
+	for unicode.IsDigit(s.peek()) {
+		s.next()
+	}
+	e.emit(s.cut(Int))
+	return defaultStateFn
 }
 
 // TODO: implement me w/ test cases :-)
-// IdentifierStateFn scans an identifiers. ex) a, b, add
-// After reading a identifier, it returns DefaultStateFn.
+// identifierStateFn scans an identifiers. ex) a, b, add
+// After reading a identifier, it returns defaultStateFn.
 //
 // when a input of a state is "int abc = 5" and start of state is 4,
-// IdentifierStateFn should emit "abc" and return DefaultStateFn
+// identifierStateFn should emit "abc" and return defaultStateFn
 //
-func IdentifierStateFn(s *state, e emitter) stateFn {
+func identifierStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
 }
 
 // TODO: implement me w/ test cases :-)
-// SpaceStateFn scans an space. ex) `\t`, `" "`
-// After ignoring all spaces, it returns DefaultStateFn.
+// spaceStateFn scans an space. ex) `\t`, `" "`
+// After ignoring all spaces, it returns defaultStateFn.
 //
-func SpaceStateFn(s *state, e emitter) stateFn {
+func spaceStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
 }
