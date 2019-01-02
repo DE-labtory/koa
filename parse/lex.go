@@ -16,7 +16,10 @@
 
 package parse
 
-import "unicode/utf8"
+import (
+	"unicode"
+	"unicode/utf8"
+)
 
 // emitter is the interface to emit the token to the client(parser).
 type emitter interface {
@@ -44,7 +47,7 @@ func (l *Lexer) run(input string) {
 		input: input,
 	}
 
-	for stateFn := DefaultStateFn; stateFn != nil; {
+	for stateFn := defaultStateFn; stateFn != nil; {
 		stateFn = stateFn(state, l)
 	}
 
@@ -135,12 +138,33 @@ func (s *state) next() rune {
 	return r
 }
 
-func DefaultStateFn(s *state, e emitter) stateFn {
+// peek returns next rune but not change state
+func (s *state) peek() rune {
+	if int(s.end) >= len(s.input) {
+		return Eof
+	}
 
-	return DefaultStateFn
+	r, _ := utf8.DecodeRuneInString(s.input[s.end:])
+	return r
 }
 
-func NumberStateFn(s *state, e emitter) stateFn {
+func defaultStateFn(s *state, e emitter) stateFn {
 
-	return DefaultStateFn
+	return defaultStateFn
+}
+
+// TODO: 1) extend to accept case like decimal has a sign "+/-" or not
+//		  2) handle error case. panic isn't enough
+// NumberStateFn scans an alphanumeric. ex) 123, 4001, 232
+// After reading Number, it returns DefaultStateFn.
+// if state is not available, return err message
+func numberStateFn(s *state, e emitter) stateFn {
+	if !unicode.IsDigit(s.peek()) {
+		panic("Invalid Function call : numberStateFn")
+	}
+	for unicode.IsDigit(s.peek()) {
+		s.next()
+	}
+	e.emit(s.cut(Int))
+	return defaultStateFn
 }

@@ -102,3 +102,87 @@ func TestState_next(t *testing.T) {
 			s.line)
 	}
 }
+
+func TestPeek(t *testing.T) {
+	input := "hello world! \n hello world3"
+	tests := []struct {
+		expectedCh rune
+	}{
+		{rune('h')},
+		{rune('e')},
+		{rune('l')},
+		{rune('l')},
+		{rune('o')},
+		{rune(' ')},
+		{rune('w')},
+		{rune('o')},
+		{rune('r')},
+		{rune('l')},
+		{rune('d')},
+		{rune('!')},
+		{rune(' ')},
+		{rune('\n')},
+		{rune(' ')},
+		{rune('h')},
+		{rune('e')},
+		{rune('l')},
+		{rune('l')},
+		{rune('o')},
+		{rune(' ')},
+		{rune('w')},
+		{rune('o')},
+		{rune('r')},
+		{rune('l')},
+		{rune('d')},
+		{rune('3')},
+		{rune(-1)},
+	}
+
+	s := state{
+		input: input,
+	}
+
+	for i, test := range tests {
+		ch := s.peek()
+		if ch != test.expectedCh {
+			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
+				i, test.expectedCh, ch)
+		}
+		s.next()
+	}
+}
+
+type MockEmitter struct {
+	emitFunc func(t Token)
+}
+
+func (m MockEmitter) emit(t Token) {
+	m.emitFunc(t)
+}
+
+func TestNumberStateFn(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedType TokenType
+		expectedVal  string
+	}{
+		{"1", Int, "1"},
+		{"0", Int, "0"},
+		{"123", Int, "123"},
+		{"9990909", Int, "9990909"},
+	}
+
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+		e.emitFunc = func(tok Token) {
+			if tok.Type != Int {
+				t.Errorf("tests[%d] - Wrong token type", i)
+			}
+			if tok.Val != test.input {
+				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.input, tok.Val)
+			}
+		}
+		numberStateFn(s, e)
+	}
+}
