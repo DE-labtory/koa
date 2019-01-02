@@ -122,6 +122,15 @@ const (
 	//
 	Pop Type = 0x20
 
+	// Push the 32bits(uint32) item .
+	//
+	// Ex)
+	//           [a]
+	// [b]  ==>  [b]
+	// [x]       [x]
+	//
+	Push Type = 0x21
+
 	// Pop the first item in the stack.
 	// Load a value from memory and push it to the stack
 	//
@@ -130,7 +139,7 @@ const (
 	// [x]       ==>  [b]
 	// [y]            [x]
 	//
-	Mload Type = 0x21
+	Mload Type = 0x22
 
 	// Pop the first two items in the stack.
 	// Store the value with the first item(offset) as the offset of the memory.
@@ -141,5 +150,5 @@ const (
 	// [y]            [y]
 	//
 	// memory[offset:offset+32] = value
-	Mstore Type = 0x22
+	Mstore Type = 0x23
 )
