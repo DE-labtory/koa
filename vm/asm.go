@@ -16,15 +16,47 @@
 
 package vm
 
+import (
+	"github.com/DE-labtory/koa/opcode"
+	"github.com/pkg/errors"
+)
+
+var ErrInvalidOpcode = errors.New("Invalid byteCode")
+
+var opCodes = map[opcode.Type]opCode{
+	opcode.Add:  add{},
+	opcode.Push: push{},
+}
+
 // Converts rawByteCode to assembly code.
 func assemble(rawByteCode []byte) (*asm, error) {
-	analysis()
-	return &asm{}, nil
+	asm := newAsm()
+
+	for i := 0; i < len(rawByteCode); i++ {
+		op, ok := opCodes[opcode.Type(rawByteCode[i])]
+
+		if !ok {
+			return nil, ErrInvalidOpcode
+		}
+
+		switch op.hex()[0] {
+		case uint8(opcode.Push):
+			body := make([]uint8, 0)
+			body = append(body, rawByteCode[i+1:i+5]...)
+
+			asm.code = append(asm.code, op)
+			asm.code = append(asm.code, Data{Body: body})
+			i += 4
+		default:
+			asm.code = append(asm.code, op)
+		}
+	}
+
+	return asm, nil
 }
 
 // Do some analysis step (calculating the cost of running the code)
 func analysis() {
-
 }
 
 // Assemble Reader read assembly codes and can jump to certain assembly code
@@ -33,22 +65,47 @@ type asmReader interface {
 	jump(i uint64)
 }
 
+type Data struct {
+	Body []uint8
+}
+
+func (d Data) hex() []uint8 {
+	return d.Body
+}
+
 type hexer interface {
 	hex() []uint8
 }
 
 type asm struct {
-	code  []hexer
-	cost  uint64
-	index uint64
+	code []hexer
+	cost uint64
+	pc   uint64
+}
+
+func newAsm() *asm {
+	return &asm{
+		code: make([]hexer, 0),
+		cost: 0,
+		pc:   0,
+	}
 }
 
 func (a *asm) next() hexer {
-	return nil
+	if a.pc+1 == uint64(len(a.code)) {
+		return nil
+	}
+
+	code := a.code[a.pc+1]
+	a.pc += 1
+	return code
 }
 
 func (a *asm) jump(pc uint64) {
-
+	if pc > uint64(len(a.code))-1 {
+		panic("Access to invalid program counter!")
+	}
+	a.pc = pc
 }
 
 func (a *asm) print() {
