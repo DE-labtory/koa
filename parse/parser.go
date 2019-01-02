@@ -18,6 +18,7 @@ package parse
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/DE-labtory/koa/ast"
@@ -112,9 +113,14 @@ func nextPrecedence(buf TokenBuffer) precedence {
 
 // ParseError contains error which happened during
 // parsing tokens
-type parseError struct{}
+type parseError struct {
+	tokenType TokenType
+	reason    string
+}
 
-func (e *parseError) Error() string { return "" }
+func (e parseError) Error() string {
+	return fmt.Sprintf("%s, %s", TokenTypeMap[e.tokenType], e.reason)
+}
 
 type (
 	prefixParseFn func(TokenBuffer) (ast.Expression, []error)
@@ -156,13 +162,13 @@ func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 // by considering expression as prefix, next as infix
 func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) {
 	errs := make([]error, 0)
-	exp, es := parseExpAsPrefix(buf)
+	exp, es := makePrefixExpression(buf)
 	if len(es) != 0 {
 		errs = append(errs, es...)
 		return exp, errs
 	}
 
-	exp, es = parseExpAsInfix(buf, exp, pre)
+	exp, es = makeInfixExpression(buf, exp, pre)
 	if len(es) != 0 {
 		errs = append(errs, es...)
 		return exp, errs
@@ -171,17 +177,33 @@ func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) 
 	return exp, errs
 }
 
-// TODO: implement me w/ test cases :-)
 // ParseExpAsPrefix retrieves prefix parse function from
 // map, then parse expression with that function if exist.
-func parseExpAsPrefix(buf TokenBuffer) (ast.Expression, []error) {
-	return nil, nil
+func makePrefixExpression(buf TokenBuffer) (ast.Expression, []error) {
+	errs := make([]error, 0)
+	curTok := buf.Peek(CURRENT)
+
+	fn := prefixParseFnMap[curTok.Type]
+	if fn == nil {
+		e := parseError{
+			curTok.Type,
+			"prefix parse function not defined",
+		}
+		return nil, append(errs, e)
+	}
+
+	exp, e := fn(buf)
+	if len(e) != 0 {
+		return nil, append(errs, e...)
+	}
+
+	return exp, errs
 }
 
 // TODO: implement me w/ test cases :-)
-// ParseExpAsInfix retrieves infix parse function from map
+// MakeInfixExpression retrieves infix parse function from map
 // then parse expression with that function if exist.
-func parseExpAsInfix(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
+func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
 	return nil, nil
 }
 
@@ -265,4 +287,3 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
 func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, []error) {
 	return nil, nil
 }
-

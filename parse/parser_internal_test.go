@@ -38,6 +38,8 @@ func (m *mockTokenBuffer) Peek(n peekNumber) Token {
 	return m.buf[m.sp+int(n)]
 }
 
+var mockError = errors.New("error occurred for some reason")
+
 func TestParse_curTokenIs(t *testing.T) {
 	tokens := []Token{
 		{Type: Int, Val: "1"},
@@ -447,6 +449,63 @@ func TestParseStringLiteral(t *testing.T) {
 				t.Fatalf("test[%d] - TestParseStringLiteral() wrong result. expected=%s, got=%s",
 					i, test.expected, exp.String())
 			}
+		}
+	}
+}
+
+// This test is not fully functional test (parse token incorrectly), but
+// for testing when proper inputs are given then verify the result is
+// what we expected
+// TODO: fix as expression parsing function added to prefixParseFnMap
+func TestParseExpAsPrefix(t *testing.T) {
+	// setup mockTokenBuffer
+	tokens := []Token{
+		{Type: Ident, Val: "a"},
+		{Type: String, Val: "hello"},
+		{Type: Plus, Val: "+"},
+	}
+	buf := mockTokenBuffer{tokens, 0}
+
+	// mock prefixParseFnMap
+	// In the case of Identifier, return normal expression
+	prefixParseFnMap[String] = func(buf TokenBuffer) (ast.Expression, []error) {
+		return &ast.StringLiteral{"hello"}, nil
+	}
+	// In the case of Asterisk, return with errors
+	prefixParseFnMap[Plus] = func(buf TokenBuffer) (ast.Expression, []error) {
+		return &ast.PrefixExpression{}, []error{mockError}
+	}
+
+	tests := []struct {
+		expectedExpression ast.Expression
+		expectedError      error
+	}{
+		{
+			nil,
+			parseError{Ident, "prefix parse function not defined"},
+		},
+		{
+			&ast.StringLiteral{"hello"},
+			nil,
+		},
+		{
+			nil,
+			mockError,
+		},
+	}
+
+	for i, test := range tests {
+		exp, errs := makePrefixExpression(&buf)
+		buf.Read()
+
+		if exp != nil && exp.String() != test.expectedExpression.String() {
+			t.Errorf("tests[%d] - Returned statements is not %s but got %s",
+				i, test.expectedExpression.String(), exp.String())
+		}
+
+		if len(errs) > 0 && errs[0] != test.expectedError {
+			t.Errorf("tests[%d] - Returend error is not %s but got %s",
+				i, test.expectedError, errs[0])
 		}
 	}
 }
