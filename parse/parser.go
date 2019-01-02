@@ -172,11 +172,15 @@ func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) 
 }
 
 // TODO: implement me w/ test cases :-)
+// ParseExpAsPrefix retrieves prefix parse function from
+// map, then parse expression with that function if exist.
 func parseExpAsPrefix(buf TokenBuffer) (ast.Expression, []error) {
 	return nil, nil
 }
 
 // TODO: implement me w/ test cases :-)
+// ParseExpAsInfix retrieves infix parse function from map
+// then parse expression with that function if exist.
 func parseExpAsInfix(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
 	return nil, nil
 }
@@ -261,3 +265,4 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
 func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, []error) {
 	return nil, nil
 }
+
