@@ -19,6 +19,8 @@ package vm
 import (
 	"errors"
 
+	"encoding/binary"
+
 	"github.com/DE-labtory/koa/opcode"
 )
 
@@ -57,11 +59,26 @@ type add struct{}
 
 // TODO: implement me w/ test cases :-)
 func (add) Do(stack *stack, _ asmReader) error {
-
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func (add) hex() []uint8 {
 	return []uint8{uint8(opcode.Add)}
+}
+
+type push struct{}
+
+func (push) Do(stack *stack, asm asmReader) error {
+	return nil
+}
+
+func (push) hex() []uint8 {
+	return []uint8{uint8(opcode.Push)}
+}
+
+func uint32ToBytes(uint32 uint32) []byte {
+	byteSlice := make([]byte, 4)
+	binary.BigEndian.PutUint32(byteSlice, uint32)
+	return byteSlice
 }
