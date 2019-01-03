@@ -18,6 +18,7 @@ package parse
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/DE-labtory/koa/ast"
 )
@@ -196,19 +197,54 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
 	return &ast.Identifier{Value: token.Val}, nil
 }
 
-// TODO: implement me w/ test cases :-)
 func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, []error) {
-	return nil, nil
+	token := buf.Read()
+	errs := make([]error, 0)
+
+	if token.Type != Int {
+		errs = append(errs, errors.New("parseIntegerLiteral() error - "+token.Val+" is not integer"))
+		return nil, errs
+	}
+
+	value, err := strconv.ParseInt(token.Val, 0, 64)
+	if err != nil {
+		errs = append(errs, err)
+		return nil, errs
+	}
+
+	lit := &ast.IntegerLiteral{Value: value}
+	return lit, nil
 }
 
-// TODO: implement me w/ test cases :-)
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, []error) {
-	return nil, nil
+	token := buf.Read()
+	errs := make([]error, 0)
+
+	if token.Type != Bool {
+		errs = append(errs, errors.New("parseBooleanLiteral() error - "+token.Val+" is not bool"))
+		return nil, errs
+	}
+
+	value, err := strconv.ParseBool(token.Val)
+	if err != nil {
+		errs = append(errs, err)
+		return nil, errs
+	}
+
+	lit := &ast.BooleanLiteral{Value: value}
+	return lit, nil
 }
 
-// TODO: implement me w/ test cases :-)
 func parseStringLiteral(buf TokenBuffer) (ast.Expression, []error) {
-	return nil, nil
+	token := buf.Read()
+	errs := make([]error, 0)
+
+	if token.Type != String {
+		errs = append(errs, errors.New("parseStringLiteral() error - "+token.Val+" is not string"))
+		return nil, errs
+	}
+
+	return &ast.StringLiteral{Value: token.Val}, nil
 }
 
 // TODO: implement me w/ test cases :-)

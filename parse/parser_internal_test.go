@@ -331,3 +331,122 @@ func TestParseIdentifier(t *testing.T) {
 		}
 	}
 }
+
+func TestParseIntegerLiteral(t *testing.T) {
+	tokens := []Token{
+		{Type: Int, Val: "12"},
+		{Type: Int, Val: "55"},
+		{Type: Int, Val: "a"},
+		{Type: String, Val: "abcdefg"},
+		{Type: Int, Val: "-13"},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
+	tests := []struct {
+		expected    *ast.IntegerLiteral
+		expectedErr error
+	}{
+		{expected: &ast.IntegerLiteral{Value: 12}, expectedErr: nil},
+		{expected: &ast.IntegerLiteral{Value: 55}, expectedErr: nil},
+		{expected: nil, expectedErr: errors.New("strconv.ParseInt: parsing \"a\": invalid syntax")},
+		{expected: nil, expectedErr: errors.New("parseIntegerLiteral() error - abcdefg is not integer")},
+		{expected: &ast.IntegerLiteral{Value: -13}, expectedErr: nil},
+	}
+
+	for i, test := range tests {
+		exp, err := parseIntegerLiteral(&tokenBuf)
+
+		switch err != nil {
+		case true:
+			if err[0].Error() != test.expectedErr.Error() {
+				t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
+					i, test.expectedErr, err[0].Error())
+			}
+		}
+
+		switch exp != nil {
+		case true:
+			if exp.String() != test.expected.String() {
+				t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
+					i, test.expectedErr, err[0].Error())
+			}
+		}
+	}
+}
+
+func TestParseBooleanLiteral(t *testing.T) {
+	tokens := []Token{
+		{Type: Bool, Val: "true"},
+		{Type: Bool, Val: "false"},
+		{Type: Bool, Val: "azzx"},
+		{Type: String, Val: "abcdefg"},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
+	tests := []struct {
+		expected    *ast.BooleanLiteral
+		expectedErr error
+	}{
+		{expected: &ast.BooleanLiteral{Value: true}, expectedErr: nil},
+		{expected: &ast.BooleanLiteral{Value: false}, expectedErr: nil},
+		{expected: nil, expectedErr: errors.New("strconv.ParseBool: parsing \"azzx\": invalid syntax")},
+		{expected: nil, expectedErr: errors.New("parseBooleanLiteral() error - abcdefg is not bool")},
+	}
+
+	for i, test := range tests {
+		exp, err := parseBooleanLiteral(&tokenBuf)
+
+		switch err != nil {
+		case true:
+			if err[0].Error() != test.expectedErr.Error() {
+				t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong error. expected=%s, got=%s",
+					i, test.expectedErr, err[0].Error())
+			}
+		}
+
+		switch exp != nil {
+		case true:
+			if exp.String() != test.expected.String() {
+				t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong result. expected=%s, got=%s",
+					i, test.expected, exp.String())
+			}
+		}
+	}
+}
+
+func TestParseStringLiteral(t *testing.T) {
+	tokens := []Token{
+		{Type: String, Val: "hello"},
+		{Type: String, Val: "hihi"},
+		{Type: Int, Val: "3"},
+		{Type: String, Val: "koa zzang"},
+	}
+	tokenBuf := mockTokenBuffer{tokens, 0}
+	tests := []struct {
+		expected    *ast.StringLiteral
+		expectedErr error
+	}{
+		{expected: &ast.StringLiteral{Value: "hello"}, expectedErr: nil},
+		{expected: &ast.StringLiteral{Value: "hihi"}, expectedErr: nil},
+		{expected: nil, expectedErr: errors.New("parseStringLiteral() error - 3 is not string")},
+		{expected: &ast.StringLiteral{Value: "koa zzang"}, expectedErr: nil},
+	}
+
+	for i, test := range tests {
+		exp, err := parseStringLiteral(&tokenBuf)
+
+		switch err != nil {
+		case true:
+			if err[0].Error() != test.expectedErr.Error() {
+				t.Fatalf("test[%d] - TestParseStringLiteral() wrong error. expected=%s, got=%s",
+					i, test.expectedErr, err[0].Error())
+			}
+		}
+
+		switch exp != nil {
+		case true:
+			if exp.String() != test.expected.String() {
+				t.Fatalf("test[%d] - TestParseStringLiteral() wrong result. expected=%s, got=%s",
+					i, test.expected, exp.String())
+			}
+		}
+	}
+}
