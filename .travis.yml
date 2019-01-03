@@ -17,6 +17,7 @@ os: linux
 install:
 - go get golang.org/x/tools/cmd/goimports
 - go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 - go mod vendor
 
 script:
