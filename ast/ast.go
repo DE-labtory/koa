@@ -115,9 +115,33 @@ type StringLiteral struct {
 
 func (sl *StringLiteral) produce() {}
 
-// TODO: implement me w/ test cases :-)
 func (sl *StringLiteral) String() string {
-	return ""
+	return sl.Value
+}
+
+// Represent integer literal
+type IntegerLiteral struct {
+	Value int64
+}
+
+func (il *IntegerLiteral) produce() {}
+
+func (il *IntegerLiteral) String() string {
+	return string(il.Value)
+}
+
+// Represent Boolean expression
+type BooleanLiteral struct {
+	Value bool
+}
+
+func (bl *BooleanLiteral) produce() {}
+
+func (bl *BooleanLiteral) String() string {
+	if bl.Value {
+		return "true"
+	}
+	return "false"
 }
 
 // Represent prefix expression
