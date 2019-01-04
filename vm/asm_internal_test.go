@@ -25,13 +25,11 @@ import (
 )
 
 func TestAssemble(t *testing.T) {
-	rawByteCode := make([]byte, 0)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(1)...) // 1 byte allocation
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(300)...) // 2 byte allocation
-	rawByteCode = append(rawByteCode, uint8(opcode.Add))
-
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(1), // 1 byte allocation
+		uint8(opcode.Push), uint32ToBytes(300), // 2 byte allocation
+		uint8(opcode.Add),
+	)
 	testAsmExpected := asm{
 		code: []hexer{
 			push{}, Data{Body: uint32ToBytes(1)},
@@ -40,7 +38,7 @@ func TestAssemble(t *testing.T) {
 		},
 	}
 
-	asm, err := assemble(rawByteCode)
+	asm, err := assemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,28 +61,26 @@ func TestAssemble(t *testing.T) {
 }
 
 func TestAssemble_invalid(t *testing.T) {
-	rawByteCode := make([]byte, 0)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(1)...)
-	rawByteCode = append(rawByteCode, uint8(255)) // invaild code
-	rawByteCode = append(rawByteCode, uint32ToBytes(300)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Add))
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(1),
+		uint8(255), uint32ToBytes(300),
+		uint8(opcode.Add),
+	)
 
-	_, err := assemble(rawByteCode)
+	_, err := assemble(testByteCode)
 	if err != ErrInvalidOpcode {
 		t.Error("The desired error was not found")
 	}
 }
 
 func TestNext(t *testing.T) {
-	rawByteCode := make([]byte, 0)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(1)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(2)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Add))
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(1),
+		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Add),
+	)
 
-	asm, err := assemble(rawByteCode)
+	asm, err := assemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -108,14 +104,13 @@ func TestNext(t *testing.T) {
 }
 
 func TestJump(t *testing.T) {
-	rawByteCode := make([]byte, 0)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(1)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(2)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Add))
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(1),
+		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Add),
+	)
 
-	asm, err := assemble(rawByteCode)
+	asm, err := assemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -141,14 +136,13 @@ func TestJump(t *testing.T) {
 }
 
 func TestJump_invalid(t *testing.T) {
-	rawByteCode := make([]byte, 0)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(1)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Push))
-	rawByteCode = append(rawByteCode, uint32ToBytes(2)...)
-	rawByteCode = append(rawByteCode, uint8(opcode.Add))
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(1),
+		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Add),
+	)
 
-	asm, err := assemble(rawByteCode)
+	asm, err := assemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
