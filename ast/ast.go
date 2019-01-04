@@ -156,3 +156,16 @@ func (pe *PrefixExpression) produce() {}
 func (pe *PrefixExpression) String() string {
 	return ""
 }
+
+// Represent infix expression
+type InfixExpression struct {
+	Operator
+	Left  Expression
+	Right Expression
+}
+
+func (ie *InfixExpression) produce() {}
+
+func (ie *InfixExpression) String() string {
+	return ""
+}
