@@ -18,10 +18,7 @@ package vm
 
 import (
 	"github.com/DE-labtory/koa/opcode"
-	"github.com/pkg/errors"
 )
-
-var ErrInvalidOpcode = errors.New("Invalid byteCode")
 
 var opCodes = map[opcode.Type]opCode{
 	opcode.Add:  add{},

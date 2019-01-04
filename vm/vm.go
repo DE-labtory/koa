@@ -24,6 +24,9 @@ import (
 	"github.com/DE-labtory/koa/opcode"
 )
 
+var ErrInvalidData = errors.New("Invalid data")
+var ErrInvalidOpcode = errors.New("invalid opcode")
+
 // The Execute function assemble the rawByteCode into an assembly code,
 // which in turn executes the assembly logic.
 func Execute(rawByteCode []byte) (*stack, error) {
@@ -34,10 +37,10 @@ func Execute(rawByteCode []byte) (*stack, error) {
 		return &stack{}, err
 	}
 
-	for h := asm.next(); h != nil; {
+	for h := asm.code[0]; h != nil; h = asm.next() {
 		op, ok := h.(opCode)
 		if !ok {
-			return &stack{}, errors.New("invalid opcode err")
+			return &stack{}, ErrInvalidOpcode
 		}
 
 		err := op.Do(s, asm)
@@ -59,6 +62,12 @@ type add struct{}
 
 // TODO: implement me w/ test cases :-)
 func (add) Do(stack *stack, _ asmReader) error {
+	rightValue := stack.pop()
+	leftValue := stack.pop()
+	result := rightValue + leftValue
+
+	stack.push(result)
+
 	return nil
 }
 
@@ -70,6 +79,14 @@ func (add) hex() []uint8 {
 type push struct{}
 
 func (push) Do(stack *stack, asm asmReader) error {
+	code := asm.next()
+	data, ok := code.(Data)
+	if !ok {
+		return ErrInvalidData
+	}
+	item := item(bytesToUint32(data.hex()))
+	stack.push(item)
+
 	return nil
 }
 
@@ -81,4 +98,9 @@ func uint32ToBytes(uint32 uint32) []byte {
 	byteSlice := make([]byte, 4)
 	binary.BigEndian.PutUint32(byteSlice, uint32)
 	return byteSlice
+}
+
+func bytesToUint32(bytes []byte) uint32 {
+	uint32 := binary.BigEndian.Uint32(bytes)
+	return uint32
 }
