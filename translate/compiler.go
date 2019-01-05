@@ -20,6 +20,7 @@ import (
 	"github.com/DE-labtory/koa/ast"
 	"github.com/pkg/errors"
 	"github.com/DE-labtory/koa/opcode"
+	"github.com/DE-labtory/koa/encoding"
 )
 
 type Compiler struct {
@@ -122,6 +123,20 @@ func (c *Compiler) compileInteger(node ast.IntegerLiteral) error {
 
 // TODO: implement w/ test cases :-)
 func (c *Compiler) compileBoolean(node ast.BooleanLiteral) error {
+	value := node.Value
+
+	// true
+	if value {
+		operand := encoding.EncodeOperand(true)
+		c.emit(opcode.Push, operand)
+
+		return nil
+	}
+
+	// false
+	operand := encoding.EncodeOperand(false)
+	c.emit(opcode.Push, operand)
+
 	return nil
 }
 
