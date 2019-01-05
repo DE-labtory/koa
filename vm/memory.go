@@ -33,10 +33,9 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
-
-	"errors"
 
 	"github.com/ethereum/go-ethereum/common/math"
 )

@@ -18,10 +18,9 @@ package encoding
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 // In koa, we use hexadecimal encoding

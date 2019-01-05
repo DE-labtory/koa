@@ -123,3 +123,8 @@ func Test_encodeBool(t *testing.T) {
 		}
 	}
 }
+
+// TODO: implement test cases :-)
+func Test_convertTo4Bytes(t *testing.T) {
+
+}
