@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-
 	"os"
 
 	"github.com/DE-labtory/koa/parse"

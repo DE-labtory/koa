@@ -46,17 +46,15 @@ func EncodeOperand(operand interface{}) ([]byte, error) {
 // Encode integer to hexadecimal bytes
 // ex) int 123 => 0x7b
 func encodeInt(operand int) ([]byte, error) {
-	operand32 := int32(operand)
-	s := fmt.Sprintf("%x", operand32)
-
-	// Encoded byte length should be even number
-	if len(s)%2 == 1 {
-		s = "0" + s
-	}
+	s := convertTo4Bytes(operand)
 
 	b, err := hex.DecodeString(s)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(b) != 4 {
+		return nil, errors.New("Integer size is not 32 bits")
 	}
 
 	return b, nil
