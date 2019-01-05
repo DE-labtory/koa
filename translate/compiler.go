@@ -16,15 +16,74 @@
 
 package translate
 
-import "github.com/DE-labtory/koa/ast"
+import (
+	"github.com/DE-labtory/koa/ast"
+	"github.com/DE-labtory/koa/opcode"
+	"github.com/pkg/errors"
+)
 
 type Compiler struct {
+	// binary is the byte code which is compiled.
+	binary []byte
+
+	debug bool
 }
 
-func NewCompiler() *Compiler {
+func NewCompiler(debug bool) *Compiler {
+	return &Compiler{
+		binary: make([]byte,0),
+		debug:  debug,
+	}
+}
+
+// Compile() compiles statements in program.
+// Statements would be compiled to byte code.
+// TODO: implement w/ test cases :-)
+func (c *Compiler) Compile(program ast.Program) error {
+	for _, s := range program.Statements {
+		if err := c.compileNode(s); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (c *Compiler) Compile(program ast.Program) {
+// compileNode() compiles a node in statement.
+// This function will be executed recursively.
+// TODO: implement w/ test cases :-)
+func (c *Compiler) compileNode(node ast.Node) error {
+	// Nodes are many kinds.
+	switch node := node.(type) {
+	case *ast.Identifier:
+		return nil
 
+	case *ast.AssignStatement:
+		return nil
+
+	case *ast.StringLiteral:
+		return nil
+
+	case *ast.IntegerLiteral:
+		return nil
+
+	case *ast.BooleanLiteral:
+		return nil
+
+	case *ast.PrefixExpression:
+		return nil
+
+	default:
+		return errors.New("compileNode() error - "+node.String()+" could not compiled")
+	}
+
+	return nil
+}
+
+// emit() generates a byte code with operator and operands.
+// Then, adds the byte code to binary in compiler
+// and returns the position of this instruction.
+// TODO: implement w/ test cases :-)
+func (c *Compiler) emit(operator opcode.Type, operand ...[]byte) int {
+	return 0
 }
