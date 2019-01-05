@@ -16,7 +16,11 @@
 
 package translate
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/DE-labtory/koa/ast"
+)
 
 // TODO: implement test cases :-)
 func TestCompiler_emit(t *testing.T) {
@@ -38,9 +42,35 @@ func TestCompiler_compileInteger(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
 func TestCompiler_compileBoolean(t *testing.T) {
+	c := Compiler{}
 
+	tests := []struct {
+		node     ast.BooleanLiteral
+		expected error
+	}{
+		{
+			node: ast.BooleanLiteral{
+				Value: true,
+			},
+			expected: nil,
+		},
+		{
+			node: ast.BooleanLiteral{
+				Value: false,
+			},
+			expected: nil,
+		},
+	}
+
+	for i, test := range tests {
+		n := test.node
+		err := c.compileBoolean(n)
+
+		if err != nil {
+			t.Fatalf("test[%d] - compileBoolean() had error. err=%v", i, err)
+		}
+	}
 }
 
 // TODO: implement test cases :-)

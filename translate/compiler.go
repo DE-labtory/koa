@@ -18,9 +18,9 @@ package translate
 
 import (
 	"github.com/DE-labtory/koa/ast"
-	"github.com/pkg/errors"
-	"github.com/DE-labtory/koa/opcode"
 	"github.com/DE-labtory/koa/encoding"
+	"github.com/DE-labtory/koa/opcode"
+	"github.com/pkg/errors"
 )
 
 type Compiler struct {
@@ -32,7 +32,7 @@ type Compiler struct {
 
 func NewCompiler(debug bool) *Compiler {
 	return &Compiler{
-		binary: make([]byte,0),
+		binary: make([]byte, 0),
 		debug:  debug,
 	}
 }
@@ -95,7 +95,7 @@ func (c *Compiler) compileNode(node ast.Node) error {
 		}
 
 	default:
-		return errors.New("compileNode() error - "+node.String()+" could not compiled")
+		return errors.New("compileNode() error - " + node.String() + " could not compiled")
 	}
 
 	return nil
@@ -121,20 +121,27 @@ func (c *Compiler) compileInteger(node ast.IntegerLiteral) error {
 	return nil
 }
 
-// TODO: implement w/ test cases :-)
 func (c *Compiler) compileBoolean(node ast.BooleanLiteral) error {
 	value := node.Value
 
 	// true
 	if value {
-		operand := encoding.EncodeOperand(true)
+		operand, err := encoding.EncodeOperand(true)
+		if err != nil {
+			return err
+		}
+
 		c.emit(opcode.Push, operand)
 
 		return nil
 	}
 
 	// false
-	operand := encoding.EncodeOperand(false)
+	operand, err := encoding.EncodeOperand(false)
+	if err != nil {
+		return err
+	}
+	
 	c.emit(opcode.Push, operand)
 
 	return nil
