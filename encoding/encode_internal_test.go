@@ -28,15 +28,15 @@ func Test_encodeInt(t *testing.T) {
 	}{
 		{
 			operand:  1,
-			expected: []byte{0x01},
+			expected: []byte{0x00, 0x00, 0x00, 0x01},
 		},
 		{
 			operand:  23,
-			expected: []byte{0x17},
+			expected: []byte{0x00, 0x00, 0x00, 0x17},
 		},
 		{
 			operand:  456,
-			expected: []byte{0x01, 0xc8},
+			expected: []byte{0x00, 0x00, 0x01, 0xc8},
 		},
 	}
 
