@@ -18,8 +18,8 @@ package translate
 
 import (
 	"github.com/DE-labtory/koa/ast"
-	"github.com/DE-labtory/koa/opcode"
 	"github.com/pkg/errors"
+	"github.com/DE-labtory/koa/opcode"
 )
 
 type Compiler struct {
@@ -49,6 +49,14 @@ func (c *Compiler) Compile(program ast.Program) error {
 	return nil
 }
 
+// emit() generates a byte code with operator and operands.
+// Then, adds the byte code to binary in compiler
+// and returns the position of this instruction.
+// TODO: implement w/ test cases :-)
+func (c *Compiler) emit(operator opcode.Type, operand ...[]byte) int {
+	return 0
+}
+
 // compileNode() compiles a node in statement.
 // This function will be executed recursively.
 // TODO: implement w/ test cases :-)
@@ -56,22 +64,34 @@ func (c *Compiler) compileNode(node ast.Node) error {
 	// Nodes are many kinds.
 	switch node := node.(type) {
 	case *ast.Identifier:
-		return nil
+		if err := c.compileIdentifier(*node); err != nil {
+			return err
+		}
 
 	case *ast.AssignStatement:
-		return nil
+		if err := c.compileAssignStatement(*node); err != nil {
+			return err
+		}
 
 	case *ast.StringLiteral:
-		return nil
+		if err := c.compileString(*node); err != nil {
+			return err
+		}
 
 	case *ast.IntegerLiteral:
-		return nil
+		if err := c.compileInteger(*node); err != nil {
+			return err
+		}
 
 	case *ast.BooleanLiteral:
-		return nil
+		if err := c.compileBoolean(*node); err != nil {
+			return err
+		}
 
 	case *ast.PrefixExpression:
-		return nil
+		if err := c.compilePrefixExpression(*node); err != nil {
+			return err
+		}
 
 	default:
 		return errors.New("compileNode() error - "+node.String()+" could not compiled")
@@ -80,10 +100,32 @@ func (c *Compiler) compileNode(node ast.Node) error {
 	return nil
 }
 
-// emit() generates a byte code with operator and operands.
-// Then, adds the byte code to binary in compiler
-// and returns the position of this instruction.
 // TODO: implement w/ test cases :-)
-func (c *Compiler) emit(operator opcode.Type, operand ...[]byte) int {
-	return 0
+func (c *Compiler) compileIdentifier(node ast.Identifier) error {
+	return nil
+}
+
+// TODO: implement w/ test cases :-)
+func (c *Compiler) compileAssignStatement(node ast.AssignStatement) error {
+	return nil
+}
+
+// TODO: implement w/ test cases :-)
+func (c *Compiler) compileString(node ast.StringLiteral) error {
+	return nil
+}
+
+// TODO: implement w/ test cases :-)
+func (c *Compiler) compileInteger(node ast.IntegerLiteral) error {
+	return nil
+}
+
+// TODO: implement w/ test cases :-)
+func (c *Compiler) compileBoolean(node ast.BooleanLiteral) error {
+	return nil
+}
+
+// TODO: implement w/ test cases :-)
+func (c *Compiler) compilePrefixExpression(node ast.PrefixExpression) error {
+	return nil
 }
