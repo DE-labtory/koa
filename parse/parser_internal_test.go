@@ -40,7 +40,7 @@ func (m *mockTokenBuffer) Peek(n peekNumber) Token {
 
 var mockError = errors.New("error occurred for some reason")
 
-func TestParse_curTokenIs(t *testing.T) {
+func TestCurTokenIs(t *testing.T) {
 	tokens := []Token{
 		{Type: Int, Val: "1"},
 		{Type: Ident, Val: "ADD"},
@@ -84,7 +84,7 @@ func TestParse_curTokenIs(t *testing.T) {
 	}
 }
 
-func TestParse_nextTokenIs(t *testing.T) {
+func TestNextTokenIs(t *testing.T) {
 	tokens := []Token{
 		{Type: Int, Val: "1"},
 		{Type: Ident, Val: "ADD"},
@@ -124,7 +124,7 @@ func TestParse_nextTokenIs(t *testing.T) {
 	}
 }
 
-func TestParse_curPrecedence(t *testing.T) {
+func TestCurPrecedence(t *testing.T) {
 	tokens := []Token{
 		{Type: Int, Val: "1"},
 		{Type: Ident, Val: "ADD"},
@@ -137,10 +137,10 @@ func TestParse_curPrecedence(t *testing.T) {
 		expected precedence
 	}{
 		{
-			expected: 0,
+			expected: LOWEST,
 		},
 		{
-			expected: 0,
+			expected: LOWEST,
 		},
 		{
 			expected: SUM,
@@ -162,7 +162,7 @@ func TestParse_curPrecedence(t *testing.T) {
 	}
 }
 
-func TestParse_nextPrecedence(t *testing.T) {
+func TestNextPrecedence(t *testing.T) {
 	tokens := []Token{
 		{Type: Int, Val: "1"},
 		{Type: Ident, Val: "ADD"},
@@ -175,7 +175,7 @@ func TestParse_nextPrecedence(t *testing.T) {
 		expected precedence
 	}{
 		{
-			expected: 0,
+			expected: LOWEST,
 		},
 		{
 			expected: SUM,
@@ -325,7 +325,6 @@ func TestParseIdentifier(t *testing.T) {
 			if test.expected != nil {
 				t.Fatalf("test[%d] - wrong result. expected=%s, got=%s", i, test.expected.String(), exp.String())
 			}
-			tokenBuf.Read()
 		case &ast.Identifier{Value: exp.String()}:
 			if exp.String() != exp.String() {
 				t.Fatalf("test[%d] - wrong result. expected=%s, got=%s", i, test.expected.String(), exp.String())
@@ -453,10 +452,6 @@ func TestParseStringLiteral(t *testing.T) {
 	}
 }
 
-// This test is not fully functional test (parse token incorrectly), but
-// for testing when proper inputs are given then verify the result is
-// what we expected
-// TODO: fix as expression parsing function added to prefixParseFnMap
 func TestParseExpAsPrefix(t *testing.T) {
 	// setup mockTokenBuffer
 	tokens := []Token{
@@ -506,6 +501,113 @@ func TestParseExpAsPrefix(t *testing.T) {
 		if len(errs) > 0 && errs[0] != test.expectedError {
 			t.Errorf("tests[%d] - Returend error is not %s but got %s",
 				i, test.expectedError, errs[0])
+		}
+	}
+}
+
+func TestMakeInfixExpression(t *testing.T) {
+	bufs := [][]Token{
+		{{Type: Plus, Val: "+"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
+		{{Type: Asterisk, Val: "*"}, {Type: Int, Val: "242"}, {Type: Plus, Val: "+"},
+			{Type: Int, Val: "312"}, {Type: Eof, Val: ""}},
+		{{Type: Asterisk, Val: "-"}, {Type: Int, Val: "15"}, {Type: Plus, Val: "-"},
+			{Type: Int, Val: "55"}, {Type: Eof, Val: ""}},
+		{{Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "3"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "4"}, {Type: Eof, Val: ""}},
+		{{Type: Plus, Val: "+"}, {Type: Plus, Val: "+"}, {Type: Eof, Val: ""}},
+	}
+
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Asterisk] = parseInfixExpression
+	infixParseFnMap[Minus] = parseInfixExpression
+
+	prefixParseFnMap[Int] = parseIntegerLiteral
+
+	prefixes := []ast.IntegerLiteral{
+		{Value: 1},
+		{Value: 121},
+		{Value: -10},
+		{Value: 1},
+		{Value: 1}}
+
+	tests := []struct {
+		expected string
+	}{
+		{expected: "(1 + (2 * 3))"},
+		{expected: "((121 * 242) + 312)"},
+		{expected: "((-10 - 15) - 55)"},
+		{expected: "((1 - (2 * 3)) + 4)"},
+		{expected: mockError.Error()},
+	}
+
+	// Expected value is
+	//      +
+	//     / \
+	//    1   *
+	//       / \
+	//      2  3
+	// result String() : 1+(2*3)
+
+	for i, test := range tests {
+		buf := mockTokenBuffer{bufs[i], 0}
+
+		//exp, _ := makePrefixExpression(&buf)
+		prefix := prefixes[i]
+		exp, err := makeInfixExpression(&buf, &prefix, LOWEST)
+
+		if len(err) > 0 && test.expected != err[0].Error() {
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
+				i, test.expected, err[0].Error())
+		}
+
+		if len(err) == 0 && test.expected != exp.String() {
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. expected=%s, got=%s",
+				i, test.expected, exp.String())
+		}
+	}
+}
+
+func TestParseInfixExpression(t *testing.T) {
+	bufs := [][]Token{
+		{{Type: Int, Val: "1"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
+		{{Type: Int, Val: "121"}, {Type: Asterisk, Val: "*"}, {Type: Int, Val: "242"}, {Type: Plus, Val: "+"},
+			{Type: Int, Val: "312"}, {Type: Eof, Val: ""}},
+		{{Type: Int, Val: "-10"}, {Type: Asterisk, Val: "-"}, {Type: Int, Val: "15"}, {Type: Plus, Val: "-"},
+			{Type: Int, Val: "55"}, {Type: Eof, Val: ""}},
+		{{Type: Int, Val: "1"}, {Type: Plus, Val: "+"}, {Type: Plus, Val: "+"}, {Type: Eof, Val: ""}},
+	}
+
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Asterisk] = parseInfixExpression
+	prefixParseFnMap[Int] = parseIntegerLiteral
+
+	tests := []struct {
+		expected string
+	}{
+		{expected: "(1 + (2 * 3))"},
+		{expected: "(121 * 242)"},
+		{expected: "(-10 - 15)"},
+		{expected: mockError.Error()},
+	}
+
+	lefts := []ast.IntegerLiteral{{Value: 1}, {Value: 121}, {Value: -10}, {Value: 1}}
+
+	for i, test := range tests {
+		buf := mockTokenBuffer{bufs[i], 1}
+
+		left := lefts[i]
+		exp, err := parseInfixExpression(&buf, &left)
+
+		if len(err) > 0 && test.expected != err[0].Error() {
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
+				i, test.expected, err[0].Error())
+		}
+
+		if len(err) == 0 && test.expected != exp.String() {
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. expected=%s, got=%s",
+				i, test.expected, exp.String())
 		}
 	}
 }
