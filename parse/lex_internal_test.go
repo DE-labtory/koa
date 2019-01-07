@@ -171,6 +171,68 @@ func TestState_peek(t *testing.T) {
 	}
 }
 
+func TestState_accept(t *testing.T) {
+	// Accept consumes the next byte if it's from the valid set.
+	valid := "12345"
+
+	tests := []struct {
+		input        string
+		expectedBool bool
+	}{
+		{"0", false}, //0
+		{"1", true},  // 1
+		{"2", true},  // 1
+		{"3", true},  // 1
+		{"4", true},  // 1
+		{"5", true},  // 1
+		{"a", false}, // 1
+		{"b", false}, // 1
+		{"c", false}, // 1
+	}
+
+	for i, test := range tests {
+		s := state{
+			input: test.input,
+		}
+
+		if ans := s.accept(valid); ans != test.expectedBool {
+			t.Errorf("tests[%d] - error. expected=%t, got=%t", i, test.expectedBool, ans)
+		}
+
+	}
+}
+
+func TestState_acceptRun(t *testing.T) {
+	// AcceptRun consumes a run of byte from the valid set.
+	valid := "12345abc"
+
+	tests := []struct {
+		input            string
+		expectedNextRune rune
+	}{
+		{"0", '0'},
+		{"12345a", eof},
+		{"aaabc123", eof},
+		{"bc3323", eof},
+		{"123def", 'd'},
+		{"456aBc", '6'},
+		{"A12ab", 'A'},
+		{"21a45baa34cc&", '&'},
+	}
+
+	for i, test := range tests {
+		s := state{
+			input: test.input,
+		}
+		s.acceptRun(valid)
+		if nextRune := s.next(); nextRune != test.expectedNextRune {
+			t.Errorf("tests[%d] - function doesn't consume full input. expectedNextRune=%q, got=%q",
+				i, test.expectedNextRune, nextRune)
+		}
+
+	}
+}
+
 type MockEmitter struct {
 	emitFunc func(t Token)
 }
@@ -328,21 +390,6 @@ func TestSpaceStateFn(t *testing.T) {
 	}
 }
 
-func TestIsSpace(t *testing.T) {
-	tests := []struct {
-		input rune
-	}{
-		{' '},
-		{'\t'},
-	}
-
-	for i, test := range tests {
-		if !isSpace(test.input) {
-			t.Errorf("tests[%d] - error occur", i)
-		}
-	}
-}
-
 func TestIsAlphaNumeric(t *testing.T) {
 	tests := []struct {
 		input rune
@@ -378,29 +425,6 @@ func TestIsAlphaNumeric(t *testing.T) {
 	for i, test := range errortests {
 		if isAlphaNumeric(test.input) {
 			t.Errorf("error tests[%d] - %q is alphanumeric", i, test.input)
-		}
-	}
-}
-
-func TestIsDigit(t *testing.T) {
-	tests := []struct {
-		input rune
-	}{
-		{'1'},
-		{'2'},
-		{'3'},
-		{'4'},
-		{'5'},
-		{'6'},
-		{'7'},
-		{'8'},
-		{'9'},
-		{'0'},
-	}
-
-	for i, test := range tests {
-		if !isDigit(test.input) {
-			t.Errorf("tests[%d] - %q is not alphanumeric", i, test.input)
 		}
 	}
 }
