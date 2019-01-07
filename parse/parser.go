@@ -61,6 +61,22 @@ var precedenceMap = map[TokenType]precedence{
 	Rbrace: LOWEST,
 }
 
+// Operator map
+var operatorTypeMap = map[TokenType]ast.OperatorType{
+	Plus:     ast.Plus,
+	Minus:    ast.Minus,
+	Bang:     ast.Bang,
+	Asterisk: ast.Asterisk,
+	Slash:    ast.Slash,
+	Mod:      ast.Mod,
+	LT:       ast.LT,
+	GT:       ast.GT,
+	LTE:      ast.LTE,
+	GTE:      ast.GTE,
+	EQ:       ast.EQ,
+	NOT_EQ:   ast.NOT_EQ,
+}
+
 // PeekNumber restrict peek count from the TokenBuffer
 type peekNumber int
 
@@ -104,11 +120,16 @@ func expectNext(buf TokenBuffer, t TokenType) (bool, error) {
 }
 
 func curPrecedence(buf TokenBuffer) precedence {
-	return precedenceMap[buf.Peek(CURRENT).Type]
+	if p, ok := precedenceMap[buf.Peek(CURRENT).Type]; ok {
+		return p
+	}
+	return LOWEST
 }
-
 func nextPrecedence(buf TokenBuffer) precedence {
-	return precedenceMap[buf.Peek(NEXT).Type]
+	if p, ok := precedenceMap[buf.Peek(NEXT).Type]; ok {
+		return p
+	}
+	return LOWEST
 }
 
 // ParseError contains error which happened during
@@ -157,7 +178,6 @@ func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 	}
 }
 
-// TODO: create test cases :-)
 // ParseExpression parse expression in two ways, first
 // by considering expression as prefix, next as infix
 func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) {
@@ -200,26 +220,56 @@ func makePrefixExpression(buf TokenBuffer) (ast.Expression, []error) {
 	return exp, errs
 }
 
-// TODO: implement me w/ test cases :-)
 // MakeInfixExpression retrieves infix parse function from map
 // then parse expression with that function if exist.
 func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
-	return nil, nil
+	errs := make([]error, 0)
+	expression := exp
+
+	for pre < curPrecedence(buf) {
+		fn := infixParseFnMap[buf.Peek(CURRENT).Type]
+		if fn == nil {
+			errs = append(errs, parseError{buf.Peek(CURRENT).Type, "infix parse function not defined"})
+			return nil, errs
+		}
+
+		var err []error
+		expression, err = fn(buf, expression)
+		if len(err) > 0 {
+			return nil, append(errs, err...)
+		}
+	}
+	return expression, nil
 }
 
-// TODO: implement me w/ test cases :-)
-func parseInfixExpression(buf TokenBuffer, exp ast.Expression) (ast.Expression, []error) {
-	return nil, nil
+func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression, []error) {
+	curTok := buf.Read()
+	expression := &ast.InfixExpression{
+		Left: left,
+		Operator: ast.Operator{
+			Type: operatorTypeMap[curTok.Type],
+			Val:  ast.OperatorVal(curTok.Val),
+		},
+	}
+	precedence := precedenceMap[curTok.Type]
+
+	var err []error
+	expression.Right, err = parseExpression(buf, precedence)
+	if len(err) > 0 {
+		return nil, err
+	}
+
+	return expression, nil
 }
 
 func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
 	errs := make([]error, 0)
-	token := buf.Peek(CURRENT)
+	token := buf.Read()
+
 	if token.Type != Ident {
 		errs = append(errs, errors.New("parseIdentifier() - "+token.Val+" is not a identifier"))
 		return nil, errs
 	}
-	buf.Read()
 	return &ast.Identifier{Value: token.Val}, nil
 }
 

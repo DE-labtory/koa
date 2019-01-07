@@ -16,6 +16,11 @@
 
 package ast
 
+import (
+	"fmt"
+	"strconv"
+)
+
 // Node represent ast node
 type Node interface {
 	String() string
@@ -127,7 +132,7 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) produce() {}
 
 func (il *IntegerLiteral) String() string {
-	return string(il.Value)
+	return strconv.FormatInt(il.Value, 10)
 }
 
 // Represent Boolean expression
@@ -157,15 +162,15 @@ func (pe *PrefixExpression) String() string {
 	return ""
 }
 
-// Represent infix expression
+// Repersent Infix expression
 type InfixExpression struct {
+	Left Expression
 	Operator
-	Left  Expression
 	Right Expression
 }
 
 func (ie *InfixExpression) produce() {}
 
 func (ie *InfixExpression) String() string {
-	return ""
+	return fmt.Sprintf("(%s %s %s)", ie.Left.String(), string(ie.Operator.Val), ie.Right.String())
 }
