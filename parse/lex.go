@@ -158,16 +158,20 @@ func (s *state) backup() {
 	}
 }
 
-// TODO: implement me w/ test cases :-)
 // Accept consumes the next byte if it's from the valid set.
 func (s *state) accept(valid string) bool {
+	if strings.IndexRune(valid, s.next()) >= 0 {
+		return true
+	}
+	s.backup()
 	return false
 }
 
-// TODO: implement me w/ test cases :-)
 // AcceptRun consumes a run of byte from the valid set.
 func (s *state) acceptRun(valid string) {
-
+	for strings.IndexRune(valid, s.next()) >= 0 {
+	}
+	s.backup()
 }
 
 //
@@ -255,12 +259,11 @@ func defaultStateFn(s *state, e emitter) stateFn {
 // After reading Number, it returns DefaultStateFn.
 // number = { decimal_digit }
 func numberStateFn(s *state, e emitter) stateFn {
-	r := s.peek()
-	if r == '+' || r == '-' { //number can get a sign
-		s.next()
-	}
+	s.accept("+-")
 
-	if !isDigit(s.peek()) {
+	const digits = "0123456789"
+
+	if !s.accept(digits) {
 		e.emit(Token{Illegal, "Invalid function call: numberStateFn", s.end, s.line})
 		return defaultStateFn
 	}
@@ -268,7 +271,7 @@ func numberStateFn(s *state, e emitter) stateFn {
 	//accept first digit
 	s.next()
 
-	for isDigit(s.peek()) {
+	for s.accept(digits) {
 		s.next()
 	}
 
@@ -304,30 +307,20 @@ func identifierStateFn(s *state, e emitter) stateFn {
 // After ignoring all spaces, it returns DefaultStateFn.
 //
 func spaceStateFn(s *state, e emitter) stateFn {
-	if !isSpace(s.peek()) {
+	const spaceChars = " \t"
+
+	if !s.accept(spaceChars) {
 		errToken := Token{Illegal, "Invalid function call: spaceStateFn", s.end, s.line}
 		e.emit(errToken)
 		return defaultStateFn
 	}
 
-	for isSpace(s.peek()) {
-		s.next()
-	}
-
-	//absorb..
+	//absorb " ", "\t"
+	s.acceptRun(spaceChars)
 	s.cut(Illegal)
 	return defaultStateFn
 }
 
-func isSpace(r rune) bool {
-	return r == ' ' || r == '\t'
-}
-
 func isAlphaNumeric(r rune) bool {
 	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
-}
-
-func isDigit(r rune) bool {
-	digits := "0123456789"
-	return strings.ContainsRune(digits, r)
 }
