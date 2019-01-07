@@ -10,7 +10,7 @@ func TestAssignStatement_String(t *testing.T) {
 		{
 			input: AssignStatement{
 				Type:     DataStructure{Type: DataStructureType(0), Val: "int"},
-				Variable: &Identifier{Value: "a"},
+				Variable: Identifier{Value: "a"},
 				Value:    &IntegerLiteral{Value: 1},
 			},
 			expect: "int a = 1",
@@ -18,7 +18,7 @@ func TestAssignStatement_String(t *testing.T) {
 		{
 			input: AssignStatement{
 				Type:     DataStructure{Type: DataStructureType(0), Val: "bool"},
-				Variable: &Identifier{Value: "asdf"},
+				Variable: Identifier{Value: "asdf"},
 				Value:    &StringLiteral{Value: "hello, world"},
 			},
 			// type mismatch is not considered here
@@ -27,7 +27,7 @@ func TestAssignStatement_String(t *testing.T) {
 		{
 			input: AssignStatement{
 				Type:     DataStructure{Type: DataStructureType(0), Val: "string"},
-				Variable: &Identifier{Value: "ff"},
+				Variable: Identifier{Value: "ff"},
 				Value:    &BooleanLiteral{Value: true},
 			},
 			// type mismatch is not considered here
