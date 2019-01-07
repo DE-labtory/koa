@@ -88,6 +88,10 @@ func (o Operator) String() string {
 
 type DataStructureType int
 
+func (dst DataStructureType) String() string {
+	return strconv.Itoa(int(dst))
+}
+
 const (
 	_ DataStructureType = iota
 	Int
@@ -97,6 +101,10 @@ const (
 
 type DataStructureVal string
 
+func (dsv DataStructureVal) String() string {
+	return string(dsv)
+}
+
 // DataStructure represent identifier's data structure
 // e.g. string, int, bool
 type DataStructure struct {
@@ -105,13 +113,13 @@ type DataStructure struct {
 }
 
 func (ds *DataStructure) String() string {
-	return string(ds.Val)
+	return ds.Val.String()
 }
 
 // Represent assign statement
 type AssignStatement struct {
 	Type     DataStructure
-	Variable *Identifier
+	Variable Identifier
 	Value    Expression
 }
 

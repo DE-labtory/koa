@@ -116,8 +116,13 @@ func nextTokenIs(buf TokenBuffer, t TokenType) bool {
 // type of token we want, and if true then return it
 // otherwise return with error
 func expectNext(buf TokenBuffer, t TokenType) (bool, error) {
-	if buf.Peek(NEXT).Type != t {
-		return false, errors.New("expectNext() : expecting token and next token are different")
+	nextType := buf.Peek(NEXT).Type
+	if nextType != t {
+		return false, parseError{
+			nextType,
+			fmt.Sprintf("expectNext() : expected [%s], but got [%s]",
+				TokenTypeMap[t], TokenTypeMap[nextType]),
+		}
 	}
 	return true, nil
 }
@@ -368,12 +373,49 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, []error) {
 	return stmt, nil
 }
 
-// TODO: implement me w/ test cases :-)
 func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
-	return nil, nil
+	stmt := &ast.AssignStatement{}
+
+	tok := buf.Read()
+	if !isDataStructure(tok) {
+		return nil, []error{parseError{tok.Type, "token is not data structure type"}}
+	}
+
+	stmt.Type = ast.DataStructure{
+		Type: ast.DataStructureType(tok.Type),
+		Val:  ast.DataStructureVal(tok.Val),
+	}
+
+	tok = buf.Read()
+	if tok.Type != Ident {
+		return nil, []error{parseError{tok.Type, "token is not identifier"}}
+	}
+
+	stmt.Variable = ast.Identifier{
+		Value: tok.String(),
+	}
+
+	if buf.Read().Type != Assign {
+		return nil, []error{parseError{tok.Type, "token is not assign"}}
+	}
+
+	exp, err := parseExpression(buf, LOWEST)
+	if len(err) != 0 {
+		return nil, err
+	}
+
+	stmt.Value = exp
+
+	return stmt, nil
 }
 
 // TODO: implement me w/ test cases :-) (This used for calling built-in function)
 func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, []error) {
 	return nil, nil
+}
+
+func isDataStructure(tok Token) bool {
+	return tok.Type == StringType ||
+		tok.Type == IntType ||
+		tok.Type == BoolType
 }
