@@ -17,6 +17,7 @@
 package ast
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 )
@@ -103,6 +104,10 @@ type DataStructure struct {
 	Val  DataStructureVal
 }
 
+func (ds *DataStructure) String() string {
+	return string(ds.Val)
+}
+
 // Represent assign statement
 type AssignStatement struct {
 	Type     DataStructure
@@ -114,7 +119,13 @@ func (as *AssignStatement) do() {}
 
 // TODO: implement me w/ test cases :-)
 func (as *AssignStatement) String() string {
-	return ""
+	var out bytes.Buffer
+
+	out.WriteString(as.Type.String() + " ")
+	out.WriteString(as.Variable.String() + " = ")
+	out.WriteString(as.Value.String())
+
+	return out.String()
 }
 
 // Represent return statement
@@ -136,7 +147,7 @@ type StringLiteral struct {
 func (sl *StringLiteral) produce() {}
 
 func (sl *StringLiteral) String() string {
-	return sl.Value
+	return fmt.Sprintf("\"%s\"", sl.Value)
 }
 
 // Represent integer literal
