@@ -66,7 +66,18 @@ func encodeInt(operand int) ([]byte, error) {
 // ex) string "abc" => 0x616263
 // TODO: implement w/ test cases :-)
 func encodeString(operand string) ([]byte, error) {
-	return nil, nil
+	src := hex.EncodeToString([]byte(operand))
+
+	if len(src)&1 > 0 {
+		src = "0" + src
+	}
+
+	dst, err := hex.DecodeString(src)
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
 }
 
 // Encode boolean to hexadecimal bytes
