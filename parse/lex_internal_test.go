@@ -351,13 +351,23 @@ func TestIdentifierStateFn(t *testing.T) {
 		{"a1123", Ident, "a1123"},
 		{"_var123", Ident, "_var123"},
 		{"_var_123", Ident, "_var_123"},
+		{"thisIsIdent", Ident, "thisIsIdent"},
+		{"function", Ident, "function"},
+		{"func", Function, "func"},
+		{"if", If, "if"},
+		{"else", Else, "else"},
+		{"int", IntType, "int"},
+		{"string", StringType, "string"},
+		{"return", Return, "return"},
+		{"true", True, "true"},
+		{"false", False, "false"},
 	}
 
 	for i, test := range tests {
 		s := &state{input: test.input}
 		e := MockEmitter{}
 		e.emitFunc = func(tok Token) {
-			if tok.Type != Ident {
+			if tok.Type != test.expectedType {
 				t.Errorf("tests[%d] - Wrong token type", i)
 			}
 			if tok.Val != test.expectedVal {
