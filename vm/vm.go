@@ -73,11 +73,15 @@ type mload struct{}
 type mstore struct{}
 
 func (add) Do(stack *stack, _ asmReader) error {
-	rightValue := stack.pop()
-	leftValue := stack.pop()
-	result := rightValue + leftValue
+	y := stack.pop()
+	x := stack.pop()
 
-	stack.push(result)
+	X := int(x)
+	Y := int(y)
+
+	item := item(X + Y)
+
+	stack.push(item)
 
 	return nil
 }
@@ -86,8 +90,17 @@ func (add) hex() []uint8 {
 	return []uint8{uint8(opcode.Add)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (mul) Do(stack *stack, _ asmReader) error {
+	y := stack.pop()
+	x := stack.pop()
+
+	X := int(x)
+	Y := int(y)
+
+	item := item(X * Y)
+
+	stack.push(item)
+
 	return nil
 }
 
@@ -95,8 +108,17 @@ func (mul) hex() []uint8 {
 	return []uint8{uint8(opcode.Mul)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (sub) Do(stack *stack, _ asmReader) error {
+	y := stack.pop()
+	x := stack.pop()
+
+	X := int(x)
+	Y := int(y)
+
+	item := item(X - Y)
+
+	stack.push(item)
+
 	return nil
 }
 
@@ -104,8 +126,15 @@ func (sub) hex() []uint8 {
 	return []uint8{uint8(opcode.Sub)}
 }
 
-// TODO: implement me w/ test cases :-)
+// Be careful! int.Div and int.Quo is different
 func (div) Do(stack *stack, _ asmReader) error {
+	y := stack.pop()
+	x := stack.pop()
+
+	item, _ := euclidean_div(x, y)
+
+	stack.push(item)
+
 	return nil
 }
 
@@ -113,8 +142,14 @@ func (div) hex() []uint8 {
 	return []uint8{uint8(opcode.Div)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (mod) Do(stack *stack, _ asmReader) error {
+	y := stack.pop()
+	x := stack.pop()
+
+	_, item := euclidean_div(x, y)
+
+	stack.push(item)
+
 	return nil
 }
 
@@ -210,4 +245,27 @@ func uint32ToBytes(uint32 uint32) []byte {
 func bytesToUint32(bytes []byte) uint32 {
 	uint32 := binary.BigEndian.Uint32(bytes)
 	return uint32
+}
+
+func euclidean_div(a item, b item) (item, item) {
+	var q int32
+	var r int32
+	A := int32(a)
+	B := int32(b)
+
+	if A < 0 && B > 0 {
+		q = int32(A/B) - 1
+		r = A - (B * q)
+	} else if A > 0 && B < 0 {
+		q = int32(A / B)
+		r = A - (B * q)
+	} else if A > 0 && B > 0 {
+		q = int32(A / B)
+		r = A - (B * q)
+	} else if A < 0 && B < 0 {
+		q = int32((A + B) / B)
+		r = A - (B * q)
+	}
+
+	return item(q), item(r)
 }

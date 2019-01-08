@@ -60,24 +60,176 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-// TODO: implement test cases :-)
+func TestAdd_negative(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
+		uint8(opcode.Push), uint32ToBytes(30),
+		uint8(opcode.Add),
+	)
+	testExpected := item(10)
+
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
 func TestMul(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(3),
+		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Mul),
+	)
+	testExpected := item(15)
 
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
 }
 
-// TODO: implement test cases :-)
+func TestMul_negative(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(0XFFFFFFFD), // FFFFFFFD : -3
+		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Mul),
+	)
+	testExpected := item(0xFFFFFFF1) // FFFFFFF1 : -15
+
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
 func TestSub(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(50),
+		uint8(opcode.Push), uint32ToBytes(20),
+		uint8(opcode.Sub),
+	)
+	testExpected := item(30)
 
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
 }
 
-// TODO: implement test cases :-)
+func TestSub_negative(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
+		uint8(opcode.Push), uint32ToBytes(50),
+		uint8(opcode.Sub),
+	)
+	testExpected := item(0xFFFFFFBA) // 0xFFFFFFBA : -70
+
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
 func TestDiv(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(14),
+		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Div),
+	)
+	testExpected := item(2)
 
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
 }
 
-// TODO: implement test cases :-)
-func TestMod(t *testing.T) {
+// Be careful! int.Div and int.Quo is different
+func TestDiv_negative(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
+		uint8(opcode.Push), uint32ToBytes(6),
+		uint8(opcode.Div),
+	)
+	testExpected := item(0xFFFFFFFC) // 0xFFFFFFFC : -4
 
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
+func TestMod(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(14),
+		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Mod),
+	)
+	testExpected := item(4)
+
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
+func TestMod_negative(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
+		uint8(opcode.Push), uint32ToBytes(6),
+		uint8(opcode.Mod),
+	)
+	testExpected := item(4)
+
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
 }
 
 // TODO: implement test cases :-)
