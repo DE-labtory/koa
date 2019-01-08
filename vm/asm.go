@@ -22,6 +22,10 @@ import (
 
 var opCodes = map[opcode.Type]opCode{
 	opcode.Add:  add{},
+	opcode.Mul:  mul{},
+	opcode.Sub:  sub{},
+	opcode.Div:  div{},
+	opcode.Mod:  mod{},
 	opcode.Push: push{},
 }
 
