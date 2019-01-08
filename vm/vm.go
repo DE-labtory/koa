@@ -32,7 +32,7 @@ var ErrInvalidOpcode = errors.New("invalid opcode")
 func Execute(rawByteCode []byte) (*stack, error) {
 
 	s := newStack()
-	asm, err := assemble(rawByteCode)
+	asm, err := disassemble(rawByteCode)
 	if err != nil {
 		return &stack{}, err
 	}
@@ -57,10 +57,21 @@ type opCode interface {
 	hexer
 }
 
-// Perform add opcode logic.
+// Perform opcodes logic.
 type add struct{}
+type mul struct{}
+type sub struct{}
+type div struct{}
+type mod struct{}
+type lt struct{}
+type gt struct{}
+type eq struct{}
+type not struct{}
+type pop struct{}
+type push struct{}
+type mload struct{}
+type mstore struct{}
 
-// TODO: implement me w/ test cases :-)
 func (add) Do(stack *stack, _ asmReader) error {
 	rightValue := stack.pop()
 	leftValue := stack.pop()
@@ -71,12 +82,90 @@ func (add) Do(stack *stack, _ asmReader) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 func (add) hex() []uint8 {
 	return []uint8{uint8(opcode.Add)}
 }
 
-type push struct{}
+// TODO: implement me w/ test cases :-)
+func (mul) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (mul) hex() []uint8 {
+	return []uint8{uint8(opcode.Mul)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (sub) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (sub) hex() []uint8 {
+	return []uint8{uint8(opcode.Sub)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (div) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (div) hex() []uint8 {
+	return []uint8{uint8(opcode.Div)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (mod) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (mod) hex() []uint8 {
+	return []uint8{uint8(opcode.Mod)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (lt) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (lt) hex() []uint8 {
+	return []uint8{uint8(opcode.LT)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (gt) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (gt) hex() []uint8 {
+	return []uint8{uint8(opcode.GT)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (eq) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (eq) hex() []uint8 {
+	return []uint8{uint8(opcode.EQ)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (not) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (not) hex() []uint8 {
+	return []uint8{uint8(opcode.NOT)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (pop) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (pop) hex() []uint8 {
+	return []uint8{uint8(opcode.Pop)}
+}
 
 func (push) Do(stack *stack, asm asmReader) error {
 	code := asm.next()
@@ -92,6 +181,24 @@ func (push) Do(stack *stack, asm asmReader) error {
 
 func (push) hex() []uint8 {
 	return []uint8{uint8(opcode.Push)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (mload) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (mload) hex() []uint8 {
+	return []uint8{uint8(opcode.Mload)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (mstore) Do(stack *stack, _ asmReader) error {
+	return nil
+}
+
+func (mstore) hex() []uint8 {
+	return []uint8{uint8(opcode.Mstore)}
 }
 
 func uint32ToBytes(uint32 uint32) []byte {
