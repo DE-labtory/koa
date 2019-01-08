@@ -279,7 +279,6 @@ func numberStateFn(s *state, e emitter) stateFn {
 	return defaultStateFn
 }
 
-// TODO: Need to check Keyword
 // IdentifierStateFn scans an identifiers. ex) a, b, add
 // After reading a identifier, it returns DefaultStateFn.
 //
@@ -299,7 +298,9 @@ func identifierStateFn(s *state, e emitter) stateFn {
 		s.next()
 	}
 
-	e.emit(s.cut(Ident))
+	//lookup keywords map and return tokenType
+	tok := LookupIdent(s.input[s.start:s.end])
+	e.emit(s.cut(tok))
 	return defaultStateFn
 }
 

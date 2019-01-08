@@ -33,10 +33,11 @@ const (
 	Illegal TokenType = iota
 
 	// Identifiers + literals
-	Ident  // add, foobar, x, y, ...
-	Int    // 1343456
-	String // "hello world"
-	Bool   // true, false
+	Ident    // add, foobar, x, y, ...
+	Int      // 1343456
+	String   // "hello world"
+	Bool     // true, false
+	Function // func
 
 	IntType
 	StringType
@@ -113,4 +114,22 @@ var TokenTypeMap = map[TokenType]string{
 	If:     "IF",
 	Else:   "ELSE",
 	Return: "RETURN",
+}
+
+var keywords = map[string]TokenType{
+	"func":   Function,
+	"if":     If,
+	"else":   Else,
+	"int":    IntType,
+	"string": StringType,
+	"return": Return,
+	"true":   True,
+	"false":  False,
+}
+
+func LookupIdent(ident string) TokenType {
+	if tok, ok := keywords[ident]; ok {
+		return tok
+	}
+	return Ident
 }
