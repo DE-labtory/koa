@@ -26,7 +26,7 @@ var opCodes = map[opcode.Type]opCode{
 }
 
 // Converts rawByteCode to assembly code.
-func assemble(rawByteCode []byte) (*asm, error) {
+func disassemble(rawByteCode []byte) (*asm, error) {
 	asm := newAsm()
 
 	for i := 0; i < len(rawByteCode); i++ {

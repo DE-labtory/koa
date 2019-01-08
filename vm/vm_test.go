@@ -41,6 +41,70 @@ func makeTestByteCode(slice ...interface{}) []byte {
 	return testByteCode
 }
 
+func TestAdd(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), uint32ToBytes(1),
+		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Add),
+	)
+	testExpected := item(3)
+
+	stack, err := Execute(testByteCode)
+
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
+// TODO: implement test cases :-)
+func TestMul(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestSub(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestDiv(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestMod(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestLT(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestGT(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestEQ(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestNOT(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestPop(t *testing.T) {
+
+}
+
 func TestPush(t *testing.T) {
 	testByteCode := makeTestByteCode(
 		uint8(opcode.Push), uint32ToBytes(1),
@@ -76,21 +140,12 @@ func TestPush_invalid(t *testing.T) {
 	}
 }
 
-func TestAdd(t *testing.T) {
-	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(opcode.Push), uint32ToBytes(2),
-		uint8(opcode.Add),
-	)
-	testExpected := item(3)
+// TODO: implement test cases :-)
+func TestMload(t *testing.T) {
 
-	stack, err := Execute(testByteCode)
+}
 
-	if err != nil {
-		t.Error(err)
-	}
-	result := stack.pop()
-	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
-	}
+// TODO: implement test cases :-)
+func TestMstore(t *testing.T) {
+
 }

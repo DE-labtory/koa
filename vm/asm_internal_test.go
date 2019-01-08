@@ -38,7 +38,7 @@ func TestAssemble(t *testing.T) {
 		},
 	}
 
-	asm, err := assemble(testByteCode)
+	asm, err := disassemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -67,7 +67,7 @@ func TestAssemble_invalid(t *testing.T) {
 		uint8(opcode.Add),
 	)
 
-	_, err := assemble(testByteCode)
+	_, err := disassemble(testByteCode)
 	if err != ErrInvalidOpcode {
 		t.Error("The desired error was not found")
 	}
@@ -80,7 +80,7 @@ func TestNext(t *testing.T) {
 		uint8(opcode.Add),
 	)
 
-	asm, err := assemble(testByteCode)
+	asm, err := disassemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -110,7 +110,7 @@ func TestJump(t *testing.T) {
 		uint8(opcode.Add),
 	)
 
-	asm, err := assemble(testByteCode)
+	asm, err := disassemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,7 +142,7 @@ func TestJump_invalid(t *testing.T) {
 		uint8(opcode.Add),
 	)
 
-	asm, err := assemble(testByteCode)
+	asm, err := disassemble(testByteCode)
 	if err != nil {
 		t.Error(err)
 	}
