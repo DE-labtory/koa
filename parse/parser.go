@@ -24,6 +24,23 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
+// OperatorTypeMap maps TokenType with OperatorType by doing this
+// we can remove dependency for token's string value
+var operatorTypeMap = map[TokenType]ast.OperatorType{
+	Plus:     ast.Plus,
+	Minus:    ast.Minus,
+	Bang:     ast.Bang,
+	Asterisk: ast.Asterisk,
+	Slash:    ast.Slash,
+	Mod:      ast.Mod,
+	LT:       ast.LT,
+	GT:       ast.GT,
+	LTE:      ast.LTE,
+	GTE:      ast.GTE,
+	EQ:       ast.EQ,
+	NOT_EQ:   ast.NOT_EQ,
+}
+
 type precedence int
 
 const (
@@ -264,6 +281,25 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 	}
 
 	return expression, nil
+}
+
+func parsePrefixExpression(buf TokenBuffer) (ast.Expression, []error) {
+	var err []error
+	tok := buf.Read()
+
+	exp := &ast.PrefixExpression{
+		Operator: ast.Operator{
+			Type: operatorTypeMap[tok.Type],
+			Val:  ast.OperatorVal(tok.Val),
+		},
+	}
+
+	exp.Right, err = parseExpression(buf, PREFIX)
+	if len(err) != 0 {
+		return nil, err
+	}
+
+	return exp, nil
 }
 
 func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
