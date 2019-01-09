@@ -610,6 +610,58 @@ func TestParseInfixExpression(t *testing.T) {
 	}
 }
 
+func TestParseGroupedExpression(t *testing.T) {
+	prefixParseFnMap[Lparen] = parseGroupedExpression
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[Ident] = parseIdentifier
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Minus] = parseInfixExpression
+	bufs := [][]Token{
+		{
+			// ( 2 + 1 )
+			{Type: Lparen, Val: "("}, {Type: Int, Val: "2"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "1"}, {Type: Rparen, Val: ")"},
+			{Type: Eol, Val: "\n"},
+		},
+		{
+			// ( a + ( 1 - 2 ) )
+			{Type: Lparen, Val: "("}, {Type: Ident, Val: "a"}, {Type: Plus, Val: "+"}, {Type: Lparen, Val: "("},
+			{Type: Int, Val: "1"}, {Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Rparen, Val: ")"}, {Type: Rparen, Val: ")"},
+			{Type: Eol, Val: "\n"},
+		},
+		{
+			// ( a + ( 1 - 2 ) + 3 )
+			{Type: Lparen, Val: "("}, {Type: Ident, Val: "a"}, {Type: Plus, Val: "+"}, {Type: Lparen, Val: "("},
+			{Type: Int, Val: "1"}, {Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Rparen, Val: ")"},
+			{Type: Plus, Val: "+"}, {Type: Int, Val: "3"}, {Type: Rparen, Val: ")"}, {Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: Lparen, Val: "("}, {Type: Int, Val: "2"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "1"},
+			{Type: Rbrace, Val: "}"}, {Type: Eol, Val: "\n"},
+		},
+	}
+	tests := []string{
+		"(2 + 1)",
+		"(a + (1 - 2))",
+		"((a + (1 - 2)) + 3)",
+		"RBRACE, is not Right paren",
+	}
+
+	for i, test := range tests {
+		mockBuf := mockTokenBuffer{bufs[i], 0}
+		exp, err := parseGroupedExpression(&mockBuf)
+
+		if err != nil && err.Error() != test {
+			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong error. expected=%s, got=%s",
+				i, test, err.Error())
+		}
+
+		if exp != nil && exp.String() != test {
+			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong answer. expected=%s, got=%s",
+				i, test, exp.String())
+		}
+	}
+}
+
 func TestParseReturnStatement(t *testing.T) {
 	prefixParseFnMap[Bool] = parseBooleanLiteral
 	prefixParseFnMap[Int] = parseIntegerLiteral

@@ -369,6 +369,24 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	return stmt, nil
 }
 
+func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
+	buf.Read()
+	exp, err := parseExpression(buf, LOWEST)
+	if err != nil {
+		return nil, err
+	}
+
+	tok := buf.Read()
+	if tok.Type != Rparen {
+		err := parseError{
+			tok.Type,
+			fmt.Sprintf("is not Right paren"),
+		}
+		return nil, err
+	}
+	return exp, nil
+}
+
 func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	stmt := &ast.AssignStatement{}
 
