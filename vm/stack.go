@@ -22,7 +22,7 @@ const (
 	stackMaxSize = 1024
 )
 
-type item uint32
+type item int32
 
 // Stack is an object for basic stack operations. Items popped to the stack are
 // expected not to be changed and modified.
