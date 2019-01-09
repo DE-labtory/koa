@@ -43,8 +43,8 @@ func makeTestByteCode(slice ...interface{}) []byte {
 
 func TestAdd(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int32ToBytes(2),
 		uint8(opcode.Add),
 	)
 	testExpected := item(3)
@@ -62,8 +62,8 @@ func TestAdd(t *testing.T) {
 
 func TestAdd_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
-		uint8(opcode.Push), uint32ToBytes(30),
+		uint8(opcode.Push), int32ToBytes(-20),
+		uint8(opcode.Push), int32ToBytes(30),
 		uint8(opcode.Add),
 	)
 	testExpected := item(10)
@@ -81,8 +81,8 @@ func TestAdd_negative(t *testing.T) {
 
 func TestMul(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(3),
-		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Push), int32ToBytes(3),
+		uint8(opcode.Push), int32ToBytes(5),
 		uint8(opcode.Mul),
 	)
 	testExpected := item(15)
@@ -100,11 +100,11 @@ func TestMul(t *testing.T) {
 
 func TestMul_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(0XFFFFFFFD), // FFFFFFFD : -3
-		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Push), int32ToBytes(-3),
+		uint8(opcode.Push), int32ToBytes(5),
 		uint8(opcode.Mul),
 	)
-	testExpected := item(0xFFFFFFF1) // FFFFFFF1 : -15
+	testExpected := item(-15)
 
 	stack, err := Execute(testByteCode)
 
@@ -119,8 +119,8 @@ func TestMul_negative(t *testing.T) {
 
 func TestSub(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(50),
-		uint8(opcode.Push), uint32ToBytes(20),
+		uint8(opcode.Push), int32ToBytes(50),
+		uint8(opcode.Push), int32ToBytes(20),
 		uint8(opcode.Sub),
 	)
 	testExpected := item(30)
@@ -138,11 +138,11 @@ func TestSub(t *testing.T) {
 
 func TestSub_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
-		uint8(opcode.Push), uint32ToBytes(50),
+		uint8(opcode.Push), int32ToBytes(-20),
+		uint8(opcode.Push), int32ToBytes(50),
 		uint8(opcode.Sub),
 	)
-	testExpected := item(0xFFFFFFBA) // 0xFFFFFFBA : -70
+	testExpected := item(-70)
 
 	stack, err := Execute(testByteCode)
 
@@ -157,8 +157,8 @@ func TestSub_negative(t *testing.T) {
 
 func TestDiv(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(14),
-		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Push), int32ToBytes(14),
+		uint8(opcode.Push), int32ToBytes(5),
 		uint8(opcode.Div),
 	)
 	testExpected := item(2)
@@ -177,11 +177,11 @@ func TestDiv(t *testing.T) {
 // Be careful! int.Div and int.Quo is different
 func TestDiv_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
-		uint8(opcode.Push), uint32ToBytes(6),
+		uint8(opcode.Push), int32ToBytes(-20),
+		uint8(opcode.Push), int32ToBytes(6),
 		uint8(opcode.Div),
 	)
-	testExpected := item(0xFFFFFFFC) // 0xFFFFFFFC : -4
+	testExpected := item(-4)
 
 	stack, err := Execute(testByteCode)
 
@@ -196,8 +196,8 @@ func TestDiv_negative(t *testing.T) {
 
 func TestMod(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(14),
-		uint8(opcode.Push), uint32ToBytes(5),
+		uint8(opcode.Push), int32ToBytes(14),
+		uint8(opcode.Push), int32ToBytes(5),
 		uint8(opcode.Mod),
 	)
 	testExpected := item(4)
@@ -215,8 +215,8 @@ func TestMod(t *testing.T) {
 
 func TestMod_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(0xFFFFFFEC), // 0xFFFFFFEC : -20
-		uint8(opcode.Push), uint32ToBytes(6),
+		uint8(opcode.Push), int32ToBytes(-20),
+		uint8(opcode.Push), int32ToBytes(6),
 		uint8(opcode.Mod),
 	)
 	testExpected := item(4)
@@ -232,24 +232,124 @@ func TestMod_negative(t *testing.T) {
 	}
 }
 
-// TODO: implement test cases :-)
 func TestLT(t *testing.T) {
+	tests := []struct {
+		x      int32
+		y      int32
+		answer int
+	}{
+		{1, 2, 1}, // true = 1 , false = 0
+		{2, 1, 0},
+		{-20, -21, 0},
+		{-21, -20, 1},
+	}
 
+	for i, test := range tests {
+		testByteCode := makeTestByteCode(
+			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.LT),
+		)
+		testExpected := item(test.answer)
+
+		stack, err := Execute(testByteCode)
+		if err != nil {
+			t.Error(err)
+		}
+		result := stack.pop()
+		if testExpected != result {
+			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+		}
+	}
 }
 
-// TODO: implement test cases :-)
 func TestGT(t *testing.T) {
+	tests := []struct {
+		x      int32
+		y      int32
+		answer int
+	}{
+		{1, 2, 0}, // true = 1 , false = 0
+		{2, 1, 1},
+		{-20, -21, 1},
+		{-21, 20, 0},
+	}
 
+	for i, test := range tests {
+		testByteCode := makeTestByteCode(
+			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.GT),
+		)
+		testExpected := item(test.answer)
+
+		stack, err := Execute(testByteCode)
+		if err != nil {
+			t.Error(err)
+		}
+		result := stack.pop()
+		if testExpected != result {
+			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+		}
+	}
 }
 
-// TODO: implement test cases :-)
 func TestEQ(t *testing.T) {
+	tests := []struct {
+		x      int32
+		y      int32
+		answer int
+	}{
+		{1, 1, 1}, // true = 1 , false = 0
+		{2, 1, 0},
+		{-20, -20, 1},
+		{-20, -21, 0},
+	}
 
+	for i, test := range tests {
+		testByteCode := makeTestByteCode(
+			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.EQ),
+		)
+		testExpected := item(test.answer)
+
+		stack, err := Execute(testByteCode)
+		if err != nil {
+			t.Error(err)
+		}
+		result := stack.pop()
+		if testExpected != result {
+			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+		}
+	}
 }
 
-// TODO: implement test cases :-)
 func TestNOT(t *testing.T) {
+	tests := []struct {
+		x      int32
+		answer int32
+	}{
+		{0, -1}, // ^x = -x-1  0x00000000 -> 0xFFFFFFFF
+		{3, -4},
+	}
 
+	for i, test := range tests {
+		testByteCode := makeTestByteCode(
+			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.NOT),
+		)
+		testExpected := item(test.answer)
+
+		stack, err := Execute(testByteCode)
+		if err != nil {
+			t.Error(err)
+		}
+		result := stack.pop()
+		if testExpected != result {
+			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+		}
+	}
 }
 
 // TODO: implement test cases :-)
@@ -259,8 +359,8 @@ func TestPop(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int32ToBytes(2),
 	)
 
 	testExpected := []item{1, 2}
@@ -282,7 +382,7 @@ func TestPush(t *testing.T) {
 func TestPush_invalid(t *testing.T) {
 	testByteCode := makeTestByteCode(
 		uint8(opcode.Push), uint8(opcode.Push),
-		uint8(opcode.Push), uint32ToBytes(3),
+		uint8(opcode.Push), int32ToBytes(3),
 	)
 
 	_, err := Execute(testByteCode)

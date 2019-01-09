@@ -17,9 +17,8 @@
 package vm
 
 import (
-	"errors"
-
 	"encoding/binary"
+	"errors"
 
 	"github.com/DE-labtory/koa/opcode"
 )
@@ -76,12 +75,7 @@ func (add) Do(stack *stack, _ asmReader) error {
 	y := stack.pop()
 	x := stack.pop()
 
-	X := int(x)
-	Y := int(y)
-
-	item := item(X + Y)
-
-	stack.push(item)
+	stack.push(x + y)
 
 	return nil
 }
@@ -94,12 +88,7 @@ func (mul) Do(stack *stack, _ asmReader) error {
 	y := stack.pop()
 	x := stack.pop()
 
-	X := int(x)
-	Y := int(y)
-
-	item := item(X * Y)
-
-	stack.push(item)
+	stack.push(x * y)
 
 	return nil
 }
@@ -112,12 +101,7 @@ func (sub) Do(stack *stack, _ asmReader) error {
 	y := stack.pop()
 	x := stack.pop()
 
-	X := int(x)
-	Y := int(y)
-
-	item := item(X - Y)
-
-	stack.push(item)
+	stack.push(x - y)
 
 	return nil
 }
@@ -157,8 +141,15 @@ func (mod) hex() []uint8 {
 	return []uint8{uint8(opcode.Mod)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (lt) Do(stack *stack, _ asmReader) error {
+	y, x := stack.pop(), stack.pop()
+
+	if x < y { // x < y
+		stack.push(item(1))
+	} else {
+		stack.push(item(0))
+	}
+
 	return nil
 }
 
@@ -166,8 +157,15 @@ func (lt) hex() []uint8 {
 	return []uint8{uint8(opcode.LT)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (gt) Do(stack *stack, _ asmReader) error {
+	y, x := stack.pop(), stack.pop()
+
+	if x > y { // x > y
+		stack.push(item(1))
+	} else {
+		stack.push(item(0))
+	}
+
 	return nil
 }
 
@@ -175,8 +173,15 @@ func (gt) hex() []uint8 {
 	return []uint8{uint8(opcode.GT)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (eq) Do(stack *stack, _ asmReader) error {
+	y, x := stack.pop(), stack.pop()
+
+	if x == y { // x == y
+		stack.push(item(1))
+	} else {
+		stack.push(item(0))
+	}
+
 	return nil
 }
 
@@ -184,8 +189,10 @@ func (eq) hex() []uint8 {
 	return []uint8{uint8(opcode.EQ)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (not) Do(stack *stack, _ asmReader) error {
+	x := stack.pop()
+
+	stack.push(^x)
 	return nil
 }
 
@@ -208,7 +215,7 @@ func (push) Do(stack *stack, asm asmReader) error {
 	if !ok {
 		return ErrInvalidData
 	}
-	item := item(bytesToUint32(data.hex()))
+	item := item(bytesToInt32(data.hex()))
 	stack.push(item)
 
 	return nil
@@ -236,15 +243,15 @@ func (mstore) hex() []uint8 {
 	return []uint8{uint8(opcode.Mstore)}
 }
 
-func uint32ToBytes(uint32 uint32) []byte {
+func int32ToBytes(int32 int32) []byte {
 	byteSlice := make([]byte, 4)
-	binary.BigEndian.PutUint32(byteSlice, uint32)
+	binary.BigEndian.PutUint32(byteSlice, uint32(int32))
 	return byteSlice
 }
 
-func bytesToUint32(bytes []byte) uint32 {
-	uint32 := binary.BigEndian.Uint32(bytes)
-	return uint32
+func bytesToInt32(bytes []byte) int32 {
+	int32 := int32(binary.BigEndian.Uint32(bytes))
+	return int32
 }
 
 func euclidean_div(a item, b item) (item, item) {

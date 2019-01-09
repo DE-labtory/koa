@@ -107,7 +107,7 @@ const (
 	// Reverse the sign and push it to the stack.
 	//
 	// Ex)
-	// [a]       [-a]
+	// [a]       [~a]
 	// [b]  ==>  [b]
 	// [x]       [x]
 	//

@@ -26,14 +26,14 @@ import (
 
 func TestAssemble(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1), // 1 byte allocation
-		uint8(opcode.Push), uint32ToBytes(300), // 2 byte allocation
+		uint8(opcode.Push), int32ToBytes(1), // 1 byte allocation
+		uint8(opcode.Push), int32ToBytes(300), // 2 byte allocation
 		uint8(opcode.Add),
 	)
 	testAsmExpected := asm{
 		code: []hexer{
-			push{}, Data{Body: uint32ToBytes(1)},
-			push{}, Data{Body: uint32ToBytes(300)},
+			push{}, Data{Body: int32ToBytes(1)},
+			push{}, Data{Body: int32ToBytes(300)},
 			add{},
 		},
 	}
@@ -62,8 +62,8 @@ func TestAssemble(t *testing.T) {
 
 func TestAssemble_invalid(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(255), uint32ToBytes(300),
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(255), int32ToBytes(300),
 		uint8(opcode.Add),
 	)
 
@@ -75,8 +75,8 @@ func TestAssemble_invalid(t *testing.T) {
 
 func TestNext(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int32ToBytes(2),
 		uint8(opcode.Add),
 	)
 
@@ -105,8 +105,8 @@ func TestNext(t *testing.T) {
 
 func TestJump(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int32ToBytes(2),
 		uint8(opcode.Add),
 	)
 
@@ -137,8 +137,8 @@ func TestJump(t *testing.T) {
 
 func TestJump_invalid(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), uint32ToBytes(1),
-		uint8(opcode.Push), uint32ToBytes(2),
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int32ToBytes(2),
 		uint8(opcode.Add),
 	)
 

@@ -27,6 +27,10 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Div:  div{},
 	opcode.Mod:  mod{},
 	opcode.Push: push{},
+	opcode.LT:   lt{},
+	opcode.GT:   gt{},
+	opcode.EQ:   eq{},
+	opcode.NOT:  not{},
 }
 
 // Converts rawByteCode to assembly code.
