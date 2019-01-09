@@ -148,6 +148,34 @@ func (rs *ReturnStatement) String() string {
 	return fmt.Sprintf("return %s", rs.ReturnValue.String())
 }
 
+// Represent if statement
+type IfStatement struct {
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (is *IfStatement) do() {}
+
+func (is *IfStatement) String() string {
+	return fmt.Sprintf("if ( %s ) { %s }", is.Condition.String(), is.Consequence.String())
+}
+
+// Represent block statement
+type BlockStatement struct {
+	Statements []Statement
+}
+
+func (bs *BlockStatement) do() {}
+
+func (bs *BlockStatement) String() string {
+	var str string
+	for i := range bs.Statements {
+		str = str + bs.Statements[i].String()
+	}
+	return str
+}
+
 // Represent string literal
 type StringLiteral struct {
 	Value string

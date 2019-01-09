@@ -1161,3 +1161,45 @@ func TestParseExpression(t *testing.T) {
 		}
 	}
 }
+
+func TestParseIfStatement(t *testing.T) {
+	prefixParseFnMap[Bool] = parseBooleanLiteral
+
+	bufs := [][]Token{
+		{
+			{Type: If, Val: "if"},
+			{Type: Lparen, Val: "("},
+			{Type: Bool, Val: "true"},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Rbrace, Val: "}"},
+		},
+	}
+
+	tests := []string{
+		// This will be "if ( true ) { int a }"
+		"if ( true ) {  }",
+	}
+
+	for i, test := range tests {
+		mockBuf := mockTokenBuffer{bufs[i], 0}
+		result, err := parseIfStatement(&mockBuf)
+
+		if len(err) > 0 && err[0].Error() != test {
+			t.Fatalf("test[%d] - TestParseIfStatement() wrong error. expected=%s got=%s",
+				i, test, err[0].Error())
+		}
+
+		if result.String() != test {
+			t.Fatalf("test[%d] - TestParseIfStatement() wrong result. expected=%s, got=%s",
+				i, test, result.String())
+		}
+
+	}
+}
+
+func TestParseBlockStatement(t *testing.T) {
+
+}
