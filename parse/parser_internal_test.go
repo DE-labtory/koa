@@ -611,3 +611,53 @@ func TestParseInfixExpression(t *testing.T) {
 		}
 	}
 }
+
+func TestParseReturnStatement(t *testing.T) {
+	prefixParseFnMap[Bool] = parseBooleanLiteral
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Asterisk] = parseInfixExpression
+
+	bufs := [][]Token{
+		{
+			{Type: Return, Val: "return"},
+			{Type: Bool, Val: "true"},
+			{Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: Return, Val: "return"},
+			{Type: Int, Val: "1"},
+			{Type: Plus, Val: "+"},
+			{Type: Int, Val: "2"},
+			{Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: Return, Val: "return"},
+			{Type: Int, Val: "1"},
+			{Type: Plus, Val: "+"},
+			{Type: Int, Val: "2"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "3"},
+			{Type: Eol, Val: "\n"},
+		},
+	}
+	tests := []string{
+		"return true",
+		"return (1 + 2)",
+		"return (1 + (2 * 3))",
+	}
+
+	for i, test := range tests {
+		mockBufs := mockTokenBuffer{bufs[i], 0}
+		exp, err := parseReturnStatement(&mockBufs)
+		if len(err) > 0 && err[0].Error() != test {
+			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error. expected=%s, got=%s",
+				i, test, err[0].Error())
+		}
+
+		if exp.String() != test {
+			t.Fatalf("test[%d] - TestParseReturnStatement() wrong result. expected=%s, got=%s",
+				i, test, exp.String())
+		}
+	}
+}

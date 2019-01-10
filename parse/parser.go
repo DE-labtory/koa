@@ -59,6 +59,8 @@ var precedenceMap = map[TokenType]precedence{
 	Rparen: LOWEST,
 	Lbrace: LOWEST,
 	Rbrace: LOWEST,
+
+	Eol: LOWEST,
 }
 
 // Operator map
@@ -173,6 +175,8 @@ func Parse(buf TokenBuffer) (*ast.Program, []error) {
 // TODO: implement me w/ test cases :-)
 func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 	switch buf.Peek(CURRENT).Type {
+	case Return:
+		return parseReturnStatement(buf)
 	default:
 		return nil, nil
 	}
@@ -323,9 +327,25 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, []error) {
 	return &ast.StringLiteral{Value: token.Val}, nil
 }
 
-// TODO: implement me w/ test cases :-)
-func parseReturnStatement(buf TokenBuffer) (ast.Expression, []error) {
-	return nil, nil
+func parseReturnStatement(buf TokenBuffer) (ast.Statement, []error) {
+	errs := make([]error, 0)
+	token := buf.Read()
+	if token.Type != Return {
+		errs = append(errs, errors.New("parseReturnStatement() error - Statement must be started with return"))
+		return nil, errs
+	}
+
+	stmt := &ast.ReturnStatement{}
+	for !curTokenIs(buf, Eol) {
+		exp, err := parseExpression(buf, LOWEST)
+		if len(err) > 0 {
+			errs = append(err, errors.New("parseReturnStatement() error - pareseExpression error"))
+			return nil, errs
+		}
+		stmt.ReturnValue = exp
+	}
+
+	return stmt, nil
 }
 
 // TODO: implement me w/ test cases :-)
