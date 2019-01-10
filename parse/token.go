@@ -16,6 +16,8 @@
 
 package parse
 
+import "fmt"
+
 type TokenType int
 
 type Token struct {
@@ -23,6 +25,10 @@ type Token struct {
 	Val    string
 	Column Pos
 	Line   int
+}
+
+func (t Token) String() string {
+	return fmt.Sprintf("val: %s, type: %s", t.Val, TokenTypeMap[t.Type])
 }
 
 // End of file
