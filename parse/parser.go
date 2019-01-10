@@ -414,9 +414,39 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	return stmt, nil
 }
 
-// TODO: implement me w/ test cases :-) (This used for calling built-in function)
 func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, error) {
-	return nil, nil
+	exp := &ast.CallExpression{Function: fn}
+
+	var err error
+	exp.Arguments, err = parseCallArguments(buf)
+	if err != nil {
+		return nil, err
+	}
+	return exp, nil
+}
+
+func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
+	args := []ast.Expression{}
+	buf.Read()
+	if curTokenIs(buf, Rparen) {
+		return args, nil
+	}
+
+	exp, err := parseExpression(buf, LOWEST)
+	if err != nil {
+		return nil, err
+	}
+	args = append(args, exp)
+
+	for curTokenIs(buf, Comma) {
+		buf.Read()
+		exp, err := parseExpression(buf, LOWEST)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, exp)
+	}
+	return args, nil
 }
 
 func isDataStructure(tok Token) bool {
