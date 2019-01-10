@@ -179,15 +179,16 @@ func TestState_accept(t *testing.T) {
 		input        string
 		expectedBool bool
 	}{
-		{"0", false}, //0
-		{"1", true},  // 1
-		{"2", true},  // 1
-		{"3", true},  // 1
-		{"4", true},  // 1
-		{"5", true},  // 1
-		{"a", false}, // 1
-		{"b", false}, // 1
-		{"c", false}, // 1
+		{"0", false},  //0
+		{"1", true},   // 1
+		{"2", true},   // 1
+		{"3", true},   // 1
+		{"4", true},   // 1
+		{"5", true},   // 1
+		{"a", false},  // 1
+		{"b", false},  // 1
+		{"c", false},  // 1
+		{"\n", false}, // 1
 	}
 
 	for i, test := range tests {
@@ -314,11 +315,12 @@ func TestNumberStateFn(t *testing.T) {
 	}{
 		{"1", Int, "1"},
 		{"0", Int, "0"},
+		{"10", Int, "10"},
 		{"123", Int, "123"},
 		{"9990909", Int, "9990909"},
-		{"+909", Int, "+909"},
-		{"-909", Int, "-909"},
-		{"-012", Int, "-012"}, //accept 0122
+		{"909", Int, "909"},
+		{"909", Int, "909"},
+		{"012", Int, "012"}, //accept 0122
 		{"_121", Illegal, "Invalid function call: numberStateFn"},
 		{"+-121", Illegal, "Invalid function call: numberStateFn"},
 		{"+_11", Illegal, "Invalid function call: numberStateFn"},

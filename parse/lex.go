@@ -202,7 +202,6 @@ func (s *state) acceptRun(valid string) {
 func defaultStateFn(s *state, e emitter) stateFn {
 
 	switch ch := s.next(); {
-
 	case ch == '!':
 		if s.peek() == '=' {
 			s.next()
@@ -230,12 +229,24 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		e.emit(s.cut(Asterisk))
 	case ch == '%':
 		e.emit(s.cut(Mod))
-
 	case ch == '<':
-		e.emit(s.cut(LT))
+		if s.peek() == '=' {
+			s.next()
+			// <=
+			e.emit(s.cut(LTE))
+		} else {
+			// <
+			e.emit(s.cut(LT))
+		}
 	case ch == '>':
-		e.emit(s.cut(GT))
-
+		if s.peek() == '=' {
+			s.next()
+			// <=
+			e.emit(s.cut(GTE))
+		} else {
+			// <
+			e.emit(s.cut(GT))
+		}
 	case ch == ')':
 		e.emit(s.cut(Rparen))
 	case ch == '(':
@@ -248,6 +259,17 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		e.emit(s.cut(Comma))
 	case ch == eof:
 		e.emit(s.cut(Eof))
+	case isSpace(ch):
+		s.backup()
+		return spaceStateFn
+	case ch == '\n':
+		e.emit(s.cut(Eol))
+	case unicode.IsDigit(ch):
+		s.backup()
+		return numberStateFn
+	case isStartingLetter(ch):
+		s.backup()
+		return identifierStateFn
 	default:
 		e.emit(s.cut(Illegal))
 	}
@@ -259,8 +281,6 @@ func defaultStateFn(s *state, e emitter) stateFn {
 // After reading Number, it returns DefaultStateFn.
 // number = { decimal_digit }
 func numberStateFn(s *state, e emitter) stateFn {
-	s.accept("+-")
-
 	const digits = "0123456789"
 
 	if !s.accept(digits) {
@@ -268,11 +288,7 @@ func numberStateFn(s *state, e emitter) stateFn {
 		return defaultStateFn
 	}
 
-	//accept first digit
-	s.next()
-
 	for s.accept(digits) {
-		s.next()
 	}
 
 	e.emit(s.cut(Int))
@@ -324,4 +340,12 @@ func spaceStateFn(s *state, e emitter) stateFn {
 
 func isAlphaNumeric(r rune) bool {
 	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
+func isStartingLetter(r rune) bool {
+	return r == '_' || unicode.IsLetter(r)
+}
+
+func isSpace(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\r'
 }
