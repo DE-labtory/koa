@@ -28,7 +28,7 @@ import (
 )
 
 const PROMPT = ">> "
-const EXIT = "exit"
+const EXIT = "exit()"
 
 const koa = `
 
@@ -46,7 +46,8 @@ const koa = `
 func printLogo() {
 	color.Yellow(koa)
 	bold := color.New(color.Bold)
-	bold.Printf("The project is inspired by the simplicity and the ivy-bitcoin. The koa project is to create \na high-level language that has more expressions than the bitcoin script and is simpler and easy to analyze than soldity(ethereum).\n\n")
+	fmt.Printf("The project is inspired by the simplicity and the ivy-bitcoin. The koa project is to create \na high-level language that has more expressions than the bitcoin script and is simpler and easy to analyze than soldity(ethereum).\n\n")
+	bold.Print("Use exit() or Ctrl-c to exit \n")
 }
 
 func main() {
@@ -66,7 +67,7 @@ func run(in io.Reader, out io.Writer) {
 
 		line := scanner.Text()
 		if line == EXIT {
-			fmt.Print("bye")
+			fmt.Println("bye")
 			return
 		}
 
