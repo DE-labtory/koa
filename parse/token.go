@@ -71,6 +71,7 @@ const (
 	Else   // else
 	Return // return
 	Eof
+	Eol
 )
 
 // TokenTypeMap mapping TokenType with its
