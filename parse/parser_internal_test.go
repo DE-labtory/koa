@@ -742,3 +742,162 @@ func TestParsePrefixExpression(t *testing.T) {
 		}
 	}
 }
+
+func TestParseCallExpression(t *testing.T) {
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[String] = parseStringLiteral
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Asterisk] = parseInfixExpression
+	bufs := [][]Token{
+		{
+			{Type: Lparen, Val: "("},
+			{Type: Int, Val: "1"},
+			{Type: Plus, Val: "+"},
+			{Type: Int, Val: "2"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: String, Val: "a"},
+			{Type: Comma, Val: ","},
+			{Type: String, Val: "b"},
+			{Type: Comma, Val: ","},
+			{Type: Int, Val: "5"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: String, Val: "a"},
+			{Type: Comma, Val: ","},
+			{Type: Asterisk, Val: "*"},
+			{Type: Comma, Val: ","},
+			{Type: Int, Val: "5"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: String, Val: "a"},
+			{Type: Plus, Val: "+"},
+			{Type: String, Val: "b"},
+			{Type: Comma, Val: ","},
+			{Type: Int, Val: "5"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "3"},
+			{Type: Rparen, Val: ")"},
+		},
+	}
+	tests := []struct {
+		function ast.Expression
+		expected string
+	}{
+		{
+			function: &ast.StringLiteral{Value: "add"},
+			expected: "function \"add\"( (1 + 2) )",
+		},
+		{
+			function: &ast.StringLiteral{Value: "testFunc"},
+			expected: "function \"testFunc\"( \"a\", \"b\", 5 )",
+		},
+		{
+			function: &ast.StringLiteral{Value: "errorFunc"},
+			expected: "ASTERISK, prefix parse function not defined",
+		},
+		{
+			function: &ast.StringLiteral{Value: "complexFunc"},
+			expected: "function \"complexFunc\"( (\"a\" + \"b\"), (5 * 3) )",
+		},
+	}
+
+	for i, test := range tests {
+		mockBuf := mockTokenBuffer{bufs[i], 0}
+		exp, err := parseCallExpression(&mockBuf, test.function)
+		if err != nil && err.Error() != test.expected {
+			t.Fatalf("test[%d] - parseCallExpression() wrong error. expected=%s, got=%s",
+				i, test.expected, err.Error())
+		}
+		if exp != nil && exp.String() != test.expected {
+			t.Fatalf("test[%d] - parseCallExpression() wrong answer. expected=%s, got=%s",
+				i, test.expected, exp.String())
+		}
+	}
+}
+
+
+func TestParseCallArguments(t *testing.T) {
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[String] = parseStringLiteral
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Asterisk] = parseInfixExpression
+	bufs := [][]Token{
+		{
+			{Type: Lparen, Val: "("},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: Int, Val: "1"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: String, Val: "a"},
+			{Type: Comma, Val: ","},
+			{Type: String, Val: "b"},
+			{Type: Comma, Val: ","},
+			{Type: Int, Val: "5"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: String, Val: "a"},
+			{Type: Plus, Val: "+"},
+			{Type: String, Val: "b"},
+			{Type: Comma, Val: ","},
+			{Type: Int, Val: "5"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "3"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: Asterisk, Val: "*"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Lparen, Val: "("},
+			{Type: String, Val: "a"},
+			{Type: Comma, Val: ","},
+			{Type: Asterisk, Val: "*"},
+			{Type: Comma, Val: ","},
+			{Type: Int, Val: "5"},
+			{Type: Rparen, Val: ")"},
+		},
+	}
+	tests := []string{
+		"function \"testFunction\"(  )",
+		"function \"testFunction\"( 1 )",
+		"function \"testFunction\"( \"a\", \"b\", 5 )",
+		"function \"testFunction\"( (\"a\" + \"b\"), (5 * 3) )",
+		"ASTERISK, prefix parse function not defined",
+		"ASTERISK, prefix parse function not defined",
+	}
+
+	for i, test := range tests {
+		mockBufs := mockTokenBuffer{bufs[i], 0}
+		exp, err := parseCallArguments(&mockBufs)
+
+		if err != nil && err.Error() != test {
+			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",
+				i, test, err.Error())
+		}
+
+		mockFn := &ast.CallExpression{
+			Function: &ast.StringLiteral{Value: "testFunction"},
+		}
+		mockFn.Arguments = exp
+		if exp != nil && mockFn.String() != test {
+			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",
+				i, test, mockFn.String())
+		}
+	}
+}
