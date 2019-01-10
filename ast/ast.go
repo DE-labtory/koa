@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Node represent ast node
@@ -207,4 +208,20 @@ func (ie *InfixExpression) produce() {}
 
 func (ie *InfixExpression) String() string {
 	return fmt.Sprintf("(%s %s %s)", ie.Left.String(), string(ie.Operator.Val), ie.Right.String())
+}
+
+// Represent Call expression
+type CallExpression struct {
+	Function  Expression
+	Arguments []Expression
+}
+
+func (ce *CallExpression) produce() {}
+
+func (ce *CallExpression) String() string {
+	strs := make([]string, 0)
+	for _, exps := range ce.Arguments {
+		strs = append(strs, exps.String())
+	}
+	return fmt.Sprintf("function %s( %s )", ce.Function.String(), strings.Join(strs, ", "))
 }
