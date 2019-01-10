@@ -113,6 +113,17 @@ func (as *AssignStatement) String() string {
 	return ""
 }
 
+// Represent return statement
+type ReturnStatement struct {
+	ReturnValue Expression
+}
+
+func (rs *ReturnStatement) do() {}
+
+func (rs *ReturnStatement) String() string {
+	return fmt.Sprintf("return %s", rs.ReturnValue.String())
+}
+
 // Represent string literal
 type StringLiteral struct {
 	Value string
