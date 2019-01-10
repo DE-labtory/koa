@@ -80,22 +80,6 @@ var precedenceMap = map[TokenType]precedence{
 	Eol: LOWEST,
 }
 
-// Operator map
-var operatorTypeMap = map[TokenType]ast.OperatorType{
-	Plus:     ast.Plus,
-	Minus:    ast.Minus,
-	Bang:     ast.Bang,
-	Asterisk: ast.Asterisk,
-	Slash:    ast.Slash,
-	Mod:      ast.Mod,
-	LT:       ast.LT,
-	GT:       ast.GT,
-	LTE:      ast.LTE,
-	GTE:      ast.GTE,
-	EQ:       ast.EQ,
-	NOT_EQ:   ast.NOT_EQ,
-}
-
 // PeekNumber restrict peek count from the TokenBuffer
 type peekNumber int
 

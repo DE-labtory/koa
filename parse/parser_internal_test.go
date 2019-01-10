@@ -669,3 +669,78 @@ func TestParseReturnStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestParsePrefixExpression(t *testing.T) {
+	tests := []struct {
+		tokenBuffer      TokenBuffer
+		expectedOperator string
+		expectedRight    string
+	}{
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "1"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"-", "1",
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "3333"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"-", "3333",
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: Minus, Val: "!"},
+					{Type: Bool, Val: "true"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"!", "true",
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: Minus, Val: "!"},
+					{Type: Bool, Val: "false"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"!", "false",
+		},
+	}
+
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[Bool] = parseBooleanLiteral
+
+	for i, tt := range tests {
+		exp, errs := parsePrefixExpression(tt.tokenBuffer)
+		if len(errs) >= 1 {
+			t.Errorf("tests[%d] - Returned error is \"%s\"",
+				i, errs[0])
+		}
+
+		expression, ok := exp.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("exp is not *ast.PrefixExpression. got=%T", exp)
+		}
+
+		if expression.Operator.String() != tt.expectedOperator {
+			t.Errorf("tests[%d] - Type is not %s but got %s",
+				i, tt.expectedOperator, expression.Operator.String())
+		}
+
+		if expression.Right.String() != tt.expectedRight {
+			t.Errorf("tests[%d] - Value is not %s but got %s",
+				i, tt.expectedRight, expression.Right.String())
+		}
+	}
+}

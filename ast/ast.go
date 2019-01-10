@@ -81,6 +81,10 @@ type Operator struct {
 	Val  OperatorVal
 }
 
+func (o Operator) String() string {
+	return string(o.Val)
+}
+
 type DataStructureType int
 
 const (
