@@ -822,7 +822,6 @@ func TestParseCallExpression(t *testing.T) {
 	}
 }
 
-
 func TestParseCallArguments(t *testing.T) {
 	prefixParseFnMap[Int] = parseIntegerLiteral
 	prefixParseFnMap[String] = parseStringLiteral
