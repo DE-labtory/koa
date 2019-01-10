@@ -640,11 +640,19 @@ func TestParseReturnStatement(t *testing.T) {
 			{Type: Int, Val: "3"},
 			{Type: Eol, Val: "\n"},
 		},
+		{
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "1"},
+			{Type: Eol, Val: "\n"},
+		},
 	}
 	tests := []string{
 		"return true",
 		"return (1 + 2)",
 		"return (1 + (2 * 3))",
+		"parseReturnStatement() error - Statement must be started with return",
 	}
 
 	for i, test := range tests {
@@ -655,7 +663,7 @@ func TestParseReturnStatement(t *testing.T) {
 				i, test, err[0].Error())
 		}
 
-		if exp.String() != test {
+		if exp != nil && exp.String() != test {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong result. expected=%s, got=%s",
 				i, test, exp.String())
 		}
