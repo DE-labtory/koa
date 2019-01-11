@@ -18,36 +18,36 @@ package encoding
 
 import (
 	"encoding/hex"
-	"log"
+	"fmt"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // In koa, we use hexadecimal encoding
 
-// TODO: implement w/ test cases :-)
-func Encode(operand interface{}) []byte {
+// EncodeOperand() encodes operand to bytes.
+func EncodeOperand(operand interface{}) ([]byte, error) {
 	switch op := operand.(type) {
 	case int:
-		return nil
-	case string:
-		return nil
-	case bool:
-		b, err := encodeBool(op)
-		if err != nil {
-			log.Fatal(err)
-			return nil
-		}
+		return encodeInt(op)
 
-		return b
+	case string:
+		return encodeString(op)
+
+	case bool:
+		return encodeBool(op)
+
 	default:
-		return nil
+		return nil, errors.New(fmt.Sprintf("EncodeOperand() error - operand %v could not encoded", op))
 	}
 }
 
 // Encode integer to hexadecimal bytes
 // ex) int 123 => 0x7b
 func encodeInt(operand int) ([]byte, error) {
-	s := strconv.FormatInt(int64(operand), 16)
+	operand32 := int32(operand)
+	s := fmt.Sprintf("%x", operand32)
 
 	// Encoded byte length should be even number
 	if len(s)%2 == 1 {
@@ -64,11 +64,10 @@ func encodeInt(operand int) ([]byte, error) {
 
 // Encode string to hexadecimal bytes
 // ex) string "abc" => 0x616263
-// TODO: implement w/ test cases :-)
 func encodeString(operand string) ([]byte, error) {
 	src := hex.EncodeToString([]byte(operand))
 
-	if len(src)&1 > 0 {
+	if len(src)&1 == 1 {
 		src = "0" + src
 	}
 
@@ -83,7 +82,34 @@ func encodeString(operand string) ([]byte, error) {
 // Encode boolean to hexadecimal bytes
 // ex) bool true => 0x01
 // ex) bool false => 0x00
-// TODO: implement w/ test cases :-)
 func encodeBool(operand bool) ([]byte, error) {
-	return nil, nil
+	var src string
+
+	if operand {
+		src = convertTo4Bytes(1)
+	} else {
+		src = convertTo4Bytes(0)
+	}
+
+	dst, err := hex.DecodeString(src)
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
+
+}
+
+// convert to 4 byte
+func convertTo4Bytes(operand int) string {
+	var zeroSet string
+
+	src := strconv.FormatUint(uint64(operand), 16)
+	diff := 8 - len(src)
+
+	for ; diff > 0; diff-- {
+		zeroSet += "0"
+	}
+	return zeroSet + src
+
 }

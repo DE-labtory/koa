@@ -49,7 +49,7 @@ func Test_encodeInt(t *testing.T) {
 		}
 
 		if !bytes.Equal(bytecode, test.expected) {
-			t.Errorf("test[%d] - encodeInt() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
+			t.Fatalf("test[%d] - encodeInt() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
 		}
 	}
 }
@@ -82,11 +82,44 @@ func Test_encodeString(t *testing.T) {
 		bytecode, err := encodeString(op)
 
 		if err != nil {
-			t.Fatalf("test[%d] - encodeInt() had error. err=%v", i, err)
+			t.Fatalf("test[%d] - encodeString() had error. err=%v", i, err)
+
 		}
 
 		if !bytes.Equal(bytecode, test.expected) {
-			t.Errorf("test[%d] - encodeInt() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
+			t.Fatalf("test[%d] - encodeString() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
+		}
+	}
+}
+func Test_encodeBool(t *testing.T) {
+	tests := []struct {
+		operand  bool
+		expected []byte
+	}{
+		{
+			operand:  true,
+			expected: []byte{0x00, 0x00, 0x00, 0x01},
+		},
+		{
+			operand:  false,
+			expected: []byte{0x00, 0x00, 0x00, 0x00},
+		},
+	}
+
+	for i, test := range tests {
+		op := test.operand
+		bytecode, err := encodeBool(op)
+
+		if err != nil {
+			t.Fatalf("test[%d] - encodeBool() had error. err=%v", i, err)
+		}
+
+		if !bytes.Equal(bytecode, test.expected) {
+			t.Fatalf("test[%d] - encodeBool() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
+		}
+
+		if len(bytecode) != 4 {
+			t.Fatalf("test[%d] - encodeBool() result wrong. expected=4, got=%x", i, bytecode)
 		}
 	}
 }
