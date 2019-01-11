@@ -17,7 +17,6 @@
 package parse
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -152,34 +151,32 @@ func (e parseError) Error() string {
 }
 
 type (
-	prefixParseFn func(TokenBuffer) (ast.Expression, []error)
-	infixParseFn  func(TokenBuffer, ast.Expression) (ast.Expression, []error)
+	prefixParseFn func(TokenBuffer) (ast.Expression, error)
+	infixParseFn  func(TokenBuffer, ast.Expression) (ast.Expression, error)
 )
 
 var prefixParseFnMap = map[TokenType]prefixParseFn{}
 var infixParseFnMap = map[TokenType]infixParseFn{}
 
 // Parse function create an abstract syntax tree
-func Parse(buf TokenBuffer) (*ast.Program, []error) {
-	errs := []error{}
+func Parse(buf TokenBuffer) (*ast.Program, error) {
 	prog := &ast.Program{}
 	prog.Statements = []ast.Statement{}
 
 	for buf.Peek(CURRENT).Type != Eof {
-		stmt, e := parseStatement(buf)
-		if len(errs) != 0 {
-			errs = append(errs, e...)
-			break
+		stmt, err := parseStatement(buf)
+		if err != nil {
+			return nil, err
 		}
 
 		prog.Statements = append(prog.Statements, stmt)
 	}
 
-	return prog, errs
+	return prog, nil
 }
 
 // TODO: implement me w/ test cases :-)
-func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
+func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 	switch buf.Peek(CURRENT).Type {
 	case Return:
 		return parseReturnStatement(buf)
@@ -190,70 +187,68 @@ func parseStatement(buf TokenBuffer) (ast.Statement, []error) {
 
 // ParseExpression parse expression in two ways, first
 // by considering expression as prefix, next as infix
-func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, []error) {
-	errs := make([]error, 0)
-	exp, es := makePrefixExpression(buf)
-	if len(es) != 0 {
-		errs = append(errs, es...)
-		return exp, errs
+func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, error) {
+	exp, err := makePrefixExpression(buf)
+	if err != nil {
+		return exp, err
 	}
 
-	exp, es = makeInfixExpression(buf, exp, pre)
-	if len(es) != 0 {
-		errs = append(errs, es...)
-		return exp, errs
+	exp, err = makeInfixExpression(buf, exp, pre)
+	if err != nil {
+		return exp, err
 	}
 
-	return exp, errs
+	return exp, nil
 }
 
 // ParseExpAsPrefix retrieves prefix parse function from
 // map, then parse expression with that function if exist.
-func makePrefixExpression(buf TokenBuffer) (ast.Expression, []error) {
-	errs := make([]error, 0)
+func makePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	curTok := buf.Peek(CURRENT)
 
 	fn := prefixParseFnMap[curTok.Type]
 	if fn == nil {
-		e := parseError{
+		return nil, parseError{
 			curTok.Type,
 			"prefix parse function not defined",
 		}
-		return nil, append(errs, e)
 	}
 
-	exp, e := fn(buf)
-	if len(e) != 0 {
-		return nil, append(errs, e...)
+	exp, err := fn(buf)
+	if err != nil {
+		return nil, err
 	}
 
-	return exp, errs
+	return exp, nil
 }
 
 // MakeInfixExpression retrieves infix parse function from map
 // then parse expression with that function if exist.
-func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, []error) {
-	errs := make([]error, 0)
+func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, error) {
+	var err error
 	expression := exp
 
 	for pre < curPrecedence(buf) {
 		fn := infixParseFnMap[buf.Peek(CURRENT).Type]
 		if fn == nil {
-			errs = append(errs, parseError{buf.Peek(CURRENT).Type, "infix parse function not defined"})
-			return nil, errs
+			return nil, parseError{
+				buf.Peek(CURRENT).Type,
+				"infix parse function not defined",
+			}
 		}
 
-		var err []error
 		expression, err = fn(buf, expression)
-		if len(err) > 0 {
-			return nil, append(errs, err...)
+		if err != nil {
+			return nil, err
 		}
 	}
 	return expression, nil
 }
 
-func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression, []error) {
+func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression, error) {
+	var err error
 	curTok := buf.Read()
+
 	expression := &ast.InfixExpression{
 		Left: left,
 		Operator: ast.Operator{
@@ -263,17 +258,16 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 	}
 	precedence := precedenceMap[curTok.Type]
 
-	var err []error
 	expression.Right, err = parseExpression(buf, precedence)
-	if len(err) > 0 {
+	if err != nil {
 		return nil, err
 	}
 
 	return expression, nil
 }
 
-func parsePrefixExpression(buf TokenBuffer) (ast.Expression, []error) {
-	var err []error
+func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
+	var err error
 	tok := buf.Read()
 
 	exp := &ast.PrefixExpression{
@@ -284,88 +278,90 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, []error) {
 	}
 
 	exp.Right, err = parseExpression(buf, PREFIX)
-	if len(err) != 0 {
+	if err != nil {
 		return nil, err
 	}
 
 	return exp, nil
 }
 
-func parseIdentifier(buf TokenBuffer) (ast.Expression, []error) {
-	errs := make([]error, 0)
+func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 
 	if token.Type != Ident {
-		errs = append(errs, errors.New("parseIdentifier() - "+token.Val+" is not a identifier"))
-		return nil, errs
+		return nil, parseError{
+			token.Type,
+			fmt.Sprintf("parseIdentifier() - %s is not a identifier", token.Val),
+		}
 	}
 	return &ast.Identifier{Value: token.Val}, nil
 }
 
-func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, []error) {
+func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-	errs := make([]error, 0)
 
 	if token.Type != Int {
-		errs = append(errs, errors.New("parseIntegerLiteral() error - "+token.Val+" is not integer"))
-		return nil, errs
+		return nil, parseError{
+			token.Type,
+			fmt.Sprintf("parseIntegerLiteral() error - %s is not integer", token.Val),
+		}
 	}
 
 	value, err := strconv.ParseInt(token.Val, 0, 64)
 	if err != nil {
-		errs = append(errs, err)
-		return nil, errs
+		return nil, err
 	}
 
 	lit := &ast.IntegerLiteral{Value: value}
 	return lit, nil
 }
 
-func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, []error) {
+func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-	errs := make([]error, 0)
 
 	if token.Type != Bool {
-		errs = append(errs, errors.New("parseBooleanLiteral() error - "+token.Val+" is not bool"))
-		return nil, errs
+		return nil, parseError{
+			token.Type,
+			fmt.Sprintf("parseBooleanLiteral() error - %s is not bool", token.Val),
+		}
 	}
 
 	value, err := strconv.ParseBool(token.Val)
 	if err != nil {
-		errs = append(errs, err)
-		return nil, errs
+		return nil, err
 	}
 
 	lit := &ast.BooleanLiteral{Value: value}
 	return lit, nil
 }
 
-func parseStringLiteral(buf TokenBuffer) (ast.Expression, []error) {
+func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-	errs := make([]error, 0)
 
 	if token.Type != String {
-		errs = append(errs, errors.New("parseStringLiteral() error - "+token.Val+" is not string"))
-		return nil, errs
+		return nil, parseError{
+			token.Type,
+			fmt.Sprintf("parseStringLiteral() error - %s is not string", token.Val),
+		}
 	}
 
 	return &ast.StringLiteral{Value: token.Val}, nil
 }
 
-func parseReturnStatement(buf TokenBuffer) (ast.Statement, []error) {
-	errs := make([]error, 0)
+func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	token := buf.Read()
 	if token.Type != Return {
-		errs = append(errs, errors.New("parseReturnStatement() error - Statement must be started with return"))
-		return nil, errs
+		return nil, parseError{
+			token.Type,
+			fmt.Sprintf("parseReturnStatement() error - Statement must be started with return"),
+		}
 	}
 
 	stmt := &ast.ReturnStatement{}
 	for !curTokenIs(buf, Eol) {
 		exp, err := parseExpression(buf, LOWEST)
-		if len(err) > 0 {
-			errs = append(err, errors.New("parseReturnStatement() error - pareseExpression error"))
-			return nil, errs
+		if err != nil {
+			return nil, err
 		}
 		stmt.ReturnValue = exp
 	}
@@ -373,12 +369,15 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, []error) {
 	return stmt, nil
 }
 
-func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
+func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	stmt := &ast.AssignStatement{}
 
 	tok := buf.Read()
 	if !isDataStructure(tok) {
-		return nil, []error{parseError{tok.Type, "token is not data structure type"}}
+		return nil, parseError{
+			tok.Type,
+			"token is not data structure type",
+		}
 	}
 
 	stmt.Type = ast.DataStructure{
@@ -388,7 +387,10 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
 
 	tok = buf.Read()
 	if tok.Type != Ident {
-		return nil, []error{parseError{tok.Type, "token is not identifier"}}
+		return nil, parseError{
+			tok.Type,
+			"token is not identifier",
+		}
 	}
 
 	stmt.Variable = ast.Identifier{
@@ -396,11 +398,14 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
 	}
 
 	if buf.Read().Type != Assign {
-		return nil, []error{parseError{tok.Type, "token is not assign"}}
+		return nil, parseError{
+			tok.Type,
+			"token is not assign",
+		}
 	}
 
 	exp, err := parseExpression(buf, LOWEST)
-	if len(err) != 0 {
+	if err != nil {
 		return nil, err
 	}
 
@@ -410,7 +415,7 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, []error) {
 }
 
 // TODO: implement me w/ test cases :-) (This used for calling built-in function)
-func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, []error) {
+func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, error) {
 	return nil, nil
 }
 

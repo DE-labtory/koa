@@ -291,7 +291,7 @@ func TestParseIdentifier(t *testing.T) {
 	}{
 		{
 			expected:     nil,
-			expectedErrs: "parseIdentifier() - 1 is not a identifier",
+			expectedErrs: "INT, parseIdentifier() - 1 is not a identifier",
 		},
 		{
 			expected: &ast.Identifier{
@@ -300,24 +300,24 @@ func TestParseIdentifier(t *testing.T) {
 		},
 		{
 			expected:     nil,
-			expectedErrs: "parseIdentifier() - + is not a identifier",
+			expectedErrs: "PLUS, parseIdentifier() - + is not a identifier",
 		},
 		{
 			expected:     nil,
-			expectedErrs: "parseIdentifier() - * is not a identifier",
+			expectedErrs: "ASTERISK, parseIdentifier() - * is not a identifier",
 		},
 		{
 			expected:     nil,
-			expectedErrs: "parseIdentifier() - ( is not a identifier",
+			expectedErrs: "LPAREN, parseIdentifier() - ( is not a identifier",
 		},
 	}
 
 	for i, test := range tests {
 
-		exp, errs := parseIdentifier(&tokenBuf)
+		exp, err := parseIdentifier(&tokenBuf)
 
-		if errs != nil && errs[0].Error() != test.expectedErrs {
-			t.Fatalf("test[%d] - wrong error. expected=%s, got=%s", i, test.expectedErrs, errs[0])
+		if err != nil && err.Error() != test.expectedErrs {
+			t.Fatalf("test[%d] - wrong error. expected=%s, got=%s", i, test.expectedErrs, err)
 		}
 
 		switch exp {
@@ -349,7 +349,7 @@ func TestParseIntegerLiteral(t *testing.T) {
 		{expected: &ast.IntegerLiteral{Value: 12}, expectedErr: nil},
 		{expected: &ast.IntegerLiteral{Value: 55}, expectedErr: nil},
 		{expected: nil, expectedErr: errors.New("strconv.ParseInt: parsing \"a\": invalid syntax")},
-		{expected: nil, expectedErr: errors.New("parseIntegerLiteral() error - abcdefg is not integer")},
+		{expected: nil, expectedErr: errors.New("STRING, parseIntegerLiteral() error - abcdefg is not integer")},
 		{expected: &ast.IntegerLiteral{Value: -13}, expectedErr: nil},
 	}
 
@@ -358,9 +358,9 @@ func TestParseIntegerLiteral(t *testing.T) {
 
 		switch err != nil {
 		case true:
-			if err[0].Error() != test.expectedErr.Error() {
+			if err.Error() != test.expectedErr.Error() {
 				t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err[0].Error())
+					i, test.expectedErr, err.Error())
 			}
 		}
 
@@ -368,7 +368,7 @@ func TestParseIntegerLiteral(t *testing.T) {
 		case true:
 			if exp.String() != test.expected.String() {
 				t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err[0].Error())
+					i, test.expectedErr, err.Error())
 			}
 		}
 	}
@@ -389,7 +389,7 @@ func TestParseBooleanLiteral(t *testing.T) {
 		{expected: &ast.BooleanLiteral{Value: true}, expectedErr: nil},
 		{expected: &ast.BooleanLiteral{Value: false}, expectedErr: nil},
 		{expected: nil, expectedErr: errors.New("strconv.ParseBool: parsing \"azzx\": invalid syntax")},
-		{expected: nil, expectedErr: errors.New("parseBooleanLiteral() error - abcdefg is not bool")},
+		{expected: nil, expectedErr: errors.New("STRING, parseBooleanLiteral() error - abcdefg is not bool")},
 	}
 
 	for i, test := range tests {
@@ -397,9 +397,9 @@ func TestParseBooleanLiteral(t *testing.T) {
 
 		switch err != nil {
 		case true:
-			if err[0].Error() != test.expectedErr.Error() {
+			if err.Error() != test.expectedErr.Error() {
 				t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err[0].Error())
+					i, test.expectedErr, err.Error())
 			}
 		}
 
@@ -427,7 +427,7 @@ func TestParseStringLiteral(t *testing.T) {
 	}{
 		{expected: &ast.StringLiteral{Value: "hello"}, expectedErr: nil},
 		{expected: &ast.StringLiteral{Value: "hihi"}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New("parseStringLiteral() error - 3 is not string")},
+		{expected: nil, expectedErr: errors.New("INT, parseStringLiteral() error - 3 is not string")},
 		{expected: &ast.StringLiteral{Value: "koa zzang"}, expectedErr: nil},
 	}
 
@@ -436,9 +436,9 @@ func TestParseStringLiteral(t *testing.T) {
 
 		switch err != nil {
 		case true:
-			if err[0].Error() != test.expectedErr.Error() {
+			if err.Error() != test.expectedErr.Error() {
 				t.Fatalf("test[%d] - TestParseStringLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err[0].Error())
+					i, test.expectedErr, err.Error())
 			}
 		}
 
@@ -463,12 +463,12 @@ func TestParseExpAsPrefix(t *testing.T) {
 
 	// mock prefixParseFnMap
 	// In the case of Identifier, return normal expression
-	prefixParseFnMap[String] = func(buf TokenBuffer) (ast.Expression, []error) {
+	prefixParseFnMap[String] = func(buf TokenBuffer) (ast.Expression, error) {
 		return &ast.StringLiteral{"hello"}, nil
 	}
 	// In the case of Asterisk, return with errors
-	prefixParseFnMap[Plus] = func(buf TokenBuffer) (ast.Expression, []error) {
-		return &ast.PrefixExpression{}, []error{mockError}
+	prefixParseFnMap[Plus] = func(buf TokenBuffer) (ast.Expression, error) {
+		return &ast.PrefixExpression{}, mockError
 	}
 
 	tests := []struct {
@@ -490,7 +490,7 @@ func TestParseExpAsPrefix(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		exp, errs := makePrefixExpression(&buf)
+		exp, err := makePrefixExpression(&buf)
 		buf.Read()
 
 		if exp != nil && exp.String() != test.expectedExpression.String() {
@@ -498,9 +498,9 @@ func TestParseExpAsPrefix(t *testing.T) {
 				i, test.expectedExpression.String(), exp.String())
 		}
 
-		if len(errs) > 0 && errs[0] != test.expectedError {
+		if err != nil && err != test.expectedError {
 			t.Errorf("tests[%d] - Returend error is not %s but got %s",
-				i, test.expectedError, errs[0])
+				i, test.expectedError, err)
 		}
 	}
 }
@@ -555,13 +555,11 @@ func TestMakeInfixExpression(t *testing.T) {
 		//exp, _ := makePrefixExpression(&buf)
 		prefix := prefixes[i]
 		exp, err := makeInfixExpression(&buf, &prefix, LOWEST)
-
-		if len(err) > 0 && test.expected != err[0].Error() {
+		if err != nil && test.expected != err.Error() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
-				i, test.expected, err[0].Error())
+				i, test.expected, err.Error())
 		}
-
-		if len(err) == 0 && test.expected != exp.String() {
+		if err == nil && test.expected != exp.String() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
@@ -600,12 +598,12 @@ func TestParseInfixExpression(t *testing.T) {
 		left := lefts[i]
 		exp, err := parseInfixExpression(&buf, &left)
 
-		if len(err) > 0 && test.expected != err[0].Error() {
+		if err != nil && test.expected != err.Error() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
-				i, test.expected, err[0].Error())
+				i, test.expected, err.Error())
 		}
 
-		if len(err) == 0 && test.expected != exp.String() {
+		if err == nil && test.expected != exp.String() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
@@ -652,15 +650,15 @@ func TestParseReturnStatement(t *testing.T) {
 		"return true",
 		"return (1 + 2)",
 		"return (1 + (2 * 3))",
-		"parseReturnStatement() error - Statement must be started with return",
+		"INT_TYPE, parseReturnStatement() error - Statement must be started with return",
 	}
 
 	for i, test := range tests {
 		mockBufs := mockTokenBuffer{bufs[i], 0}
 		exp, err := parseReturnStatement(&mockBufs)
-		if len(err) > 0 && err[0].Error() != test {
+		if err != nil && err.Error() != test {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error. expected=%s, got=%s",
-				i, test, err[0].Error())
+				i, test, err.Error())
 		}
 
 		if exp != nil && exp.String() != test {
@@ -722,10 +720,10 @@ func TestParsePrefixExpression(t *testing.T) {
 	prefixParseFnMap[Bool] = parseBooleanLiteral
 
 	for i, tt := range tests {
-		exp, errs := parsePrefixExpression(tt.tokenBuffer)
-		if len(errs) >= 1 {
+		exp, err := parsePrefixExpression(tt.tokenBuffer)
+		if err != nil {
 			t.Errorf("tests[%d] - Returned error is \"%s\"",
-				i, errs[0])
+				i, err)
 		}
 
 		expression, ok := exp.(*ast.PrefixExpression)
