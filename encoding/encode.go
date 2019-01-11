@@ -64,11 +64,10 @@ func encodeInt(operand int) ([]byte, error) {
 
 // Encode string to hexadecimal bytes
 // ex) string "abc" => 0x616263
-// TODO: implement w/ test cases :-)
 func encodeString(operand string) ([]byte, error) {
 	src := hex.EncodeToString([]byte(operand))
 
-	if len(src)&1 > 0 {
+	if len(src)&1 == 1 {
 		src = "0" + src
 	}
 
@@ -83,7 +82,34 @@ func encodeString(operand string) ([]byte, error) {
 // Encode boolean to hexadecimal bytes
 // ex) bool true => 0x01
 // ex) bool false => 0x00
-// TODO: implement w/ test cases :-)
 func encodeBool(operand bool) ([]byte, error) {
-	return nil, nil
+	var src string
+
+	if operand {
+		src = convertTo4Bytes(1)
+	} else {
+		src = convertTo4Bytes(0)
+	}
+
+	dst, err := hex.DecodeString(src)
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
+
+}
+
+// convert to 4 byte
+func convertTo4Bytes(operand int) string {
+	var zeroSet string
+
+	src := strconv.FormatUint(uint64(operand), 16)
+	diff := 8 - len(src)
+
+	for ; diff > 0; diff-- {
+		zeroSet += "0"
+	}
+	return zeroSet + src
+
 }
