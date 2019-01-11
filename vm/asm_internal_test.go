@@ -17,9 +17,8 @@
 package vm
 
 import (
-	"testing"
-
 	"bytes"
+	"testing"
 
 	"github.com/DE-labtory/koa/opcode"
 )
