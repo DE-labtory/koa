@@ -992,7 +992,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: BoolType, Val: "bool"},
 					{Type: Ident, Val: "ddd"},
 					{Type: Assign, Val: "="},
-					{Type: Bool, Val: "true"},
+					{Type: True, Val: "true"},
 					{Type: Eof}},
 				sp: 0,
 			},
@@ -1028,7 +1028,8 @@ func TestParseAssignStatement(t *testing.T) {
 
 	prefixParseFnMap[Int] = parseIntegerLiteral
 	prefixParseFnMap[String] = parseStringLiteral
-	prefixParseFnMap[Bool] = parseBooleanLiteral
+	prefixParseFnMap[True] = parseBooleanLiteral
+	prefixParseFnMap[False] = parseBooleanLiteral
 
 	for i, tt := range tests {
 		exp, err := parseAssignStatement(tt.tokenBuffer)
@@ -1163,43 +1164,114 @@ func TestParseExpression(t *testing.T) {
 }
 
 func TestParseIfStatement(t *testing.T) {
-	prefixParseFnMap[Bool] = parseBooleanLiteral
-
+	prefixParseFnMap[True] = parseBooleanLiteral
+	prefixParseFnMap[False] = parseBooleanLiteral
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[Ident] = parseIdentifier
+	prefixParseFnMap[String] = parseStringLiteral
+	infixParseFnMap[EQ] = parseInfixExpression
 	bufs := [][]Token{
 		{
-			{Type: If, Val: "if"},
-			{Type: Lparen, Val: "("},
-			{Type: Bool, Val: "true"},
-			{Type: Rparen, Val: ")"},
-			{Type: Lbrace, Val: "{"},
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Rbrace, Val: "}"},
+			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: True, Val: "true"}, {Type: Rparen, Val: ")"},
+
+			{Type: Lbrace, Val: "{"}, {Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
+			{Type: Int, Val: "0"}, {Type: Eol, Val: "\n"}, {Type: Rbrace, Val: "}"}, {Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: Ident, Val: "a"}, {Type: EQ, Val: "=="},
+			{Type: Int, Val: "5"}, {Type: Rparen, Val: ")"},
+
+			{Type: Lbrace, Val: "{"}, {Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
+			{Type: Int, Val: "1"}, {Type: Eol, Val: "\n"}, {Type: Rbrace, Val: "}"},
+
+			{Type: Else, Val: "else"}, {Type: Lbrace, Val: "{"}, {Type: StringType, Val: "string"},
+			{Type: Ident, Val: "b"}, {Type: Assign, Val: "="}, {Type: String, Val: "example"}, {Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"}, {Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "5"},
+		},
+		{
+			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: True, Val: "true"}, {Type: Rparen, Val: ")"},
+
+			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
+			{Type: Int, Val: "0"}, {Type: Eol, Val: "\n"}, {Type: Rbrace, Val: "}"}, {Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: True, Val: "true"}, {Type: Rbrace, Val: "}"},
+
+			{Type: Lbrace, Val: "{"}, {Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
+			{Type: Int, Val: "0"}, {Type: Eol, Val: "\n"}, {Type: Rbrace, Val: "}"}, {Type: Eol, Val: "\n"},
 		},
 	}
 
 	tests := []string{
-		// This will be "if ( true ) { int a }"
-		"if ( true ) {  }",
+		"if ( true ) { int val: a, type: IDENT = 0 }",
+		"if ( (a == 5) ) { int val: a, type: IDENT = 1 } else { string val: b, type: IDENT = \"example\" }",
+		"INT_TYPE, is not a If",
+		"INT_TYPE, is not a Left brace",
+		"RBRACE, is not a Right paren",
 	}
 
 	for i, test := range tests {
 		mockBuf := mockTokenBuffer{bufs[i], 0}
-		result, err := parseIfStatement(&mockBuf)
+		stmt, err := parseIfStatement(&mockBuf)
 
-		if len(err) > 0 && err[0].Error() != test {
+		if err != nil && err.Error() != test {
 			t.Fatalf("test[%d] - TestParseIfStatement() wrong error. expected=%s got=%s",
-				i, test, err[0].Error())
+				i, test, err.Error())
 		}
 
-		if result.String() != test {
+		if stmt != nil && stmt.String() != test {
 			t.Fatalf("test[%d] - TestParseIfStatement() wrong result. expected=%s, got=%s",
-				i, test, result.String())
+				i, test, stmt.String())
 		}
 
 	}
 }
 
 func TestParseBlockStatement(t *testing.T) {
+	prefixParseFnMap[True] = parseBooleanLiteral
+	prefixParseFnMap[False] = parseBooleanLiteral
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[Ident] = parseIdentifier
+	prefixParseFnMap[String] = parseStringLiteral
+	infixParseFnMap[EQ] = parseInfixExpression
+	bufs := [][]Token{
+		{
+			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "0"}, {Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+		},
+		{
+			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "0"}, {Type: Eol, Val: "\n"},
+			{Type: StringType, Val: "string"}, {Type: Ident, Val: "b"}, {Type: Assign, Val: "="}, {Type: String, Val: "abc"}, {Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+		},
+		{
+			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "0"}, {Type: Eol, Val: "\n"},
+			{Type: StringType, Val: "string"}, {Type: Ident, Val: "b"}, {Type: Assign, Val: "="}, {Type: String, Val: "abc"}, {Type: Eol, Val: "\n"},
+			{Type: BoolType, Val: "bool"}, {Type: Ident, Val: "c"}, {Type: Assign, Val: "="}, {Type: True, Val: "true"}, {Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+		},
+	}
+	tests := []string{
+		"int val: a, type: IDENT = 0",
+		"int val: a, type: IDENT = 0/string val: b, type: IDENT = \"abc\"",
+		"int val: a, type: IDENT = 0/string val: b, type: IDENT = \"abc\"/bool val: c, type: IDENT = true",
+	}
 
+	for i, test := range tests {
+		mockBuf := mockTokenBuffer{bufs[i], 0}
+		exp, err := parseBlockStatement(&mockBuf)
+
+		if err != nil && err.Error() != test {
+			t.Fatalf("test[%d] - TestParseBlockStatement() wrong error. expected=%s, got=%s",
+				i, test, err.Error())
+		}
+
+		if exp != nil && exp.String() != test {
+			t.Fatalf("test[%d] - TestParseBlockStatement() wrong result. expected=%s, got=%s",
+				i, test, exp.String())
+		}
+	}
 }

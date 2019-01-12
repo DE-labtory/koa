@@ -205,6 +205,14 @@ func initParseFnMap() {
 // TODO: implement me w/ test cases :-)
 func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 	switch buf.Peek(CURRENT).Type {
+	case IntType:
+		return parseAssignStatement(buf)
+	case BoolType:
+		return parseAssignStatement(buf)
+	case StringType:
+		return parseAssignStatement(buf)
+	case If:
+		return parseIfStatement(buf)
 	case Return:
 		return parseReturnStatement(buf)
 	default:
@@ -500,59 +508,75 @@ func isDataStructure(tok Token) bool {
 		tok.Type == BoolType
 }
 
-func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, []error) {
-	errs := make([]error, 0)
-	var err []error
+func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	tok := buf.Read()
 	if tok.Type != If {
-		errs = append(errs, errors.New("parseIfStatement() error - No IF statement"))
-		return nil, errs
+		err := parseError{
+			tok.Type,
+			"is not a If",
+		}
+		return nil, err
 	}
 
 	tok = buf.Read()
 	if tok.Type != Lparen {
-		errs = append(errs, errors.New("parseIfStatement() error - Condition must be stared with left paren"))
-		return nil, errs
+		err := parseError{
+			tok.Type,
+			"is not a Left paren",
+		}
+		return nil, err
 	}
 
 	expression := &ast.IfStatement{}
+	var err error
 	expression.Condition, err = parseExpression(buf, LOWEST)
-	if len(err) > 0 {
-		errs = append(errs, errors.New("parseIfStatement() error - Condition parsing error"))
-		return nil, errs
+	if err != nil {
+		return nil, err
 	}
 
 	tok = buf.Read()
 	if tok.Type != Rparen {
-		errs = append(errs, errors.New("parseIfStatement() error - Condition must be ended with right paren"))
-		return nil, errs
+		err := parseError{
+			tok.Type,
+			"is not a Right paren",
+		}
+		return nil, err
 	}
 
 	tok = buf.Read()
 	if tok.Type != Lbrace {
-		errs = append(errs, errors.New("parseIfStatement() error - Block must be started with left brace"))
-		return nil, errs
+		err := parseError{
+			tok.Type,
+			"is not a Left brace",
+		}
+		return nil, err
 	}
 
 	expression.Consequence, err = parseBlockStatement(buf)
-	if len(err) > 0 {
-		errs = append(errs, errors.New("parseIfStatement() error - block statement parsing error"))
-		return nil, errs
+	if err != nil {
+		return nil, err
+	}
+
+	tok = buf.Read()
+	if curTokenIs(buf, Else) {
+		tok = buf.Read()
+		expression.Alternative, err = parseBlockStatement(buf)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return expression, nil
 }
 
-func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, []error) {
-	errs := make([]error, 0)
+func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	block := &ast.BlockStatement{
 		Statements: []ast.Statement{},
 	}
 
 	for !curTokenIs(buf, Rbrace) && !curTokenIs(buf, Eof) {
 		stmt, err := parseStatement(buf)
-		if len(err) > 0 {
-			errs = append(errs, errors.New("parseBlockStatement() error - statement parsing error"))
+		if err != nil {
 			return nil, err
 		}
 		if stmt != nil {

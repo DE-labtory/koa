@@ -158,7 +158,11 @@ type IfStatement struct {
 func (is *IfStatement) do() {}
 
 func (is *IfStatement) String() string {
-	return fmt.Sprintf("if ( %s ) { %s }", is.Condition.String(), is.Consequence.String())
+	if is.Alternative == nil {
+		return fmt.Sprintf("if ( %s ) { %s }", is.Condition.String(), is.Consequence.String())
+	}
+	return fmt.Sprintf("if ( %s ) { %s } else { %s }", is.Condition.String(), is.Consequence.String(),
+		is.Alternative.String())
 }
 
 // Represent block statement
@@ -169,11 +173,11 @@ type BlockStatement struct {
 func (bs *BlockStatement) do() {}
 
 func (bs *BlockStatement) String() string {
-	var str string
+	str := make([]string, 0)
 	for i := range bs.Statements {
-		str = str + bs.Statements[i].String()
+		str = append(str, bs.Statements[i].String())
 	}
-	return str
+	return strings.Join(str, "/")
 }
 
 // Represent string literal
