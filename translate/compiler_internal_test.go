@@ -21,11 +21,46 @@ import (
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
+	"github.com/DE-labtory/koa/opcode"
 )
 
-// TODO: implement test cases :-)
 func TestCompiler_emit(t *testing.T) {
+	tests := []struct {
+		operator opcode.Type
+		operands [][]byte
+		expected []byte
+	}{
+		{
+			operator: opcode.Push,
+			operands: [][]byte{
+				{0x00, 0x00, 0x00, 01},
+			},
+			expected: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
+		},
+		{
+			operator: opcode.Pop,
+			operands: [][]byte{
+				{},
+			},
+			expected: []byte{0x20},
+		},
+		{
+			operator: opcode.Add,
+			operands: [][]byte{
+				{0x00, 0x00, 0x00, 0x01},
+				{0x00, 0x00, 0x00, 0x02},
+			},
+			expected: []byte{0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02},
+		},
+	}
 
+	for i, test := range tests {
+		b := emit(test.operator, test.operands...)
+
+		if !bytes.Equal(b, test.expected) {
+			t.Fatalf("test[%d] - emit() result is wrong. expected=%x, got=%x", i, test.expected, b)
+		}
+	}
 }
 
 // TODO: implement test cases :-)
@@ -58,14 +93,14 @@ func TestCompiler_compileBoolean(t *testing.T) {
 			node: ast.BooleanLiteral{
 				Value: true,
 			},
-			expected: []byte{0x00, 0x00, 0x00, 0x01},
+			expected: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
 			err:      nil,
 		},
 		{
 			node: ast.BooleanLiteral{
 				Value: false,
 			},
-			expected: []byte{0x00, 0x00, 0x00, 0x00},
+			expected: []byte{0x21, 0x00, 0x00, 0x00, 0x00},
 			err:      nil,
 		},
 	}

@@ -44,9 +44,16 @@ func Compile(program ast.Program) ([]byte, error) {
 
 // emit() generates a byte code with operator and operands.
 // Then, returns byte code.
-// TODO: implement w/ test cases :-)
-func emit(operator opcode.Type, operand ...[]byte) []byte {
-	return nil
+func emit(operator opcode.Type, operands ...[]byte) []byte {
+	b := make([]byte, 0)
+
+	b = append(b, byte(operator))
+
+	for _, o := range operands {
+		b = append(b, o...)
+	}
+
+	return b
 }
 
 // compileNode() compiles a node in statement.
