@@ -19,11 +19,6 @@ package translate
 import "testing"
 
 // TODO: implement test cases :-)
-func TestNewCompiler(t *testing.T) {
-
-}
-
-// TODO: implement test cases :-)
 func TestCompiler_Compile(t *testing.T) {
 
 }

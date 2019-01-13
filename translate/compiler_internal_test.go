@@ -17,6 +17,7 @@
 package translate
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
@@ -24,6 +25,11 @@ import (
 
 // TODO: implement test cases :-)
 func TestCompiler_emit(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompiler_compileNode(t *testing.T) {
 
 }
 
@@ -43,29 +49,34 @@ func TestCompiler_compileInteger(t *testing.T) {
 }
 
 func TestCompiler_compileBoolean(t *testing.T) {
-	c := Compiler{}
-
 	tests := []struct {
 		node     ast.BooleanLiteral
-		expected error
+		expected []byte
+		err      error
 	}{
 		{
 			node: ast.BooleanLiteral{
 				Value: true,
 			},
-			expected: nil,
+			expected: []byte{0x00, 0x00, 0x00, 0x01},
+			err:      nil,
 		},
 		{
 			node: ast.BooleanLiteral{
 				Value: false,
 			},
-			expected: nil,
+			expected: []byte{0x00, 0x00, 0x00, 0x00},
+			err:      nil,
 		},
 	}
 
 	for i, test := range tests {
 		n := test.node
-		err := c.compileBoolean(n)
+		b, err := compileBoolean(n)
+
+		if !bytes.Equal(b, test.expected) {
+			t.Fatalf("test[%d] - compileBoolean() result is wrong. expected=%x, got=%x", i, test.expected, b)
+		}
 
 		if err != nil {
 			t.Fatalf("test[%d] - compileBoolean() had error. err=%v", i, err)
