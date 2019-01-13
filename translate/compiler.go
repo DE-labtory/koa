@@ -18,6 +18,7 @@ package translate
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/encoding"
@@ -28,37 +29,46 @@ import (
 // Statements would be compiled to byte code.
 // TODO: implement w/ test cases :-)
 func Compile(program ast.Program) ([]byte, error) {
-	bin := make([]byte, 0)
+	o := &Bytecode{
+		RawByte: make([]byte, 0),
+		AsmCode: make([]string, 0),
+		PC:      0,
+	}
 
 	for _, s := range program.Statements {
-		b, err := compileNode(s)
+		err := compileNode(s, o)
 		if err != nil {
 			return nil, err
 		}
-
-		bin = append(bin, b...)
 	}
 
-	return bin, nil
+	return o.RawByte, nil
 }
 
 // emit() generates a byte code with operator and operands.
-// Then, returns byte code.
-func emit(operator opcode.Type, operands ...[]byte) []byte {
+// Then, saves the byte code and assemble code to output.
+func emit(bytecode *Bytecode, operator opcode.Type, operands ...[]byte) {
 	b := make([]byte, 0)
+	s := make([]string, 0)
 
 	b = append(b, byte(operator))
+	s = append(s, operator.ToString())
 
 	for _, o := range operands {
 		b = append(b, o...)
+
+		operand := fmt.Sprintf("%x", o)
+		s = append(s, operand)
 	}
 
-	return b
+	bytecode.RawByte = append(bytecode.RawByte, b...)
+	bytecode.AsmCode = append(bytecode.AsmCode, s...)
 }
 
 // compileNode() compiles a node in statement.
 // This function will be executed recursively.
-func compileNode(node ast.Node) ([]byte, error) {
+// TODO: implement w/ test cases :-)
+func compileNode(node ast.Node, bytecode *Bytecode) error {
 	// Nodes are many kinds.
 	switch node := node.(type) {
 	case *ast.Identifier:
@@ -67,6 +77,9 @@ func compileNode(node ast.Node) ([]byte, error) {
 	case *ast.AssignStatement:
 		return compileAssignStatement(*node)
 
+	case *ast.ReturnStatement:
+		return nil
+
 	case *ast.StringLiteral:
 		return compileString(*node)
 
@@ -74,48 +87,53 @@ func compileNode(node ast.Node) ([]byte, error) {
 		return compileInteger(*node)
 
 	case *ast.BooleanLiteral:
-		return compileBoolean(*node)
+		return compileBoolean(*node, bytecode)
 
 	case *ast.PrefixExpression:
 		return compilePrefixExpression(*node)
 
+	case *ast.InfixExpression:
+		return nil
+
+	case *ast.CallExpression:
+		return nil
+
 	default:
-		err := errors.New("compileNode() error - " + node.String() + " could not compiled")
-		return nil, err
+		return errors.New("compileNode() error - " + node.String() + " could not compiled")
 	}
 }
 
 // TODO: implement w/ test cases :-)
-func compileIdentifier(node ast.Identifier) ([]byte, error) {
-	return nil, nil
+func compileIdentifier(node ast.Identifier) error {
+	return nil
 }
 
 // TODO: implement w/ test cases :-)
-func compileAssignStatement(node ast.AssignStatement) ([]byte, error) {
-	return nil, nil
+func compileAssignStatement(node ast.AssignStatement) error {
+	return nil
 }
 
 // TODO: implement w/ test cases :-)
-func compileString(node ast.StringLiteral) ([]byte, error) {
-	return nil, nil
+func compileString(node ast.StringLiteral) error {
+	return nil
 }
 
 // TODO: implement w/ test cases :-)
-func compileInteger(node ast.IntegerLiteral) ([]byte, error) {
-	return nil, nil
+func compileInteger(node ast.IntegerLiteral) error {
+	return nil
 }
 
-func compileBoolean(node ast.BooleanLiteral) ([]byte, error) {
+func compileBoolean(node ast.BooleanLiteral, bytecode *Bytecode) error {
 	operand, err := encoding.EncodeOperand(node.Value)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	b := emit(opcode.Push, operand)
-	return b, nil
+	emit(bytecode, opcode.Push, operand)
+	return nil
 }
 
 // TODO: implement w/ test cases :-)
-func compilePrefixExpression(node ast.PrefixExpression) ([]byte, error) {
-	return nil, nil
+func compilePrefixExpression(node ast.PrefixExpression) error {
+	return nil
 }

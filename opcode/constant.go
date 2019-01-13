@@ -152,3 +152,37 @@ const (
 	// memory[offset:offset+32] = value
 	Mstore Type = 0x23
 )
+
+func (p Type) ToString() string {
+	switch p {
+	case 0x01:
+		return "Add"
+	case 0x02:
+		return "Mul"
+	case 0x03:
+		return "Sub"
+	case 0x04:
+		return "Div"
+	case 0x05:
+		return "Mod"
+	case 0x10:
+		return "LT"
+	case 0x11:
+		return "GT"
+	case 0x12:
+		return "EQ"
+	case 0x13:
+		return "NOT"
+	case 0x20:
+		return "Pop"
+	case 0x21:
+		return "Push"
+	case 0x22:
+		return "Mload"
+	case 0x23:
+		return "Mstore"
+
+	default:
+		return ""
+	}
+}

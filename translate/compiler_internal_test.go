@@ -26,23 +26,24 @@ import (
 
 func TestCompiler_emit(t *testing.T) {
 	tests := []struct {
-		operator opcode.Type
-		operands [][]byte
-		expected []byte
+		operator       opcode.Type
+		operands       [][]byte
+		expectedByte   []byte
+		expectedString []string
 	}{
 		{
 			operator: opcode.Push,
 			operands: [][]byte{
 				{0x00, 0x00, 0x00, 01},
 			},
-			expected: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
+			expectedByte:   []byte{0x21, 0x00, 0x00, 0x00, 0x01},
+			expectedString: []string{"Push", "00000001"},
 		},
 		{
-			operator: opcode.Pop,
-			operands: [][]byte{
-				{},
-			},
-			expected: []byte{0x20},
+			operator:       opcode.Pop,
+			operands:       nil,
+			expectedByte:   []byte{0x20},
+			expectedString: []string{"Pop"},
 		},
 		{
 			operator: opcode.Add,
@@ -50,15 +51,29 @@ func TestCompiler_emit(t *testing.T) {
 				{0x00, 0x00, 0x00, 0x01},
 				{0x00, 0x00, 0x00, 0x02},
 			},
-			expected: []byte{0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02},
+			expectedByte:   []byte{0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02},
+			expectedString: []string{"Add", "00000001", "00000002"},
 		},
 	}
 
 	for i, test := range tests {
-		b := emit(test.operator, test.operands...)
+		bytecode := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+			PC:      0,
+		}
 
-		if !bytes.Equal(b, test.expected) {
-			t.Fatalf("test[%d] - emit() result is wrong. expected=%x, got=%x", i, test.expected, b)
+		emit(bytecode, test.operator, test.operands...)
+
+		if !bytes.Equal(bytecode.RawByte, test.expectedByte) {
+			t.Fatalf("test[%d] - emit() bytecode result is wrong. expected=%x, got=%x", i, test.expectedByte, bytecode.RawByte)
+		}
+
+		for n, s := range bytecode.AsmCode {
+			expected := test.expectedString[n]
+			if s != expected {
+				t.Fatalf("test[%d] - emit() asmcode result is wrong. expected=%s, got=%s", i, expected, s)
+			}
 		}
 	}
 }
@@ -85,32 +100,48 @@ func TestCompiler_compileInteger(t *testing.T) {
 
 func TestCompiler_compileBoolean(t *testing.T) {
 	tests := []struct {
-		node     ast.BooleanLiteral
-		expected []byte
-		err      error
+		node           ast.BooleanLiteral
+		expectedByte   []byte
+		expectedString []string
+		err            error
 	}{
 		{
 			node: ast.BooleanLiteral{
 				Value: true,
 			},
-			expected: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
-			err:      nil,
+			expectedByte:   []byte{0x21, 0x00, 0x00, 0x00, 0x01},
+			expectedString: []string{"Push", "00000001"},
+			err:            nil,
 		},
 		{
 			node: ast.BooleanLiteral{
 				Value: false,
 			},
-			expected: []byte{0x21, 0x00, 0x00, 0x00, 0x00},
-			err:      nil,
+			expectedByte:   []byte{0x21, 0x00, 0x00, 0x00, 0x00},
+			expectedString: []string{"Push", "00000000"},
+			err:            nil,
 		},
 	}
 
 	for i, test := range tests {
-		n := test.node
-		b, err := compileBoolean(n)
+		bytecode := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+			PC:      0,
+		}
 
-		if !bytes.Equal(b, test.expected) {
-			t.Fatalf("test[%d] - compileBoolean() result is wrong. expected=%x, got=%x", i, test.expected, b)
+		n := test.node
+		err := compileBoolean(n, bytecode)
+
+		if !bytes.Equal(bytecode.RawByte, test.expectedByte) {
+			t.Fatalf("test[%d] - compileBoolean() bytecode result is wrong. expected=%x, got=%x", i, test.expectedByte, bytecode.RawByte)
+		}
+
+		for n, s := range bytecode.AsmCode {
+			expected := test.expectedString[n]
+			if s != expected {
+				t.Fatalf("test[%d] - compileBoolean() asmcode result is wrong. expected=%s, got=%s", i, expected, s)
+			}
 		}
 
 		if err != nil {

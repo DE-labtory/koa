@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package translate_test
+package translate
 
-import "testing"
-
-// TODO: implement test cases :-)
-func TestCompiler_Compile(t *testing.T) {
-
+type Bytecode struct {
+	// Raw byte code like 0x10211234...
+	RawByte []byte
+	// Assemble code like Push 1 Push 2 Add 2 3 Pop ...
+	AsmCode []string
 }
