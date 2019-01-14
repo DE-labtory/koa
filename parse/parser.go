@@ -319,7 +319,7 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 
-	if token.Type != Bool {
+	if token.Type != True && token.Type != False {
 		return nil, parseError{
 			token.Type,
 			fmt.Sprintf("parseBooleanLiteral() error - %s is not bool", token.Val),

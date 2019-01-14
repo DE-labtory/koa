@@ -49,7 +49,6 @@ const (
 	Ident    // add, foobar, x, y, ...
 	Int      // 1343456
 	String   // "hello world"
-	Bool     // true, false
 	Function // func
 
 	IntType
@@ -95,7 +94,6 @@ var TokenTypeMap = map[TokenType]string{
 	Ident:  "IDENT",
 	Int:    "INT",
 	String: "STRING",
-	Bool:   "BOOL",
 
 	IntType:    "INT_TYPE",
 	StringType: "STRING_TYPE",

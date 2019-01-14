@@ -376,9 +376,9 @@ func TestParseIntegerLiteral(t *testing.T) {
 
 func TestParseBooleanLiteral(t *testing.T) {
 	tokens := []Token{
-		{Type: Bool, Val: "true"},
-		{Type: Bool, Val: "false"},
-		{Type: Bool, Val: "azzx"},
+		{Type: True, Val: "true"},
+		{Type: False, Val: "false"},
+		{Type: True, Val: "azzx"},
 		{Type: String, Val: "abcdefg"},
 	}
 	tokenBuf := mockTokenBuffer{tokens, 0}
@@ -611,7 +611,8 @@ func TestParseInfixExpression(t *testing.T) {
 }
 
 func TestParseReturnStatement(t *testing.T) {
-	prefixParseFnMap[Bool] = parseBooleanLiteral
+	prefixParseFnMap[True] = parseBooleanLiteral
+	prefixParseFnMap[False] = parseBooleanLiteral
 	prefixParseFnMap[Int] = parseIntegerLiteral
 	infixParseFnMap[Plus] = parseInfixExpression
 	infixParseFnMap[Asterisk] = parseInfixExpression
@@ -619,7 +620,7 @@ func TestParseReturnStatement(t *testing.T) {
 	bufs := [][]Token{
 		{
 			{Type: Return, Val: "return"},
-			{Type: Bool, Val: "true"},
+			{Type: True, Val: "true"},
 			{Type: Eol, Val: "\n"},
 		},
 		{
@@ -698,7 +699,7 @@ func TestParsePrefixExpression(t *testing.T) {
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: Minus, Val: "!"},
-					{Type: Bool, Val: "true"},
+					{Type: True, Val: "true"},
 					{Type: Eof}},
 				sp: 0,
 			},
@@ -708,7 +709,7 @@ func TestParsePrefixExpression(t *testing.T) {
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: Minus, Val: "!"},
-					{Type: Bool, Val: "false"},
+					{Type: False, Val: "false"},
 					{Type: Eof}},
 				sp: 0,
 			},
@@ -717,7 +718,8 @@ func TestParsePrefixExpression(t *testing.T) {
 	}
 
 	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[Bool] = parseBooleanLiteral
+	prefixParseFnMap[True] = parseBooleanLiteral
+	prefixParseFnMap[False] = parseBooleanLiteral
 
 	for i, tt := range tests {
 		exp, err := parsePrefixExpression(tt.tokenBuffer)
