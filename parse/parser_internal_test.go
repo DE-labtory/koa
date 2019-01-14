@@ -952,3 +952,210 @@ func TestParseCallArguments(t *testing.T) {
 		}
 	}
 }
+
+func TestParseAssignStatement(t *testing.T) {
+	tests := []struct {
+		tokenBuffer           TokenBuffer
+		expectedDataStructure string
+		expectedIdent         string
+		expectedVal           string
+	}{
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "hello"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"string", "val: a, type: IDENT", "\"hello\"",
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "myInt"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"int", "val: myInt, type: IDENT", "1",
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "ddd"},
+					{Type: Assign, Val: "="},
+					{Type: Bool, Val: "true"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"bool", "val: ddd, type: IDENT", "true",
+		},
+		{
+			// type mismatch tc - int ddd2 = "iam_string"
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "ddd2"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "iam_string"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"int", "val: ddd2, type: IDENT", "\"iam_string\"",
+		},
+		{
+			// type mismatch tc - bool foo = "iam_string"
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "foo"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "iam_string"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+		},
+	}
+
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[String] = parseStringLiteral
+	prefixParseFnMap[Bool] = parseBooleanLiteral
+
+	for i, tt := range tests {
+		exp, err := parseAssignStatement(tt.tokenBuffer)
+
+		if err != nil {
+			t.Errorf("tests[%d] - Returned error is \"%s\"",
+				i, err)
+		}
+
+		if exp.Type.String() != tt.expectedDataStructure {
+			t.Errorf("tests[%d] - Type is not %s but got %s",
+				i, tt.expectedDataStructure, exp.Type.String())
+		}
+
+		if exp.Variable.String() != tt.expectedIdent {
+			t.Errorf("tests[%d] - Variable is not %s but got %s",
+				i, tt.expectedIdent, exp.Variable.String())
+		}
+
+		if exp.Value.String() != tt.expectedVal {
+			t.Errorf("tests[%d] - Value is not %s but got %s",
+				i, tt.expectedVal, exp.Value.String())
+		}
+	}
+}
+
+// TestParseExpression tests strings which combine prefix and
+// infix expression
+func TestParseExpression(t *testing.T) {
+	initParseFnMap()
+	tokens := [][]Token{
+		{
+			{Type: Minus, Val: "-"},
+			{Type: Ident, Val: "a"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Ident, Val: "b"},
+			{Type: Eof},
+		},
+
+		{
+			{Type: Bang, Val: "!"},
+			{Type: Minus, Val: "-"},
+			{Type: Ident, Val: "b"},
+			{Type: Eof},
+		},
+		{
+			{Type: Minus, Val: "-"},
+			{Type: Int, Val: "33"},
+			{Type: Slash, Val: "/"},
+			{Type: Int, Val: "67"},
+			{Type: Plus, Val: "+"},
+			{Type: Ident, Val: "a"},
+			{Type: Eof},
+		},
+		{
+			{Type: Int, Val: "33"},
+			{Type: Mod, Val: "%"},
+			{Type: Minus, Val: "-"},
+			{Type: Int, Val: "67"},
+			{Type: Plus, Val: "+"},
+			{Type: Ident, Val: "a"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Ident, Val: "c"},
+			{Type: Eof},
+		},
+		{
+			{Type: Int, Val: "33"},
+			{Type: Mod, Val: "%"},
+			{Type: Lparen, Val: "("},
+			{Type: Minus, Val: "-"},
+			{Type: Int, Val: "67"},
+			{Type: Plus, Val: "+"},
+			{Type: Ident, Val: "a"},
+			{Type: Rparen, Val: ")"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Ident, Val: "c"},
+			{Type: Eof},
+		},
+		{
+			{Type: Minus, Val: "-"},
+			{Type: Int, Val: "33"},
+			{Type: Slash, Val: "/"},
+			{Type: Int, Val: "67"},
+			{Type: LT, Val: "<"},
+			{Type: Ident, Val: "a"},
+			{Type: Asterisk, Val: "*"},
+			{Type: Int, Val: "67"},
+			{Type: Eof},
+		},
+		{
+			{Type: Minus, Val: "-"},
+			{Type: Int, Val: "33"},
+			{Type: Slash, Val: "/"},
+			{Type: Int, Val: "67"},
+			{Type: GTE, Val: ">="},
+			{Type: Ident, Val: "a"},
+			{Type: Plus, Val: "+"},
+			{Type: Int, Val: "67"},
+			{Type: Mod, Val: "%"},
+			{Type: Ident, Val: "z"},
+			{Type: Eof},
+		},
+	}
+
+	tests := []struct {
+		expected string
+		err      error
+	}{
+		{"((-a) * b)", nil},
+		{"(!(-b))", nil},
+		{"(((-33) / 67) + a)", nil},
+		{"((33 % (-67)) + (a * c))", nil},
+		{"((33 % ((-67) + a)) * c)", nil},
+		{"(((-33) / 67) < (a * 67))", nil},
+		{"(((-33) / 67) >= (a + (67 % z)))", nil},
+	}
+
+	for i, tt := range tests {
+		buf := &mockTokenBuffer{tokens[i], 0}
+		exp, err := parseExpression(buf, LOWEST)
+
+		if err != nil {
+			t.Fatalf("test[%d] - parseExpression() with wrong error. expected=%s, got=%s",
+				i, tt.err, err)
+		}
+
+		if err == nil && exp.String() != tt.expected {
+			t.Fatalf("test[%d] - parseExpression() with wrong expression. expected=%s, got=%s",
+				i, tt.expected, exp.String())
+		}
+	}
+}

@@ -192,9 +192,8 @@ type PrefixExpression struct {
 
 func (pe *PrefixExpression) produce() {}
 
-// TODO: implement me w/ test cases :-)
 func (pe *PrefixExpression) String() string {
-	return ""
+	return fmt.Sprintf("(%s%s)", pe.Operator.Val, pe.Right.String())
 }
 
 // Repersent Infix expression
