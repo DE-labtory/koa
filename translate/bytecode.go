@@ -16,9 +16,37 @@
 
 package translate
 
+import (
+	"fmt"
+
+	"github.com/DE-labtory/koa/opcode"
+)
+
 type Bytecode struct {
 	// Raw byte code like 0x10211234...
 	RawByte []byte
 	// Assemble code like Push 1 Push 2 Add 2 3 Pop ...
 	AsmCode []string
+}
+
+// Emit() adds raw byte code and assemble code to Bytecode.
+// Then, returns the position of this instruction.
+// TODO: return pc position w/ test cases :-)
+func (b *Bytecode) Emit(operator opcode.Type, operands ...[]byte) (uint64, error) {
+	b.RawByte = append(b.RawByte, byte(operator))
+
+	opStr, err := operator.ToString()
+	if err != nil {
+		return 0, err
+	}
+	b.AsmCode = append(b.AsmCode, opStr)
+
+	for _, o := range operands {
+		b.RawByte = append(b.RawByte, o...)
+
+		operand := fmt.Sprintf("%x", o)
+		b.AsmCode = append(b.AsmCode, operand)
+	}
+
+	return 0, nil
 }

@@ -16,6 +16,8 @@
 
 package opcode
 
+import "errors"
+
 type Type uint8
 
 const (
@@ -153,36 +155,36 @@ const (
 	Mstore Type = 0x23
 )
 
-func (p Type) ToString() string {
+func (p Type) ToString() (string, error) {
 	switch p {
 	case 0x01:
-		return "Add"
+		return "Add", nil
 	case 0x02:
-		return "Mul"
+		return "Mul", nil
 	case 0x03:
-		return "Sub"
+		return "Sub", nil
 	case 0x04:
-		return "Div"
+		return "Div", nil
 	case 0x05:
-		return "Mod"
+		return "Mod", nil
 	case 0x10:
-		return "LT"
+		return "LT", nil
 	case 0x11:
-		return "GT"
+		return "GT", nil
 	case 0x12:
-		return "EQ"
+		return "EQ", nil
 	case 0x13:
-		return "NOT"
+		return "NOT", nil
 	case 0x20:
-		return "Pop"
+		return "Pop", nil
 	case 0x21:
-		return "Push"
+		return "Push", nil
 	case 0x22:
-		return "Mload"
+		return "Mload", nil
 	case 0x23:
-		return "Mstore"
+		return "Mstore", nil
 
 	default:
-		return ""
+		return "", errors.New("ToString() error - Not defined opcode")
 	}
 }

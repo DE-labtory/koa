@@ -21,62 +21,7 @@ import (
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
-	"github.com/DE-labtory/koa/opcode"
 )
-
-func TestCompiler_emit(t *testing.T) {
-	tests := []struct {
-		operator       opcode.Type
-		operands       [][]byte
-		expectedByte   []byte
-		expectedString []string
-	}{
-		{
-			operator: opcode.Push,
-			operands: [][]byte{
-				{0x00, 0x00, 0x00, 01},
-			},
-			expectedByte:   []byte{0x21, 0x00, 0x00, 0x00, 0x01},
-			expectedString: []string{"Push", "00000001"},
-		},
-		{
-			operator:       opcode.Pop,
-			operands:       nil,
-			expectedByte:   []byte{0x20},
-			expectedString: []string{"Pop"},
-		},
-		{
-			operator: opcode.Add,
-			operands: [][]byte{
-				{0x00, 0x00, 0x00, 0x01},
-				{0x00, 0x00, 0x00, 0x02},
-			},
-			expectedByte:   []byte{0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02},
-			expectedString: []string{"Add", "00000001", "00000002"},
-		},
-	}
-
-	for i, test := range tests {
-		bytecode := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
-			PC:      0,
-		}
-
-		emit(bytecode, test.operator, test.operands...)
-
-		if !bytes.Equal(bytecode.RawByte, test.expectedByte) {
-			t.Fatalf("test[%d] - emit() bytecode result is wrong. expected=%x, got=%x", i, test.expectedByte, bytecode.RawByte)
-		}
-
-		for n, s := range bytecode.AsmCode {
-			expected := test.expectedString[n]
-			if s != expected {
-				t.Fatalf("test[%d] - emit() asmcode result is wrong. expected=%s, got=%s", i, expected, s)
-			}
-		}
-	}
-}
 
 // TODO: implement test cases :-)
 func TestCompiler_compileNode(t *testing.T) {
@@ -127,7 +72,6 @@ func TestCompiler_compileBoolean(t *testing.T) {
 		bytecode := &Bytecode{
 			RawByte: make([]byte, 0),
 			AsmCode: make([]string, 0),
-			PC:      0,
 		}
 
 		n := test.node

@@ -18,7 +18,6 @@ package translate
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/encoding"
@@ -28,41 +27,20 @@ import (
 // Compile() compiles statements in ast.program.
 // Statements would be compiled to byte code.
 // TODO: implement w/ test cases :-)
-func Compile(program ast.Program) ([]byte, error) {
-	o := &Bytecode{
+func Compile(program ast.Program) (Bytecode, error) {
+	b := &Bytecode{
 		RawByte: make([]byte, 0),
 		AsmCode: make([]string, 0),
-		PC:      0,
 	}
 
 	for _, s := range program.Statements {
-		err := compileNode(s, o)
+		err := compileNode(s, b)
 		if err != nil {
-			return nil, err
+			return *b, err
 		}
 	}
 
-	return o.RawByte, nil
-}
-
-// emit() generates a byte code with operator and operands.
-// Then, saves the byte code and assemble code to output.
-func emit(bytecode *Bytecode, operator opcode.Type, operands ...[]byte) {
-	b := make([]byte, 0)
-	s := make([]string, 0)
-
-	b = append(b, byte(operator))
-	s = append(s, operator.ToString())
-
-	for _, o := range operands {
-		b = append(b, o...)
-
-		operand := fmt.Sprintf("%x", o)
-		s = append(s, operand)
-	}
-
-	bytecode.RawByte = append(bytecode.RawByte, b...)
-	bytecode.AsmCode = append(bytecode.AsmCode, s...)
+	return *b, nil
 }
 
 // compileNode() compiles a node in statement.
@@ -129,7 +107,11 @@ func compileBoolean(node ast.BooleanLiteral, bytecode *Bytecode) error {
 		return err
 	}
 
-	emit(bytecode, opcode.Push, operand)
+	_, err = bytecode.Emit(opcode.Push, operand)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
