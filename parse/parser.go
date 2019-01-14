@@ -160,6 +160,8 @@ var infixParseFnMap = map[TokenType]infixParseFn{}
 
 // Parse function create an abstract syntax tree
 func Parse(buf TokenBuffer) (*ast.Program, error) {
+	initParseFnMap()
+
 	prog := &ast.Program{}
 	prog.Statements = []ast.Statement{}
 
@@ -173,6 +175,31 @@ func Parse(buf TokenBuffer) (*ast.Program, error) {
 	}
 
 	return prog, nil
+}
+
+// TODO: Currently there's no parsing function for statement
+// TODO: so when complete parsing statement function, add that function
+// TODO: to the map
+func initParseFnMap() {
+	prefixParseFnMap[Ident] = parseIdentifier
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[Bang] = parsePrefixExpression
+	prefixParseFnMap[Minus] = parsePrefixExpression
+	prefixParseFnMap[True] = parseBooleanLiteral
+	prefixParseFnMap[False] = parseBooleanLiteral
+	prefixParseFnMap[Lparen] = parseGroupedExpression
+
+	infixParseFnMap[Plus] = parseInfixExpression
+	infixParseFnMap[Minus] = parseInfixExpression
+	infixParseFnMap[Asterisk] = parseInfixExpression
+	infixParseFnMap[Slash] = parseInfixExpression
+	infixParseFnMap[Mod] = parseInfixExpression
+	infixParseFnMap[EQ] = parseInfixExpression
+	infixParseFnMap[NOT_EQ] = parseInfixExpression
+	infixParseFnMap[LT] = parseInfixExpression
+	infixParseFnMap[GT] = parseInfixExpression
+	infixParseFnMap[LTE] = parseInfixExpression
+	infixParseFnMap[GTE] = parseInfixExpression
 }
 
 // TODO: implement me w/ test cases :-)
@@ -207,13 +234,13 @@ func makePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	curTok := buf.Peek(CURRENT)
 
 	fn := prefixParseFnMap[curTok.Type]
+
 	if fn == nil {
 		return nil, parseError{
 			curTok.Type,
 			"prefix parse function not defined",
 		}
 	}
-
 	exp, err := fn(buf)
 	if err != nil {
 		return nil, err
