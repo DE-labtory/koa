@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/DE-labtory/koa/opcode"
-	"github.com/stretchr/testify/assert"
 )
 
 func makeTestByteCode(slice ...interface{}) []byte {
@@ -374,7 +373,9 @@ func TestPush(t *testing.T) {
 	}
 
 	for i, item := range stack.items {
-		assert.Equal(t, testExpected[i], item)
+		if testExpected[i] != item {
+			t.Errorf("Stack item is incorrect - expected=%d, got=%d", testExpected[i], item)
+		}
 	}
 }
 
