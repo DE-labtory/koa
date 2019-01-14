@@ -229,7 +229,6 @@ func TestPeekNumber_IsValid(t *testing.T) {
 }
 
 func TestExpectNext(t *testing.T) {
-	err := errors.New("expectNext() : expecting token and next token are different")
 	tokens := []Token{
 		{Type: Int, Val: "1"},
 		{Type: Ident, Val: "ADD"},
@@ -244,35 +243,38 @@ func TestExpectNext(t *testing.T) {
 		expectedError error
 	}{
 		{
-			token:         Ident,
+			token:         Int,
 			expectedBool:  true,
 			expectedError: nil,
 		},
 		{
 			token:         Minus,
 			expectedBool:  false,
-			expectedError: err,
+			expectedError: errors.New("IDENT, expectNext() : expected [MINUS], but got [IDENT]"),
 		},
 		{
-			token:         Asterisk,
+			token:         Plus,
 			expectedBool:  true,
 			expectedError: nil,
 		},
 		{
 			token:         Rbrace,
 			expectedBool:  false,
-			expectedError: err,
+			expectedError: errors.New("ASTERISK, expectNext() : expected [RBRACE], but got [ASTERISK]"),
 		},
 	}
 
 	for i, test := range tests {
-		retBool, retError := expectNext(&tokenBuf, test.token)
-		if retBool != test.expectedBool {
+		retError := expectNext(&tokenBuf, test.token)
+		if retError != nil && retError.Error() != test.expectedError.Error() {
 			t.Fatalf("test[%d] - expectNext() result wrong.\n"+
-				"expected bool: %t, error: %d\n"+
-				"got bool: %t, error: %d", i, test.expectedBool, test.expectedError, retBool, retError)
+				"expected error: %s\n"+
+				"got error: %s", i, test.expectedError.Error(), retError.Error())
 		}
-		tokenBuf.Read()
+
+		if retError != nil {
+			tokenBuf.Read()
+		}
 	}
 }
 
@@ -354,22 +356,17 @@ func TestParseIntegerLiteral(t *testing.T) {
 	}
 
 	for i, test := range tests {
+		// For debugging
+		tokenBuf.sp = i
 		exp, err := parseIntegerLiteral(&tokenBuf)
-
-		switch err != nil {
-		case true:
-			if err.Error() != test.expectedErr.Error() {
-				t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err.Error())
-			}
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
+				i, test.expectedErr, err.Error())
 		}
 
-		switch exp != nil {
-		case true:
-			if exp.String() != test.expected.String() {
-				t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err.Error())
-			}
+		if exp != nil && exp.String() != test.expected.String() {
+			t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
+				i, test.expectedErr, err.Error())
 		}
 	}
 }
@@ -432,6 +429,8 @@ func TestParseStringLiteral(t *testing.T) {
 	}
 
 	for i, test := range tests {
+		// For debbuging
+		tokenBuf.sp = i
 		exp, err := parseStringLiteral(&tokenBuf)
 
 		switch err != nil {
@@ -643,7 +642,7 @@ func TestParseGroupedExpression(t *testing.T) {
 		"(2 + 1)",
 		"(a + (1 - 2))",
 		"((a + (1 - 2)) + 3)",
-		"RBRACE, is not Right paren",
+		"RBRACE, expectNext() : expected [RPAREN], but got [RBRACE]",
 	}
 
 	for i, test := range tests {
@@ -651,12 +650,16 @@ func TestParseGroupedExpression(t *testing.T) {
 		exp, err := parseGroupedExpression(&mockBuf)
 
 		if err != nil && err.Error() != test {
-			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong error.\n"+
+				"expected=%s,\n"+
+				"got=%s",
 				i, test, err.Error())
 		}
 
 		if exp != nil && exp.String() != test {
-			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong answer. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong answer.\n"+
+				"expected=%s,\n"+
+				"got=%s",
 				i, test, exp.String())
 		}
 	}
@@ -703,19 +706,23 @@ func TestParseReturnStatement(t *testing.T) {
 		"return true",
 		"return (1 + 2)",
 		"return (1 + (2 * 3))",
-		"INT_TYPE, parseReturnStatement() error - Statement must be started with return",
+		"INT_TYPE, expectNext() : expected [RETURN], but got [INT_TYPE]",
 	}
 
 	for i, test := range tests {
 		mockBufs := mockTokenBuffer{bufs[i], 0}
 		exp, err := parseReturnStatement(&mockBufs)
 		if err != nil && err.Error() != test {
-			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error.\n"+
+				"expected=%s,\n"+
+				"got=%s",
 				i, test, err.Error())
 		}
 
 		if exp != nil && exp.String() != test {
-			t.Fatalf("test[%d] - TestParseReturnStatement() wrong result. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseReturnStatement() wrong result.\n"+
+				"expected=%s,\n"+
+				"got=%s",
 				i, test, exp.String())
 		}
 	}

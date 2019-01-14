@@ -114,16 +114,17 @@ func nextTokenIs(buf TokenBuffer, t TokenType) bool {
 // ExpectNext helps to check whether next token is
 // type of token we want, and if true then return it
 // otherwise return with error
-func expectNext(buf TokenBuffer, t TokenType) (bool, error) {
-	nextType := buf.Peek(NEXT).Type
+func expectNext(buf TokenBuffer, t TokenType) error {
+	nextType := buf.Peek(CURRENT).Type
 	if nextType != t {
-		return false, parseError{
+		return parseError{
 			nextType,
 			fmt.Sprintf("expectNext() : expected [%s], but got [%s]",
 				TokenTypeMap[t], TokenTypeMap[nextType]),
 		}
 	}
-	return true, nil
+	buf.Read()
+	return nil
 }
 
 func curPrecedence(buf TokenBuffer) precedence {
@@ -291,8 +292,8 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 			Val:  ast.OperatorVal(curTok.Val),
 		},
 	}
-	precedence := precedenceMap[curTok.Type]
 
+	precedence := precedenceMap[curTok.Type]
 	expression.Right, err = parseExpression(buf, precedence)
 	if err != nil {
 		return nil, err
@@ -322,7 +323,6 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 
 func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-
 	if token.Type != Ident {
 		return nil, parseError{
 			token.Type,
@@ -334,7 +334,6 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 
 func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-
 	if token.Type != Int {
 		return nil, parseError{
 			token.Type,
@@ -353,7 +352,6 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-
 	if token.Type != True && token.Type != False {
 		return nil, parseError{
 			token.Type,
@@ -372,7 +370,6 @@ func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 
 func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-
 	if token.Type != String {
 		return nil, parseError{
 			token.Type,
@@ -384,12 +381,8 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 }
 
 func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
-	token := buf.Read()
-	if token.Type != Return {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("parseReturnStatement() error - Statement must be started with return"),
-		}
+	if err := expectNext(buf, Return); err != nil {
+		return nil, err
 	}
 
 	stmt := &ast.ReturnStatement{}
@@ -411,14 +404,10 @@ func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
 		return nil, err
 	}
 
-	tok := buf.Read()
-	if tok.Type != Rparen {
-		err := parseError{
-			tok.Type,
-			fmt.Sprintf("is not Right paren"),
-		}
+	if err = expectNext(buf, Rparen); err != nil {
 		return nil, err
 	}
+
 	return exp, nil
 }
 
