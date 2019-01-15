@@ -28,7 +28,7 @@ func TestAssignStatement_String(t *testing.T) {
 			input: AssignStatement{
 				Type:     StringType,
 				Variable: Identifier{Value: "ff"},
-				Value:    &BooleanLiteral{Type: True},
+				Value:    &BooleanLiteral{Value: true},
 			},
 			// type mismatch is not considered here
 			expected: "string ff = true",
@@ -134,11 +134,11 @@ func TestBooleanLiteral_String(t *testing.T) {
 		expected string
 	}{
 		{
-			BooleanLiteral{True},
+			BooleanLiteral{true},
 			"true",
 		},
 		{
-			BooleanLiteral{False},
+			BooleanLiteral{false},
 			"false",
 		},
 	}
@@ -152,6 +152,6 @@ func TestBooleanLiteral_String(t *testing.T) {
 func testString(t *testing.T, got, expected string) {
 	t.Helper()
 	if got != expected {
-		t.Errorf("String() wrong result. expected=\"%s\", got=\"%s\"", expected, got)
+		t.Errorf(`String() wrong result. expected="%s", got="%s"`, expected, got)
 	}
 }

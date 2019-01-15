@@ -25,7 +25,7 @@ import (
 
 // OperatorTypeMap maps TokenType with OperatorType by doing this
 // we can remove dependency for token's string value
-var operatorTypeMap = map[TokenType]ast.OperatorType{
+var operatorMap = map[TokenType]ast.Operator{
 	Plus:     ast.Plus,
 	Minus:    ast.Minus,
 	Bang:     ast.Bang,
@@ -44,11 +44,6 @@ var datastructureMap = map[TokenType]ast.DataStructure{
 	IntType:    ast.IntType,
 	StringType: ast.StringType,
 	BoolType:   ast.BoolType,
-}
-
-var booleanTypeMap = map[TokenType]ast.BooleanType{
-	False: ast.False,
-	True:  ast.True,
 }
 
 type precedence int
@@ -297,11 +292,8 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 	curTok := buf.Read()
 
 	expression := &ast.InfixExpression{
-		Left: left,
-		Operator: ast.Operator{
-			Type: operatorTypeMap[curTok.Type],
-			Val:  ast.OperatorVal(curTok.Val),
-		},
+		Left:     left,
+		Operator: operatorMap[curTok.Type],
 	}
 
 	precedence := precedenceMap[curTok.Type]
@@ -318,10 +310,7 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	tok := buf.Read()
 
 	exp := &ast.PrefixExpression{
-		Operator: ast.Operator{
-			Type: operatorTypeMap[tok.Type],
-			Val:  ast.OperatorVal(tok.Val),
-		},
+		Operator: operatorMap[tok.Type],
 	}
 
 	exp.Right, err = parseExpression(buf, PREFIX)
@@ -364,20 +353,19 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 
-	tokType, ok := booleanTypeMap[token.Type]
-	if !ok {
+	if token.Type != True && token.Type != False {
 		return nil, parseError{
 			token.Type,
 			fmt.Sprintf("parseBooleanLiteral() error - %s is not bool", token.Val),
 		}
 	}
 
-	_, err := strconv.ParseBool(token.Val)
+	val, err := strconv.ParseBool(token.Val)
 	if err != nil {
 		return nil, err
 	}
 
-	lit := &ast.BooleanLiteral{Type: tokType}
+	lit := &ast.BooleanLiteral{Value: val}
 	return lit, nil
 }
 
