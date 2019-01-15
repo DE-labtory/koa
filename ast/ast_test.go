@@ -28,7 +28,7 @@ func TestAssignStatement_String(t *testing.T) {
 			input: AssignStatement{
 				Type:     StringType,
 				Variable: Identifier{Value: "ff"},
-				Value:    &BooleanLiteral{Value: true},
+				Value:    &BooleanLiteral{Type: True},
 			},
 			// type mismatch is not considered here
 			expected: "string ff = true",
@@ -134,11 +134,11 @@ func TestBooleanLiteral_String(t *testing.T) {
 		expected string
 	}{
 		{
-			BooleanLiteral{true},
+			BooleanLiteral{True},
 			"true",
 		},
 		{
-			BooleanLiteral{false},
+			BooleanLiteral{False},
 			"false",
 		},
 	}

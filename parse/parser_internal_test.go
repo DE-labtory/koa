@@ -383,8 +383,8 @@ func TestParseBooleanLiteral(t *testing.T) {
 		expected    *ast.BooleanLiteral
 		expectedErr error
 	}{
-		{expected: &ast.BooleanLiteral{Value: true}, expectedErr: nil},
-		{expected: &ast.BooleanLiteral{Value: false}, expectedErr: nil},
+		{expected: &ast.BooleanLiteral{ast.True}, expectedErr: nil},
+		{expected: &ast.BooleanLiteral{ast.False}, expectedErr: nil},
 		{expected: nil, expectedErr: errors.New("strconv.ParseBool: parsing \"azzx\": invalid syntax")},
 		{expected: nil, expectedErr: errors.New("STRING, parseBooleanLiteral() error - abcdefg is not bool")},
 	}
@@ -392,20 +392,19 @@ func TestParseBooleanLiteral(t *testing.T) {
 	for i, test := range tests {
 		exp, err := parseBooleanLiteral(&tokenBuf)
 
-		switch err != nil {
-		case true:
-			if err.Error() != test.expectedErr.Error() {
-				t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong error. expected=%s, got=%s",
-					i, test.expectedErr, err.Error())
-			}
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong error. expected=\"%s\", got=\"%s\"",
+				i, test.expectedErr.Error(), err.Error())
 		}
 
-		switch exp != nil {
-		case true:
-			if exp.String() != test.expected.String() {
-				t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong result. expected=%s, got=%s",
-					i, test.expected, exp.String())
-			}
+		lit, ok := exp.(*ast.BooleanLiteral)
+		if err == nil && !ok {
+			t.Fatalf("test[%d] - TestParseBooleanLiteral() returned expression is not *ast.BooleanLiteral", i)
+		}
+
+		if err == nil && lit.String() != test.expected.String() {
+			t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong result. expected=%s, got=%s",
+				i, test.expected, lit.String())
 		}
 	}
 }
