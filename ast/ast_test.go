@@ -9,7 +9,7 @@ func TestAssignStatement_String(t *testing.T) {
 	}{
 		{
 			input: AssignStatement{
-				Type:     DataStructure{Type: DataStructureType(0), Val: "int"},
+				Type:     IntType,
 				Variable: Identifier{Value: "a"},
 				Value:    &IntegerLiteral{Value: 1},
 			},
@@ -17,7 +17,7 @@ func TestAssignStatement_String(t *testing.T) {
 		},
 		{
 			input: AssignStatement{
-				Type:     DataStructure{Type: DataStructureType(0), Val: "bool"},
+				Type:     BoolType,
 				Variable: Identifier{Value: "asdf"},
 				Value:    &StringLiteral{Value: "hello, world"},
 			},
@@ -26,7 +26,7 @@ func TestAssignStatement_String(t *testing.T) {
 		},
 		{
 			input: AssignStatement{
-				Type:     DataStructure{Type: DataStructureType(0), Val: "string"},
+				Type:     StringType,
 				Variable: Identifier{Value: "ff"},
 				Value:    &BooleanLiteral{Value: true},
 			},
@@ -75,8 +75,8 @@ func TestIdentifier_String(t *testing.T) {
 }
 
 func TestStringLiteral_String(t *testing.T) {
-	tests := []struct{
-		input StringLiteral
+	tests := []struct {
+		input    StringLiteral
 		expected string
 	}{
 		{
@@ -108,8 +108,8 @@ func TestStringLiteral_String(t *testing.T) {
 }
 
 func TestIntegerLiteral_String(t *testing.T) {
-	tests := []struct{
-		input IntegerLiteral
+	tests := []struct {
+		input    IntegerLiteral
 		expected string
 	}{
 		{
@@ -129,8 +129,8 @@ func TestIntegerLiteral_String(t *testing.T) {
 }
 
 func TestBooleanLiteral_String(t *testing.T) {
-	tests := []struct{
-		input BooleanLiteral
+	tests := []struct {
+		input    BooleanLiteral
 		expected string
 	}{
 		{

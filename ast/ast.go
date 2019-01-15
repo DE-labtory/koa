@@ -76,18 +76,18 @@ const (
 )
 
 var OperatorTypeMap = map[OperatorType]string{
-	Plus:     "PLUS",
-	Minus:    "MINUS",
-	Bang:     "BANG",
-	Asterisk: "ASTERISK",
-	Slash:    "SLASH",
-	Mod:      "MOD",
-	LT:       "LT",
-	GT:       "GT",
-	LTE:      "LTE",
-	GTE:      "GTE",
-	EQ:       "EQ",
-	NOT_EQ:   "NOT_EQ",
+	Plus:     "+",
+	Minus:    "-",
+	Bang:     "!",
+	Asterisk: "*",
+	Slash:    "/",
+	Mod:      "%",
+	LT:       "<",
+	GT:       ">",
+	LTE:      "<=",
+	GTE:      ">=",
+	EQ:       "==",
+	NOT_EQ:   "!=",
 }
 
 type OperatorVal string
@@ -102,40 +102,25 @@ func (o Operator) String() string {
 	return string(o.Val)
 }
 
-type DataStructureType int
-
-func (dst DataStructureType) String() string {
-	return DataStructureTypeMap[dst]
-}
-
 const (
-	_ DataStructureType = iota
-	Int
-	String
-	Bool
+	_ DataStructure = iota
+	IntType
+	StringType
+	BoolType
 )
 
-var DataStructureTypeMap = map[DataStructureType]string{
-	Int:    "INT",
-	String: "STRING",
-	Bool:   "BOOL",
-}
-
-type DataStructureVal string
-
-func (dsv DataStructureVal) String() string {
-	return string(dsv)
+var DataStructureMap = map[DataStructure]string{
+	IntType:    "int",
+	StringType: "string",
+	BoolType:   "bool",
 }
 
 // DataStructure represent identifier's data structure
 // e.g. string, int, bool
-type DataStructure struct {
-	Type DataStructureType
-	Val  DataStructureVal
-}
+type DataStructure int
 
-func (ds *DataStructure) String() string {
-	return ds.Val.String()
+func (ds DataStructure) String() string {
+	return DataStructureMap[ds]
 }
 
 // Represent assign statement

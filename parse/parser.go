@@ -40,6 +40,12 @@ var operatorTypeMap = map[TokenType]ast.OperatorType{
 	NOT_EQ:   ast.NOT_EQ,
 }
 
+var datastructureMap = map[TokenType]ast.DataStructure{
+	IntType:    ast.IntType,
+	StringType: ast.StringType,
+	BoolType:   ast.BoolType,
+}
+
 type precedence int
 
 const (
@@ -415,17 +421,9 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	stmt := &ast.AssignStatement{}
 
 	tok := buf.Read()
-	if !isDataStructure(tok) {
-		return nil, parseError{
-			tok.Type,
-			"token is not data structure type",
-		}
-	}
 
-	stmt.Type = ast.DataStructure{
-		Type: ast.DataStructureType(tok.Type),
-		Val:  ast.DataStructureVal(tok.Val),
-	}
+	ds := datastructureMap[tok.Type]
+	stmt.Type = ds
 
 	tok = buf.Read()
 	if tok.Type != Ident {
@@ -439,9 +437,9 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 		Value: tok.String(),
 	}
 
-	if buf.Read().Type != Assign {
+	if assign := buf.Read(); assign.Type != Assign {
 		return nil, parseError{
-			tok.Type,
+			assign.Type,
 			"token is not assign",
 		}
 	}
@@ -489,12 +487,6 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 		args = append(args, exp)
 	}
 	return args, nil
-}
-
-func isDataStructure(tok Token) bool {
-	return tok.Type == StringType ||
-		tok.Type == IntType ||
-		tok.Type == BoolType
 }
 
 func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {

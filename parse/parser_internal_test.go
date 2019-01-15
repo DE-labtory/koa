@@ -968,6 +968,7 @@ func TestParseAssignStatement(t *testing.T) {
 		expectedDataStructure string
 		expectedIdent         string
 		expectedVal           string
+		expectedErr           error
 	}{
 		{
 			&mockTokenBuffer{
@@ -980,6 +981,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"string", "val: a, type: IDENT", "\"hello\"",
+			nil,
 		},
 		{
 			&mockTokenBuffer{
@@ -992,6 +994,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"int", "val: myInt, type: IDENT", "1",
+			nil,
 		},
 		{
 			&mockTokenBuffer{
@@ -1004,6 +1007,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool", "val: ddd, type: IDENT", "true",
+			nil,
 		},
 		{
 			// type mismatch tc - int ddd2 = "iam_string"
@@ -1017,6 +1021,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"int", "val: ddd2, type: IDENT", "\"iam_string\"",
+			nil,
 		},
 		{
 			// type mismatch tc - bool foo = "iam_string"
@@ -1030,6 +1035,32 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: String, Val: "foo"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "iam_string"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+			parseError{String, "token is not identifier"},
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "foo"},
+					{Type: String, Val: "iam_string"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+			parseError{String, "token is not assign"},
 		},
 	}
 
@@ -1041,22 +1072,22 @@ func TestParseAssignStatement(t *testing.T) {
 	for i, tt := range tests {
 		exp, err := parseAssignStatement(tt.tokenBuffer)
 
-		if err != nil {
-			t.Errorf("tests[%d] - Returned error is \"%s\"",
-				i, err)
+		if err != nil && err != tt.expectedErr {
+			t.Errorf("tests[%d] - Returned err is not \"%s\", but got \"%s\"",
+				i, tt.expectedErr.Error(), err.Error())
 		}
 
-		if exp.Type.String() != tt.expectedDataStructure {
+		if err == nil && exp.Type.String() != tt.expectedDataStructure {
 			t.Errorf("tests[%d] - Type is not %s but got %s",
 				i, tt.expectedDataStructure, exp.Type.String())
 		}
 
-		if exp.Variable.String() != tt.expectedIdent {
+		if err == nil && exp.Variable.String() != tt.expectedIdent {
 			t.Errorf("tests[%d] - Variable is not %s but got %s",
 				i, tt.expectedIdent, exp.Variable.String())
 		}
 
-		if exp.Value.String() != tt.expectedVal {
+		if err == nil && exp.Value.String() != tt.expectedVal {
 			t.Errorf("tests[%d] - Value is not %s but got %s",
 				i, tt.expectedVal, exp.Value.String())
 		}
