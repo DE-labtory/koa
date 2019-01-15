@@ -4,8 +4,8 @@ import "testing"
 
 func TestAssignStatement_String(t *testing.T) {
 	tests := []struct {
-		input  AssignStatement
-		expect string
+		input    AssignStatement
+		expected string
 	}{
 		{
 			input: AssignStatement{
@@ -13,7 +13,7 @@ func TestAssignStatement_String(t *testing.T) {
 				Variable: Identifier{Value: "a"},
 				Value:    &IntegerLiteral{Value: 1},
 			},
-			expect: "int a = 1",
+			expected: "int a = 1",
 		},
 		{
 			input: AssignStatement{
@@ -22,7 +22,7 @@ func TestAssignStatement_String(t *testing.T) {
 				Value:    &StringLiteral{Value: "hello, world"},
 			},
 			// type mismatch is not considered here
-			expect: "bool asdf = \"hello, world\"",
+			expected: "bool asdf = \"hello, world\"",
 		},
 		{
 			input: AssignStatement{
@@ -31,14 +31,127 @@ func TestAssignStatement_String(t *testing.T) {
 				Value:    &BooleanLiteral{Value: true},
 			},
 			// type mismatch is not considered here
-			expect: "string ff = true",
+			expected: "string ff = true",
 		},
 	}
 
-	for i, tt := range tests {
+	for _, tt := range tests {
 		result := tt.input.String()
-		if result != tt.expect {
-			t.Errorf("test[%d] - String() wrong result. expected=\"%s\", got=\"%s\"", i, tt.expect, result)
-		}
+		testString(t, result, tt.expected)
+	}
+}
+
+func TestIdentifier_String(t *testing.T) {
+	tests := []struct {
+		input    Identifier
+		expected string
+	}{
+		{
+			input:    Identifier{Value: "a"},
+			expected: "a",
+		},
+		{
+			input:    Identifier{Value: "zcf"},
+			expected: "zcf",
+		},
+		{
+			input:    Identifier{Value: "zcf asdf"},
+			expected: "zcf asdf",
+		},
+		{
+			input:    Identifier{Value: "123"},
+			expected: "123",
+		},
+		{
+			input:    Identifier{Value: ""},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
+func TestStringLiteral_String(t *testing.T) {
+	tests := []struct{
+		input StringLiteral
+		expected string
+	}{
+		{
+			StringLiteral{"hello"},
+			"\"hello\"",
+		},
+		{
+			StringLiteral{"hello, world"},
+			"\"hello, world\"",
+		},
+		{
+			StringLiteral{"123"},
+			"\"123\"",
+		},
+		{
+			StringLiteral{"123, hello"},
+			"\"123, hello\"",
+		},
+		{
+			StringLiteral{""},
+			"\"\"",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
+func TestIntegerLiteral_String(t *testing.T) {
+	tests := []struct{
+		input IntegerLiteral
+		expected string
+	}{
+		{
+			IntegerLiteral{Value: 123},
+			"123",
+		},
+		{
+			IntegerLiteral{Value: -1},
+			"-1",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
+func TestBooleanLiteral_String(t *testing.T) {
+	tests := []struct{
+		input BooleanLiteral
+		expected string
+	}{
+		{
+			BooleanLiteral{true},
+			"true",
+		},
+		{
+			BooleanLiteral{false},
+			"false",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
+func testString(t *testing.T, got, expected string) {
+	t.Helper()
+	if got != expected {
+		t.Errorf("String() wrong result. expected=\"%s\", got=\"%s\"", expected, got)
 	}
 }
