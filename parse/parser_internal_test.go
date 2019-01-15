@@ -350,7 +350,7 @@ func TestParseIntegerLiteral(t *testing.T) {
 	}{
 		{expected: &ast.IntegerLiteral{Value: 12}, expectedErr: nil},
 		{expected: &ast.IntegerLiteral{Value: 55}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New("strconv.ParseInt: parsing \"a\": invalid syntax")},
+		{expected: nil, expectedErr: errors.New(`strconv.ParseInt: parsing "a": invalid syntax`)},
 		{expected: nil, expectedErr: errors.New("STRING, parseIntegerLiteral() error - abcdefg is not integer")},
 		{expected: &ast.IntegerLiteral{Value: -13}, expectedErr: nil},
 	}
@@ -383,9 +383,9 @@ func TestParseBooleanLiteral(t *testing.T) {
 		expected    *ast.BooleanLiteral
 		expectedErr error
 	}{
-		{expected: &ast.BooleanLiteral{ast.True}, expectedErr: nil},
-		{expected: &ast.BooleanLiteral{ast.False}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New("strconv.ParseBool: parsing \"azzx\": invalid syntax")},
+		{expected: &ast.BooleanLiteral{true}, expectedErr: nil},
+		{expected: &ast.BooleanLiteral{false}, expectedErr: nil},
+		{expected: nil, expectedErr: errors.New(`strconv.ParseBool: parsing "azzx": invalid syntax`)},
 		{expected: nil, expectedErr: errors.New("STRING, parseBooleanLiteral() error - abcdefg is not bool")},
 	}
 
@@ -393,7 +393,7 @@ func TestParseBooleanLiteral(t *testing.T) {
 		exp, err := parseBooleanLiteral(&tokenBuf)
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong error. expected=\"%s\", got=\"%s\"",
+			t.Fatalf(`test[%d] - TestParseBooleanLiteral() wrong error. expected="%s", got="%s"`,
 				i, test.expectedErr.Error(), err.Error())
 		}
 
@@ -403,7 +403,7 @@ func TestParseBooleanLiteral(t *testing.T) {
 		}
 
 		if err == nil && lit.String() != test.expected.String() {
-			t.Fatalf("test[%d] - TestParseBooleanLiteral() wrong result. expected=%s, got=%s",
+			t.Fatalf(`test[%d] - TestParseBooleanLiteral() wrong result. expected="%s", got="%s"`,
 				i, test.expected, lit.String())
 		}
 	}
@@ -509,7 +509,7 @@ func TestMakeInfixExpression(t *testing.T) {
 			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
 		{{Type: Asterisk, Val: "*"}, {Type: Int, Val: "242"}, {Type: Plus, Val: "+"},
 			{Type: Int, Val: "312"}, {Type: Eof, Val: ""}},
-		{{Type: Asterisk, Val: "-"}, {Type: Int, Val: "15"}, {Type: Plus, Val: "-"},
+		{{Type: Minus, Val: "-"}, {Type: Int, Val: "15"}, {Type: Minus, Val: "-"},
 			{Type: Int, Val: "55"}, {Type: Eof, Val: ""}},
 		{{Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
 			{Type: Int, Val: "3"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "4"}, {Type: Eof, Val: ""}},
@@ -549,10 +549,10 @@ func TestMakeInfixExpression(t *testing.T) {
 
 	for i, test := range tests {
 		buf := mockTokenBuffer{bufs[i], 0}
-
 		//exp, _ := makePrefixExpression(&buf)
 		prefix := prefixes[i]
 		exp, err := makeInfixExpression(&buf, &prefix, LOWEST)
+
 		if err != nil && test.expected != err.Error() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
 				i, test.expected, err.Error())
@@ -570,7 +570,7 @@ func TestParseInfixExpression(t *testing.T) {
 			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
 		{{Type: Int, Val: "121"}, {Type: Asterisk, Val: "*"}, {Type: Int, Val: "242"}, {Type: Plus, Val: "+"},
 			{Type: Int, Val: "312"}, {Type: Eof, Val: ""}},
-		{{Type: Int, Val: "-10"}, {Type: Asterisk, Val: "-"}, {Type: Int, Val: "15"}, {Type: Plus, Val: "-"},
+		{{Type: Int, Val: "-10"}, {Type: Asterisk, Val: "*"}, {Type: Int, Val: "15"}, {Type: Plus, Val: "+"},
 			{Type: Int, Val: "55"}, {Type: Eof, Val: ""}},
 		{{Type: Int, Val: "1"}, {Type: Plus, Val: "+"}, {Type: Plus, Val: "+"}, {Type: Eof, Val: ""}},
 	}
@@ -584,7 +584,7 @@ func TestParseInfixExpression(t *testing.T) {
 	}{
 		{expected: "(1 + (2 * 3))"},
 		{expected: "(121 * 242)"},
-		{expected: "(-10 - 15)"},
+		{expected: "(-10 * 15)"},
 		{expected: mockError.Error()},
 	}
 
@@ -756,7 +756,7 @@ func TestParsePrefixExpression(t *testing.T) {
 		{
 			&mockTokenBuffer{
 				buf: []Token{
-					{Type: Minus, Val: "!"},
+					{Type: Bang, Val: "!"},
 					{Type: True, Val: "true"},
 					{Type: Eof}},
 				sp: 0,
@@ -766,7 +766,7 @@ func TestParsePrefixExpression(t *testing.T) {
 		{
 			&mockTokenBuffer{
 				buf: []Token{
-					{Type: Minus, Val: "!"},
+					{Type: Bang, Val: "!"},
 					{Type: False, Val: "false"},
 					{Type: Eof}},
 				sp: 0,
@@ -782,7 +782,7 @@ func TestParsePrefixExpression(t *testing.T) {
 	for i, tt := range tests {
 		exp, err := parsePrefixExpression(tt.tokenBuffer)
 		if err != nil {
-			t.Errorf("tests[%d] - Returned error is \"%s\"",
+			t.Errorf(`tests[%d] - Returned error is "%s"`,
 				i, err)
 		}
 
@@ -852,11 +852,11 @@ func TestParseCallExpression(t *testing.T) {
 	}{
 		{
 			function: &ast.StringLiteral{Value: "add"},
-			expected: "function \"add\"( (1 + 2) )",
+			expected: `function "add"( (1 + 2) )`,
 		},
 		{
 			function: &ast.StringLiteral{Value: "testFunc"},
-			expected: "function \"testFunc\"( \"a\", \"b\", 5 )",
+			expected: `function "testFunc"( "a", "b", 5 )`,
 		},
 		{
 			function: &ast.StringLiteral{Value: "errorFunc"},
@@ -864,7 +864,7 @@ func TestParseCallExpression(t *testing.T) {
 		},
 		{
 			function: &ast.StringLiteral{Value: "complexFunc"},
-			expected: "function \"complexFunc\"( (\"a\" + \"b\"), (5 * 3) )",
+			expected: `function "complexFunc"( ("a" + "b"), (5 * 3) )`,
 		},
 	}
 
@@ -933,10 +933,10 @@ func TestParseCallArguments(t *testing.T) {
 		},
 	}
 	tests := []string{
-		"function \"testFunction\"(  )",
-		"function \"testFunction\"( 1 )",
-		"function \"testFunction\"( \"a\", \"b\", 5 )",
-		"function \"testFunction\"( (\"a\" + \"b\"), (5 * 3) )",
+		`function "testFunction"(  )`,
+		`function "testFunction"( 1 )`,
+		`function "testFunction"( "a", "b", 5 )`,
+		`function "testFunction"( ("a" + "b"), (5 * 3) )`,
 		"ASTERISK, prefix parse function not defined",
 		"ASTERISK, prefix parse function not defined",
 	}
@@ -979,7 +979,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"string", "val: a, type: IDENT", "\"hello\"",
+			"string", "val: a, type: IDENT", `"hello"`,
 			nil,
 		},
 		{
@@ -1019,7 +1019,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"int", "val: ddd2, type: IDENT", "\"iam_string\"",
+			"int", "val: ddd2, type: IDENT", `"iam_string"`,
 			nil,
 		},
 		{
@@ -1033,7 +1033,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+			"bool", "val: foo, type: IDENT", `"iam_string"`,
 			nil,
 		},
 		{
@@ -1046,7 +1046,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+			"bool", "val: foo, type: IDENT", `"iam_string"`,
 			parseError{String, "token is not identifier"},
 		},
 		{
@@ -1058,7 +1058,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: foo, type: IDENT", "\"iam_string\"",
+			"bool", "val: foo, type: IDENT", `"iam_string"`,
 			parseError{String, "token is not assign"},
 		},
 	}
@@ -1072,7 +1072,7 @@ func TestParseAssignStatement(t *testing.T) {
 		exp, err := parseAssignStatement(tt.tokenBuffer)
 
 		if err != nil && err != tt.expectedErr {
-			t.Errorf("tests[%d] - Returned err is not \"%s\", but got \"%s\"",
+			t.Errorf(`tests[%d] - Returned err is not "%s", but got "%s"`,
 				i, tt.expectedErr.Error(), err.Error())
 		}
 
@@ -1244,7 +1244,7 @@ func TestParseIfStatement(t *testing.T) {
 
 	tests := []string{
 		"if ( true ) { int val: a, type: IDENT = 0 }",
-		"if ( (a == 5) ) { int val: a, type: IDENT = 1 } else { string val: b, type: IDENT = \"example\" }",
+		`if ( (a == 5) ) { int val: a, type: IDENT = 1 } else { string val: b, type: IDENT = "example" }`,
 		"INT_TYPE, is not a If",
 		"INT_TYPE, is not a Left brace",
 		"RBRACE, is not a Right paren",
@@ -1293,8 +1293,8 @@ func TestParseBlockStatement(t *testing.T) {
 	}
 	tests := []string{
 		"int val: a, type: IDENT = 0",
-		"int val: a, type: IDENT = 0/string val: b, type: IDENT = \"abc\"",
-		"int val: a, type: IDENT = 0/string val: b, type: IDENT = \"abc\"/bool val: c, type: IDENT = true",
+		`int val: a, type: IDENT = 0/string val: b, type: IDENT = "abc"`,
+		`int val: a, type: IDENT = 0/string val: b, type: IDENT = "abc"/bool val: c, type: IDENT = true`,
 	}
 
 	for i, test := range tests {

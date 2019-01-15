@@ -57,25 +57,26 @@ func (i *Identifier) String() string {
 
 func (i *Identifier) produce() {}
 
-type OperatorType int
+// Operator represent operator between expression
+type Operator int
 
 const (
-	_        OperatorType = iota
-	Plus                  // +
-	Minus                 // -
-	Bang                  // !
-	Asterisk              // *
-	Slash                 // /
-	Mod                   // %
-	LT                    // <
-	GT                    // >
-	LTE                   // <=
-	GTE                   // >=
-	EQ                    // ==
-	NOT_EQ                // !=
+	_        Operator = iota
+	Plus              // +
+	Minus             // -
+	Bang              // !
+	Asterisk          // *
+	Slash             // /
+	Mod               // %
+	LT                // <
+	GT                // >
+	LTE               // <=
+	GTE               // >=
+	EQ                // ==
+	NOT_EQ            // !=
 )
 
-var OperatorTypeMap = map[OperatorType]string{
+var OperatorMap = map[Operator]string{
 	Plus:     "+",
 	Minus:    "-",
 	Bang:     "!",
@@ -90,16 +91,8 @@ var OperatorTypeMap = map[OperatorType]string{
 	NOT_EQ:   "!=",
 }
 
-type OperatorVal string
-
-// Operator represent operator between expression
-type Operator struct {
-	Type OperatorType
-	Val  OperatorVal
-}
-
 func (o Operator) String() string {
-	return string(o.Val)
+	return OperatorMap[o]
 }
 
 // DataStructure represent identifier's data structure
@@ -132,7 +125,6 @@ type AssignStatement struct {
 
 func (as *AssignStatement) do() {}
 
-// TODO: implement me w/ test cases :-)
 func (as *AssignStatement) String() string {
 	var out bytes.Buffer
 
@@ -208,27 +200,15 @@ func (il *IntegerLiteral) String() string {
 	return strconv.FormatInt(il.Value, 10)
 }
 
-type BooleanType int
-
-const (
-	False BooleanType = iota
-	True
-)
-
-var BooleanTypeMap = map[BooleanType]string{
-	False: "false",
-	True:  "true",
-}
-
 // Represent Boolean expression
 type BooleanLiteral struct {
-	Type BooleanType
+	Value bool
 }
 
 func (bl *BooleanLiteral) produce() {}
 
 func (bl *BooleanLiteral) String() string {
-	return BooleanTypeMap[bl.Type]
+	return strconv.FormatBool(bl.Value)
 }
 
 // Represent prefix expression
@@ -240,7 +220,7 @@ type PrefixExpression struct {
 func (pe *PrefixExpression) produce() {}
 
 func (pe *PrefixExpression) String() string {
-	return fmt.Sprintf("(%s%s)", pe.Operator.Val, pe.Right.String())
+	return fmt.Sprintf("(%s%s)", pe.Operator.String(), pe.Right.String())
 }
 
 // Repersent Infix expression
@@ -253,7 +233,7 @@ type InfixExpression struct {
 func (ie *InfixExpression) produce() {}
 
 func (ie *InfixExpression) String() string {
-	return fmt.Sprintf("(%s %s %s)", ie.Left.String(), string(ie.Operator.Val), ie.Right.String())
+	return fmt.Sprintf("(%s %s %s)", ie.Left.String(), ie.Operator.String(), ie.Right.String())
 }
 
 // Represent Call expression
