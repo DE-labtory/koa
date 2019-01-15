@@ -11,7 +11,7 @@ This project is inspired by [the simplicity](https://blockstream.com/simplicity.
 
 The koa project is to create a high-level language that has `more expressions` than the bitcoin script.
 
-### Contents
+## Contents
 
 * [Lexical analysis](#lexical-analysis)
 * [Syntax analysis](#syntax-analysis)
