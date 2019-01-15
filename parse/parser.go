@@ -46,6 +46,11 @@ var datastructureMap = map[TokenType]ast.DataStructure{
 	BoolType:   ast.BoolType,
 }
 
+var booleanTypeMap = map[TokenType]ast.BooleanType{
+	False: ast.False,
+	True:  ast.True,
+}
+
 type precedence int
 
 const (
@@ -358,19 +363,21 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-	if token.Type != True && token.Type != False {
+
+	tokType, ok := booleanTypeMap[token.Type]
+	if !ok {
 		return nil, parseError{
 			token.Type,
 			fmt.Sprintf("parseBooleanLiteral() error - %s is not bool", token.Val),
 		}
 	}
 
-	value, err := strconv.ParseBool(token.Val)
+	_, err := strconv.ParseBool(token.Val)
 	if err != nil {
 		return nil, err
 	}
 
-	lit := &ast.BooleanLiteral{Value: value}
+	lit := &ast.BooleanLiteral{Type: tokType}
 	return lit, nil
 }
 

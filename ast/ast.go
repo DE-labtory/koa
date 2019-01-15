@@ -102,6 +102,10 @@ func (o Operator) String() string {
 	return string(o.Val)
 }
 
+// DataStructure represent identifier's data structure
+// e.g. string, int, bool
+type DataStructure int
+
 const (
 	_ DataStructure = iota
 	IntType
@@ -114,10 +118,6 @@ var DataStructureMap = map[DataStructure]string{
 	StringType: "string",
 	BoolType:   "bool",
 }
-
-// DataStructure represent identifier's data structure
-// e.g. string, int, bool
-type DataStructure int
 
 func (ds DataStructure) String() string {
 	return DataStructureMap[ds]
@@ -208,18 +208,27 @@ func (il *IntegerLiteral) String() string {
 	return strconv.FormatInt(il.Value, 10)
 }
 
+type BooleanType int
+
+const (
+	False BooleanType = iota
+	True
+)
+
+var BooleanTypeMap = map[BooleanType]string{
+	False: "false",
+	True:  "true",
+}
+
 // Represent Boolean expression
 type BooleanLiteral struct {
-	Value bool
+	Type BooleanType
 }
 
 func (bl *BooleanLiteral) produce() {}
 
 func (bl *BooleanLiteral) String() string {
-	if bl.Value {
-		return "true"
-	}
-	return "false"
+	return BooleanTypeMap[bl.Type]
 }
 
 // Represent prefix expression
