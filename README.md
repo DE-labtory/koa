@@ -9,6 +9,9 @@ is simpler and easy to analyze than soldity(ethereum).
 
 <p align="center"><img src="./image/koa-concept.png" width="380px" height="300px"></p>
 
+A more detailed explanation is given below.
+- [Doc](https://github.com/DE-labtory/koa/blob/develop/docs/doc.md)
+
 ### Architecture
 
 ![koa architecture](image/koa-architecture.png)
