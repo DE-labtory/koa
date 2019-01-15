@@ -75,6 +75,21 @@ const (
 	NOT_EQ                // !=
 )
 
+var OperatorTypeMap = map[OperatorType]string{
+	Plus:     "PLUS",
+	Minus:    "MINUS",
+	Bang:     "BANG",
+	Asterisk: "ASTERISK",
+	Slash:    "SLASH",
+	Mod:      "MOD",
+	LT:       "LT",
+	GT:       "GT",
+	LTE:      "LTE",
+	GTE:      "GTE",
+	EQ:       "EQ",
+	NOT_EQ:   "NOT_EQ",
+}
+
 type OperatorVal string
 
 // Operator represent operator between expression
@@ -90,7 +105,7 @@ func (o Operator) String() string {
 type DataStructureType int
 
 func (dst DataStructureType) String() string {
-	return strconv.Itoa(int(dst))
+	return DataStructureTypeMap[dst]
 }
 
 const (
@@ -99,6 +114,12 @@ const (
 	String
 	Bool
 )
+
+var DataStructureTypeMap = map[DataStructureType]string{
+	Int:    "INT",
+	String: "STRING",
+	Bool:   "BOOL",
+}
 
 type DataStructureVal string
 
