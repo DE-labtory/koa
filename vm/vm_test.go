@@ -350,9 +350,28 @@ func TestNOT(t *testing.T) {
 	}
 }
 
-// TODO: implement test cases :-)
 func TestPop(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int32ToBytes(2),
+		uint8(opcode.Pop),
+	)
+	testExpected := []item{1}
 
+	stack, err := Execute(testByteCode)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(stack.items) != 1 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+	}
+
+	for i, item := range stack.items {
+		if testExpected[i] != item {
+			t.Errorf("Stack item is incorrect - expected=%d, got=%d", testExpected[i], item)
+		}
+	}
 }
 
 func TestPush(t *testing.T) {
