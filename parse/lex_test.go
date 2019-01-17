@@ -24,16 +24,31 @@ import (
 
 func TestLexer_NextToken(t *testing.T) {
 	input := `
-	3 / 10
-	int a = 5
-	int b = 315 + (5 * 7) / 3 - 10
-	<= >= == != = { } , 
+	contract {
+		func (a int){
+			3 / 10
+			int a = 5
+			int b = 315 + (5 * 7) / 3 - 10
+			<= >= == != = { } , 
+		}
+	}
 	`
 
 	tests := []struct {
 		expectedType  parse.TokenType
 		expectedValue string
 	}{
+		{parse.Eol, "\n"},
+		{parse.Contract, "contract"},
+		{parse.Lbrace, "{"},
+		{parse.Eol, "\n"},
+		{parse.Function, "func"},
+		{parse.Lparen, "("},
+		{parse.Ident, "a"},
+		{parse.IntType, "int"},
+		{parse.Rparen, ")"},
+		{parse.Lbrace, "{"},
+
 		{parse.Eol, "\n"},
 		{parse.Int, "3"},
 		{parse.Slash, "/"},
@@ -71,6 +86,12 @@ func TestLexer_NextToken(t *testing.T) {
 		{parse.Rbrace, "}"},
 		{parse.Comma, ","},
 		{parse.Eol, "\n"},
+
+		{parse.Rbrace, "}"},
+		{parse.Eol, "\n"},
+		{parse.Rbrace, "}"},
+		{parse.Eol, "\n"},
+		{parse.Eof, ""},
 	}
 
 	l := parse.NewLexer(input)
