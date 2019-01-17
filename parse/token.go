@@ -50,6 +50,7 @@ const (
 	Int      // 1343456
 	String   // "hello world"
 	Function // func
+	Contract // contract
 
 	IntType
 	StringType
@@ -132,14 +133,15 @@ var TokenTypeMap = map[TokenType]string{
 }
 
 var keywords = map[string]TokenType{
-	"func":   Function,
-	"if":     If,
-	"else":   Else,
-	"int":    IntType,
-	"string": StringType,
-	"return": Return,
-	"true":   True,
-	"false":  False,
+	"contract": Contract,
+	"func":     Function,
+	"if":       If,
+	"else":     Else,
+	"int":      IntType,
+	"string":   StringType,
+	"return":   Return,
+	"true":     True,
+	"false":    False,
 }
 
 func LookupIdent(ident string) TokenType {
