@@ -366,7 +366,7 @@ func TestExpectNext(t *testing.T) {
 		{
 			token:         Minus,
 			expectedBool:  false,
-			expectedError: errors.New("IDENT, expectNext() : expected [MINUS], but got [IDENT]"),
+			expectedError: errors.New("IDENT, [line 0, column 0] expected [MINUS], but got [IDENT]"),
 		},
 		{
 			token:         Plus,
@@ -376,7 +376,7 @@ func TestExpectNext(t *testing.T) {
 		{
 			token:         Rbrace,
 			expectedBool:  false,
-			expectedError: errors.New("ASTERISK, expectNext() : expected [RBRACE], but got [ASTERISK]"),
+			expectedError: errors.New("ASTERISK, [line 0, column 0] expected [RBRACE], but got [ASTERISK]"),
 		},
 	}
 
@@ -409,7 +409,7 @@ func TestParseIdentifier(t *testing.T) {
 	}{
 		{
 			expected:     nil,
-			expectedErrs: "INT, parseIdentifier() - 1 is not a identifier",
+			expectedErrs: "INT, [line 0, column 0] 1 is not a identifier",
 		},
 		{
 			expected: &ast.Identifier{
@@ -418,15 +418,15 @@ func TestParseIdentifier(t *testing.T) {
 		},
 		{
 			expected:     nil,
-			expectedErrs: "PLUS, parseIdentifier() - + is not a identifier",
+			expectedErrs: "PLUS, [line 0, column 0] + is not a identifier",
 		},
 		{
 			expected:     nil,
-			expectedErrs: "ASTERISK, parseIdentifier() - * is not a identifier",
+			expectedErrs: "ASTERISK, [line 0, column 0] * is not a identifier",
 		},
 		{
 			expected:     nil,
-			expectedErrs: "LPAREN, parseIdentifier() - ( is not a identifier",
+			expectedErrs: "LPAREN, [line 0, column 0] ( is not a identifier",
 		},
 	}
 
@@ -467,7 +467,7 @@ func TestParseIntegerLiteral(t *testing.T) {
 		{expected: &ast.IntegerLiteral{Value: 12}, expectedErr: nil},
 		{expected: &ast.IntegerLiteral{Value: 55}, expectedErr: nil},
 		{expected: nil, expectedErr: errors.New(`strconv.ParseInt: parsing "a": invalid syntax`)},
-		{expected: nil, expectedErr: errors.New("STRING, parseIntegerLiteral() error - abcdefg is not integer")},
+		{expected: nil, expectedErr: errors.New("STRING, [line 0, column 0] abcdefg is not integer")},
 		{expected: &ast.IntegerLiteral{Value: -13}, expectedErr: nil},
 	}
 
@@ -502,7 +502,7 @@ func TestParseBooleanLiteral(t *testing.T) {
 		{expected: &ast.BooleanLiteral{true}, expectedErr: nil},
 		{expected: &ast.BooleanLiteral{false}, expectedErr: nil},
 		{expected: nil, expectedErr: errors.New(`strconv.ParseBool: parsing "azzx": invalid syntax`)},
-		{expected: nil, expectedErr: errors.New("STRING, parseBooleanLiteral() error - abcdefg is not bool")},
+		{expected: nil, expectedErr: errors.New("STRING, [line 0, column 0] abcdefg is not bool")},
 	}
 
 	for i, test := range tests {
@@ -539,7 +539,7 @@ func TestParseStringLiteral(t *testing.T) {
 	}{
 		{expected: &ast.StringLiteral{Value: "hello"}, expectedErr: nil},
 		{expected: &ast.StringLiteral{Value: "hihi"}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New("INT, parseStringLiteral() error - 3 is not string")},
+		{expected: nil, expectedErr: errors.New("INT, [line 0, column 0] 3 is not string")},
 		{expected: &ast.StringLiteral{Value: "koa zzang"}, expectedErr: nil},
 	}
 
@@ -944,7 +944,7 @@ func TestParseGroupedExpression(t *testing.T) {
 		"(2 + 1)",
 		"(a + (1 - 2))",
 		"((a + (1 - 2)) + 3)",
-		"RBRACE, expectNext() : expected [RPAREN], but got [RBRACE]",
+		"RBRACE, [line 0, column 0] expected [RPAREN], but got [RBRACE]",
 	}
 
 	for i, test := range tests {
@@ -1008,7 +1008,7 @@ func TestParseReturnStatement(t *testing.T) {
 		"return true",
 		"return (1 + 2)",
 		"return (1 + (2 * 3))",
-		"INT_TYPE, expectNext() : expected [RETURN], but got [INT_TYPE]",
+		"INT_TYPE, [line 0, column 0] expected [RETURN], but got [INT_TYPE]",
 	}
 
 	for i, test := range tests {

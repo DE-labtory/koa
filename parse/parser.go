@@ -124,12 +124,12 @@ func nextTokenIs(buf TokenBuffer, t TokenType) bool {
 // type of token we want, and if true then return it
 // otherwise return with error
 func expectNext(buf TokenBuffer, t TokenType) error {
-	nextType := buf.Peek(CURRENT).Type
-	if nextType != t {
+	tok := buf.Peek(CURRENT)
+	if tok.Type != t {
 		return parseError{
-			nextType,
-			fmt.Sprintf("expectNext() : expected [%s], but got [%s]",
-				TokenTypeMap[t], TokenTypeMap[nextType]),
+			tok.Type,
+			fmt.Sprintf("[line %d, column %d] expected [%s], but got [%s]",
+				tok.Line, tok.Column, TokenTypeMap[t], TokenTypeMap[tok.Type]),
 		}
 	}
 	buf.Read()
@@ -294,7 +294,8 @@ func makePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	if fn == nil {
 		return nil, parseError{
 			curTok.Type,
-			"prefix parse function not defined",
+			fmt.Sprintf("[line %d, column %d] prefix parse function not defined",
+				curTok.Line, curTok.Column),
 		}
 	}
 	exp, err := fn(buf)
@@ -312,11 +313,13 @@ func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (a
 	expression := exp
 
 	for pre < curPrecedence(buf) {
-		fn := infixParseFnMap[buf.Peek(CURRENT).Type]
+		token := buf.Peek(CURRENT)
+		fn := infixParseFnMap[token.Type]
 		if fn == nil {
 			return nil, parseError{
-				buf.Peek(CURRENT).Type,
-				"infix parse function not defined",
+				token.Type,
+				fmt.Sprintf("[line %d, column %d] infix parse function not defined",
+					token.Line, token.Column),
 			}
 		}
 
@@ -378,7 +381,8 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != Ident {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseIdentifier() - %s is not a identifier", token.Val),
+			fmt.Sprintf("[line %d, column %d] %s is not a identifier",
+				token.Line, token.Column, token.Val),
 		}
 	}
 	return &ast.Identifier{Value: token.Val}, nil
@@ -390,7 +394,8 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != Int {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseIntegerLiteral() error - %s is not integer", token.Val),
+			fmt.Sprintf("[line %d, column %d] %s is not integer",
+				token.Line, token.Column, token.Val),
 		}
 	}
 
@@ -410,7 +415,7 @@ func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != True && token.Type != False {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseBooleanLiteral() error - %s is not bool", token.Val),
+			fmt.Sprintf("[line %d, column %d] %s is not bool", token.Line, token.Column, token.Val),
 		}
 	}
 
@@ -430,7 +435,7 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != String {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseStringLiteral() error - %s is not string", token.Val),
+			fmt.Sprintf("[line %d, column %d] %s is not string", token.Line, token.Column, token.Val),
 		}
 	}
 
@@ -605,7 +610,7 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	if tok.Type != Ident {
 		return nil, parseError{
 			tok.Type,
-			"token is not identifier",
+			fmt.Sprintf("[line %d, column %d] token is not identifier", tok.Line, tok.Column),
 		}
 	}
 
@@ -616,7 +621,7 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	if assign := buf.Read(); assign.Type != Assign {
 		return nil, parseError{
 			assign.Type,
-			"token is not assign",
+			fmt.Sprintf("[line %d, column %d] token is not assign", tok.Line, tok.Column),
 		}
 	}
 
@@ -681,7 +686,7 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	if tok.Type != If {
 		err := parseError{
 			tok.Type,
-			"is not a If",
+			fmt.Sprintf("[line %d, column %d] is not a If", tok.Line, tok.Column),
 		}
 		return nil, err
 	}
@@ -690,7 +695,7 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	if tok.Type != Lparen {
 		err := parseError{
 			tok.Type,
-			"is not a Left paren",
+			fmt.Sprintf("[line %d, column %d] is not a Left paren", tok.Line, tok.Column),
 		}
 		return nil, err
 	}
@@ -706,7 +711,7 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	if tok.Type != Rparen {
 		err := parseError{
 			tok.Type,
-			"is not a Right paren",
+			fmt.Sprintf("[line %d, column %d] is not a Right paren", tok.Line, tok.Column),
 		}
 		return nil, err
 	}
@@ -715,7 +720,7 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	if tok.Type != Lbrace {
 		err := parseError{
 			tok.Type,
-			"is not a Left brace",
+			fmt.Sprintf("[line %d, column %d] is not a Left brace", tok.Line, tok.Column),
 		}
 		return nil, err
 	}
