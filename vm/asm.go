@@ -26,6 +26,7 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Sub:  sub{},
 	opcode.Div:  div{},
 	opcode.Mod:  mod{},
+	opcode.Pop:  pop{},
 	opcode.Push: push{},
 	opcode.LT:   lt{},
 	opcode.GT:   gt{},

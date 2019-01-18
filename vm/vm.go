@@ -200,8 +200,8 @@ func (not) hex() []uint8 {
 	return []uint8{uint8(opcode.NOT)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (pop) Do(stack *stack, _ asmReader) error {
+	_ = stack.pop()
 	return nil
 }
 
