@@ -25,6 +25,14 @@ import (
 
 // In koa, we use hexadecimal encoding
 
+type EncodeError struct {
+	Operand interface{}
+}
+
+func (e EncodeError) Error() string {
+	return fmt.Sprintf("EncodeOperand() error - operand %v could not encoded", e.Operand)
+}
+
 // EncodeOperand() encodes operand to bytes.
 func EncodeOperand(operand interface{}) ([]byte, error) {
 	switch op := operand.(type) {
@@ -38,7 +46,7 @@ func EncodeOperand(operand interface{}) ([]byte, error) {
 		return encodeBool(op)
 
 	default:
-		return nil, errors.New(fmt.Sprintf("EncodeOperand() error - operand %v could not encoded", op))
+		return nil, EncodeError{op}
 	}
 }
 
