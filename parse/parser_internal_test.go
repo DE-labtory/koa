@@ -851,20 +851,20 @@ func TestParseCallExpression(t *testing.T) {
 		expected string
 	}{
 		{
-			function: &ast.StringLiteral{Value: "add"},
-			expected: `function "add"( (1 + 2) )`,
+			function: &ast.Identifier{Value: "add"},
+			expected: `function add( (1 + 2) )`,
 		},
 		{
-			function: &ast.StringLiteral{Value: "testFunc"},
-			expected: `function "testFunc"( "a", "b", 5 )`,
+			function: &ast.Identifier{Value: "testFunc"},
+			expected: `function testFunc( "a", "b", 5 )`,
 		},
 		{
-			function: &ast.StringLiteral{Value: "errorFunc"},
+			function: &ast.Identifier{Value: "errorFunc"},
 			expected: "ASTERISK, prefix parse function not defined",
 		},
 		{
-			function: &ast.StringLiteral{Value: "complexFunc"},
-			expected: `function "complexFunc"( ("a" + "b"), (5 * 3) )`,
+			function: &ast.Identifier{Value: "complexFunc"},
+			expected: `function complexFunc( ("a" + "b"), (5 * 3) )`,
 		},
 	}
 
@@ -933,10 +933,10 @@ func TestParseCallArguments(t *testing.T) {
 		},
 	}
 	tests := []string{
-		`function "testFunction"(  )`,
-		`function "testFunction"( 1 )`,
-		`function "testFunction"( "a", "b", 5 )`,
-		`function "testFunction"( ("a" + "b"), (5 * 3) )`,
+		`function testFunction(  )`,
+		`function testFunction( 1 )`,
+		`function testFunction( "a", "b", 5 )`,
+		`function testFunction( ("a" + "b"), (5 * 3) )`,
 		"ASTERISK, prefix parse function not defined",
 		"ASTERISK, prefix parse function not defined",
 	}
@@ -951,7 +951,7 @@ func TestParseCallArguments(t *testing.T) {
 		}
 
 		mockFn := &ast.CallExpression{
-			Function: &ast.StringLiteral{Value: "testFunction"},
+			Function: &ast.Identifier{Value: "testFunction"},
 		}
 		mockFn.Arguments = exp
 		if exp != nil && mockFn.String() != test {
@@ -1380,6 +1380,7 @@ func TestParseStatement(t *testing.T) {
 		expectedErr  error
 		expectedStmt string
 	}{
+		// tests for IntType
 		{
 			tokens: []Token{
 				{Type: IntType, Val: "int"},
@@ -1389,7 +1390,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: "int val: a, type: IDENT = 1",
+			expectedStmt: "int [IDENT, a] = 1",
 		},
 		{
 			tokens: []Token{
@@ -1402,7 +1403,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: "int val: a, type: IDENT = (1 + 2)",
+			expectedStmt: "int [IDENT, a] = (1 + 2)",
 		},
 		{
 			tokens: []Token{
@@ -1417,7 +1418,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: "int val: a, type: IDENT = (1 + (2 * 3))",
+			expectedStmt: "int [IDENT, a] = (1 + (2 * 3))",
 		},
 		{
 			tokens: []Token{
@@ -1428,8 +1429,10 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `int val: a, type: IDENT = "1"`,
+			expectedStmt: `int [IDENT, a] = "1"`,
 		},
+
+		// tests for StringType
 		{
 			tokens: []Token{
 				{Type: StringType, Val: "string"},
@@ -1439,7 +1442,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `string val: abb, type: IDENT = "do not merge, rebase!"`,
+			expectedStmt: `string [IDENT, abb] = "do not merge, rebase!"`,
 		},
 		{
 			tokens: []Token{
@@ -1450,7 +1453,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `string val: abb, type: IDENT = "hello,*+"`,
+			expectedStmt: `string [IDENT, abb] = "hello,*+"`,
 		},
 		{
 			tokens: []Token{
@@ -1461,8 +1464,10 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `string val: abb, type: IDENT = 1`,
+			expectedStmt: `string [IDENT, abb] = 1`,
 		},
+
+		// tests for BoolType
 		{
 			tokens: []Token{
 				{Type: BoolType, Val: "bool"},
@@ -1472,7 +1477,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `bool val: asdf, type: IDENT = true`,
+			expectedStmt: `bool [IDENT, asdf] = true`,
 		},
 		{
 			tokens: []Token{
@@ -1483,7 +1488,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `bool val: asdf, type: IDENT = false`,
+			expectedStmt: `bool [IDENT, asdf] = false`,
 		},
 		{
 			tokens: []Token{
@@ -1494,8 +1499,10 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `bool val: asdf, type: IDENT = 1`,
+			expectedStmt: `bool [IDENT, asdf] = 1`,
 		},
+
+		// tests for If statement
 		{
 			tokens: []Token{
 				{Type: If, Val: "if"},
@@ -1560,7 +1567,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `if ( true ) { int val: a, type: IDENT = 2 }`,
+			expectedStmt: `if ( true ) { int [IDENT, a] = 2 }`,
 		},
 		{
 			tokens: []Token{
@@ -1581,7 +1588,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `if ( true ) { int val: a, type: IDENT = 2 } else {  }`,
+			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else {  }`,
 		},
 		{
 			tokens: []Token{
@@ -1607,8 +1614,10 @@ func TestParseStatement(t *testing.T) {
 				{Type: Eol, Val: "\n"},
 			},
 			expectedErr:  nil,
-			expectedStmt: `if ( true ) { int val: a, type: IDENT = 2 } else { string val: b, type: IDENT = "hello" }`,
+			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else { string [IDENT, b] = "hello" }`,
 		},
+
+		// tests for Return statement
 		{
 			tokens: []Token{
 				{Type: Return, Val: "return"},
@@ -1653,6 +1662,8 @@ func TestParseStatement(t *testing.T) {
 			expectedErr:  nil,
 			expectedStmt: `return (function add( 1, 2 ) + (2 * 3))`,
 		},
+
+		// tests for Default
 		{
 			tokens: []Token{
 				{Type: Int, Val: "1"},
