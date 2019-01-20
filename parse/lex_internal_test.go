@@ -242,7 +242,6 @@ func (m MockEmitter) emit(t Token) {
 	m.emitFunc(t)
 }
 
-// TODO: LTE, GTE, spaceStateFn, numberStateFn, identifierStateFn case
 func TestLex_defaultStateFn(t *testing.T) {
 
 	//	Bang     // !
@@ -330,7 +329,27 @@ func TestStringStateFn(t *testing.T) {
 		stringStateFn(s, e)
 	}
 }
+func TestCommentStateFn(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"/commentline"},
+		{"**/"},
+		{"* \n **commentblock** \n */"},
+	}
 
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+
+		commentStateFn(s, e)
+
+		if s.next() != eof {
+			t.Errorf("tests[%d] - error", i)
+		}
+
+	}
+}
 func TestErrorStringStateFn(t *testing.T) {
 	tests := []struct {
 		input              string

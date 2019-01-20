@@ -24,8 +24,13 @@ import (
 
 func TestLexer_NextToken(t *testing.T) {
 	input := `
-	contract {
-		func (a int){
+	contract { //lexer does not return this comment as token
+			/*abcdef*/ /*/**/
+			/*
+			lexer does not return this comment as token
+			lexer does not return this comment as token
+			lexer does not return this comment as token */
+			func (a int){
 			3 / 10
 			int a = 5
 			int b = 315 + (5 * 7) / 3 - 10
@@ -43,6 +48,8 @@ second
 		{parse.Eol, "\n"},
 		{parse.Contract, "contract"},
 		{parse.Lbrace, "{"},
+		{parse.Eol, "\n"},
+		{parse.Eol, "\n"},
 		{parse.Eol, "\n"},
 		{parse.Function, "func"},
 		{parse.Lparen, "("},

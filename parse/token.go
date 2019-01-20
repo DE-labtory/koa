@@ -29,13 +29,13 @@ type Token struct {
 
 func (t Token) String() string {
 	if t.Type == Eol {
-		return fmt.Sprintf("val: End of line, type: Eol")
+		return fmt.Sprintf("[EOL, End of line]")
 	}
 
 	if t.Type == Eof {
-		return fmt.Sprintf("val: End of file, type: Eof")
+		return fmt.Sprintf("[EOF, End of file]")
 	}
-	return fmt.Sprintf("val: %s, type: %s", t.Val, TokenTypeMap[t.Type])
+	return fmt.Sprintf("[%s, %s]", TokenTypeMap[t.Type], t.Val)
 }
 
 // End of file
@@ -92,9 +92,11 @@ const (
 var TokenTypeMap = map[TokenType]string{
 	Illegal: "ILLEGAL",
 
-	Ident:  "IDENT",
-	Int:    "INT",
-	String: "STRING",
+	Ident:    "IDENT",
+	Int:      "INT",
+	String:   "STRING",
+	Function: "FUNCTION",
+	Contract: "CONTRACT",
 
 	IntType:    "INT_TYPE",
 	StringType: "STRING_TYPE",
