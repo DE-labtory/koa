@@ -18,13 +18,49 @@ package translate
 
 import "github.com/DE-labtory/koa/ast"
 
-type Compiler struct {
+// TODO: parameter should be ast.Contract
+// TODO: implement me w/ test cases :-)
+// CompileContract() compiles a smart contract.
+// returns bytecode and error.
+func CompileContract(c ast.Contract) (Bytecode, error) {
+	bytecode := &Bytecode{
+		RawByte: make([]byte, 0),
+		AsmCode: make([]string, 0),
+	}
+
+	if err := generateFuncJumper(bytecode); err != nil {
+		return *bytecode, err
+	}
+
+	for _, f := range c.Functions {
+		// TODO: generate function identifer with Keccak256()
+
+		if err := compileFunction(*f, bytecode); err != nil {
+			return *bytecode, err
+		}
+
+		// TODO: use abi.ExtractAbi(f)
+	}
+
+	return *bytecode, nil
 }
 
-func NewCompiler() *Compiler {
+// TODO: implement me w/ test cases :-)
+// compileFunction() compiles a function in contract.
+// Generates and adds output to bytecode.
+func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode) error {
 	return nil
 }
 
-func (c *Compiler) Compile(program ast.Contract) {
+// TODO: implement me w/ test cases :-)
+// compileStatement() compiles a statement in function.
+// Generates and adds output to bytecode.
+func compileStatement(s ast.Statement, bytecode *Bytecode) error {
+	return nil
+}
 
+// TODO: implement me w/ test cases :-)
+// Generates a bytecode of function jumper.
+func generateFuncJumper(bytecode *Bytecode) error {
+	return nil
 }
