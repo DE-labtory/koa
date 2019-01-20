@@ -166,22 +166,22 @@ var prefixParseFnMap = map[TokenType]prefixParseFn{}
 var infixParseFnMap = map[TokenType]infixParseFn{}
 
 // Parse function create an abstract syntax tree
-func Parse(buf TokenBuffer) (*ast.Program, error) {
+func Parse(buf TokenBuffer) (*ast.Contract, error) {
 	initParseFnMap()
 
-	prog := &ast.Program{}
-	prog.Statements = []ast.Statement{}
+	contract := &ast.Contract{}
+	contract.Functions = []*ast.FunctionLiteral{}
 
 	for buf.Peek(CURRENT).Type != Eof {
-		stmt, err := parseStatement(buf)
+		fn, err := parseFunctionLiteral(buf)
 		if err != nil {
 			return nil, err
 		}
 
-		prog.Statements = append(prog.Statements, stmt)
+		contract.Functions = append(contract.Functions, fn)
 	}
 
-	return prog, nil
+	return contract, nil
 }
 
 // TODO: Currently there's no parsing function for statement
@@ -562,4 +562,9 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	}
 
 	return block, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
+	return nil, nil
 }

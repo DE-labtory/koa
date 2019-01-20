@@ -149,6 +149,50 @@ func TestBooleanLiteral_String(t *testing.T) {
 	}
 }
 
+// TODO: Add test cases when Type field is added to Identifier
+func TestFunctionLiteral_String(t *testing.T) {
+	tests := []struct {
+		input    FunctionLiteral
+		expected string
+	}{
+		{
+			FunctionLiteral{
+				Name:       &Identifier{Value: "foo"},
+				Parameters: []*Identifier{},
+				Body:       &BlockStatement{},
+				ReturnType: StringType,
+			},
+			`func foo() string {
+
+}`,
+		},
+		{
+			FunctionLiteral{
+				Name:       &Identifier{Value: "foo"},
+				Parameters: []*Identifier{},
+				Body: &BlockStatement{
+					Statements: []Statement{
+						&AssignStatement{
+							Type:     IntType,
+							Variable: Identifier{Value: "a"},
+							Value:    &IntegerLiteral{Value: 1},
+						},
+					},
+				},
+				ReturnType: IntType,
+			},
+			`func foo() int {
+int a = 1
+}`,
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
 func testString(t *testing.T, got, expected string) {
 	t.Helper()
 	if got != expected {
