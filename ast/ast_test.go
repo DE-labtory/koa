@@ -158,7 +158,7 @@ func TestFunctionLiteral_String(t *testing.T) {
 		{
 			FunctionLiteral{
 				Name:       &Identifier{Value: "foo"},
-				Parameters: []*Identifier{},
+				Parameters: []*ParameterLiteral{},
 				Body:       &BlockStatement{},
 				ReturnType: StringType,
 			},
@@ -169,7 +169,7 @@ func TestFunctionLiteral_String(t *testing.T) {
 		{
 			FunctionLiteral{
 				Name:       &Identifier{Value: "foo"},
-				Parameters: []*Identifier{},
+				Parameters: []*ParameterLiteral{},
 				Body: &BlockStatement{
 					Statements: []Statement{
 						&AssignStatement{
