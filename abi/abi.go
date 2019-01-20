@@ -16,7 +16,43 @@
 
 package abi
 
-import "github.com/DE-labtory/koa/crpyto"
+import (
+	"encoding/json"
+	"strings"
+
+	"github.com/DE-labtory/koa/crpyto"
+)
+
+type ABI struct {
+	Methods []Method
+}
+
+func New(abiJSON string) (ABI, error) {
+	reader := strings.NewReader(abiJSON)
+	dec := json.NewDecoder(reader)
+
+	var abi ABI
+	if err := dec.Decode(&abi); err != nil {
+		return ABI{}, err
+	}
+
+	return abi, nil
+}
+
+// UnmarshalJSON is implementation of json.Decoder's UnmarshalJSON
+func (abi *ABI) UnmarshalJSON(data []byte) error {
+	var methods []Method
+
+	if err := json.Unmarshal(data, &methods); err != nil {
+		return err
+	}
+
+	for _, method := range methods {
+		abi.Methods = append(abi.Methods, method)
+	}
+
+	return nil
+}
 
 // The implementation below is implemented for the abi spec of ethereum.
 // https://solidity.readthedocs.io/en/develop/abi-spec.html
