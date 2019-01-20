@@ -23,6 +23,63 @@ import (
 	"github.com/DE-labtory/koa/abi"
 )
 
+func TestNew(t *testing.T) {
+	abiJSON := `[
+	{
+		"name" : "foo",
+		"arguments" : [
+			{
+				"name" : "first",
+				"type" : "int256"
+			},
+			{
+				"name" : "second",
+				"type" : "string"
+			},
+			{
+				"name" : "third",
+				"type" : "byte"
+			}
+		],
+		"output" : {
+			"name" : "returnValue",
+			"type" : "int256"
+		}
+	},
+	{
+		"name" : "var",
+		"arguments" : [
+			{
+				"name" : "first",
+				"type" : "int256"
+			},
+			{
+				"name" : "second",
+				"type" : "string"
+			},
+			{
+				"name" : "third",
+				"type" : "byte"
+			}
+		],
+		"output" : {
+			"name" : "returnValue",
+			"type" : "int256"
+		}
+	}
+]
+`
+
+	ABI, err := abi.New(abiJSON)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(ABI.Methods) != 2 {
+		t.Error("Invalid JSON parsing!")
+	}
+}
+
 func TestSelector(t *testing.T) {
 	tests := []struct {
 		input  string
