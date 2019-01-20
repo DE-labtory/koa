@@ -211,6 +211,35 @@ func (bl *BooleanLiteral) String() string {
 	return strconv.FormatBool(bl.Value)
 }
 
+// Represent Function expression
+type FunctionLiteral struct {
+	Parameters []*ParameterLiteral
+	Body       *BlockStatement
+}
+
+func (fl *FunctionLiteral) produce() {}
+
+func (fl *FunctionLiteral) String() string {
+	strs := make([]string, 0)
+	for _, parameter := range fl.Parameters {
+		strs = append(strs, parameter.String())
+	}
+	strs = append(strs, fl.Body.String())
+	return strings.Join(strs, ", ")
+}
+
+// Represent Function Parameter expression
+type ParameterLiteral struct {
+	Identifier *Identifier
+	Type       DataStructure
+}
+
+func (pl *ParameterLiteral) produce() {}
+
+func (pl *ParameterLiteral) String() string {
+	return fmt.Sprintf("Parameter : (Identifier: %s, Type: %s)", pl.Identifier.String(), pl.Type.String())
+}
+
 // Represent prefix expression
 type PrefixExpression struct {
 	Operator
