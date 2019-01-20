@@ -33,8 +33,6 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 	}
 
 	for _, f := range c.Functions {
-		// TODO: generate function identifer with Keccak256()
-
 		if err := compileFunction(*f, bytecode); err != nil {
 			return *bytecode, err
 		}
@@ -49,6 +47,16 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
 func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode) error {
+	// TODO: generate function identifer with Keccak256()
+
+	statements := f.Body.Statements
+
+	for _, s := range statements {
+		if err := compileStatement(s, bytecode); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
