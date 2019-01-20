@@ -16,6 +16,8 @@
 
 package opcode
 
+import "errors"
+
 type Type uint8
 
 const (
@@ -152,3 +154,38 @@ const (
 	// memory[offset:offset+32] = value
 	Mstore Type = 0x23
 )
+
+// Change the bytecode of an opcode to string.
+func (p Type) String() (string, error) {
+	switch p {
+	case 0x01:
+		return "Add", nil
+	case 0x02:
+		return "Mul", nil
+	case 0x03:
+		return "Sub", nil
+	case 0x04:
+		return "Div", nil
+	case 0x05:
+		return "Mod", nil
+	case 0x10:
+		return "LT", nil
+	case 0x11:
+		return "GT", nil
+	case 0x12:
+		return "EQ", nil
+	case 0x13:
+		return "NOT", nil
+	case 0x20:
+		return "Pop", nil
+	case 0x21:
+		return "Push", nil
+	case 0x22:
+		return "Mload", nil
+	case 0x23:
+		return "Mstore", nil
+
+	default:
+		return "", errors.New("String() error - Not defined opcode")
+	}
+}
