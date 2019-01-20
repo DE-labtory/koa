@@ -91,6 +91,7 @@ func Test_encodeString(t *testing.T) {
 		}
 	}
 }
+
 func Test_encodeBool(t *testing.T) {
 	tests := []struct {
 		operand  bool
@@ -122,4 +123,9 @@ func Test_encodeBool(t *testing.T) {
 			t.Fatalf("test[%d] - encodeBool() result wrong. expected=4, got=%x", i, bytecode)
 		}
 	}
+}
+
+// TODO: implement test cases :-)
+func Test_convertTo4Bytes(t *testing.T) {
+
 }
