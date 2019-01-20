@@ -40,10 +40,10 @@ type Expression interface {
 	produce()
 }
 
-// Represent Program.
-// Program consists of multiple statements.
-type Program struct {
-	Statements []Statement
+// Represent Contract.
+// Contract consists of multiple functions.
+type Contract struct {
+	Functions []*FunctionLiteral
 }
 
 // Represent identifier
@@ -161,6 +161,37 @@ func (is *IfStatement) String() string {
 	}
 	return fmt.Sprintf("if ( %s ) { %s } else { %s }", is.Condition.String(), is.Consequence.String(),
 		is.Alternative.String())
+}
+
+// FunctionLiteral represents function definition
+// e.g. func foo(int a) { ... }
+type FunctionLiteral struct {
+	Name       *Identifier
+	Parameters []*Identifier
+	Body       *BlockStatement
+	ReturnType DataStructure
+}
+
+func (fl *FunctionLiteral) do() {}
+
+// TODO: Add test cases when Type field is added to Identifier
+func (fl *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, p := range fl.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("func " + fl.Name.String() + "(")
+
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") ")
+	out.WriteString(fl.ReturnType.String() + " {\n")
+	out.WriteString(fl.Body.String() + "\n")
+	out.WriteString("}")
+
+	return out.String()
 }
 
 // Represent block statement
