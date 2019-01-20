@@ -28,10 +28,6 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		AsmCode: make([]string, 0),
 	}
 
-	if err := generateFuncJumper(bytecode); err != nil {
-		return *bytecode, err
-	}
-
 	for _, f := range c.Functions {
 		if err := compileFunction(*f, bytecode); err != nil {
 			return *bytecode, err
@@ -40,17 +36,26 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		// TODO: use abi.ExtractAbi(f)
 	}
 
+	if err := generateFuncJumper(bytecode); err != nil {
+		return *bytecode, err
+	}
+
 	return *bytecode, nil
+}
+
+// TODO: implement me w/ test cases :-)
+// Generates a bytecode of function jumper.
+func generateFuncJumper(bytecode *Bytecode) error {
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
 func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode) error {
-	// TODO: generate function identifer with Keccak256()
+	// TODO: generate function identifier with Keccak256()
 
 	statements := f.Body.Statements
-
 	for _, s := range statements {
 		if err := compileStatement(s, bytecode); err != nil {
 			return err
@@ -64,11 +69,40 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode) error {
 // compileStatement() compiles a statement in function.
 // Generates and adds output to bytecode.
 func compileStatement(s ast.Statement, bytecode *Bytecode) error {
+	switch statement := s.(type) {
+	case *ast.AssignStatement:
+		return compileAssignStatement(statement, bytecode)
+
+	case *ast.ReturnStatement:
+		return compileReturnStatement(statement, bytecode)
+
+	case *ast.IfStatement:
+		return compileIfStatement(statement, bytecode)
+
+	case *ast.BlockStatement:
+		return compileBlockStatement(statement, bytecode)
+
+	default:
+		return nil
+	}
+}
+
+// TODO: implement me w/ test cases :-)
+func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode) error {
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
-// Generates a bytecode of function jumper.
-func generateFuncJumper(bytecode *Bytecode) error {
+func compileReturnStatement(s *ast.ReturnStatement, bytecode *Bytecode) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func compileIfStatement(s *ast.IfStatement, bytecode *Bytecode) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode) error {
 	return nil
 }
