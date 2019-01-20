@@ -307,6 +307,70 @@ func TestLex_defaultStateFn(t *testing.T) {
 	}
 }
 
+func TestStringStateFn(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedType TokenType
+		expectedVal  string
+	}{
+		{"\nsomeString\"", String, "\nsomeString\""},
+	}
+
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+		e.emitFunc = func(tok Token) {
+			if tok.Type != test.expectedType {
+				t.Errorf("tests[%d] - Wrong token type", i)
+			}
+			if tok.Val != test.expectedVal {
+				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.expectedVal, tok.Val)
+			}
+		}
+		stringStateFn(s, e)
+	}
+}
+
+func TestErrorStringStateFn(t *testing.T) {
+	tests := []struct {
+		input              string
+		firstExpectedType  TokenType
+		firstExpectedVal   string
+		secondExpectedType TokenType
+		secondExpectedVal  string
+	}{
+		{"First\n second\"", Illegal, "String not terminated",
+			String, "First"},
+	}
+
+	for i, test := range tests {
+		s := &state{input: test.input}
+		e := MockEmitter{}
+		count := 0
+		e.emitFunc = func(tok Token) {
+			if count == 0 { //firstCall
+				if tok.Type != test.firstExpectedType {
+					t.Errorf("tests[%d] - Wrong token type", i)
+				}
+				if tok.Val != test.firstExpectedVal {
+					t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.firstExpectedVal, tok.Val)
+				}
+			} else if count == 1 { //secondCall
+				if tok.Type != test.secondExpectedType {
+					t.Errorf("tests[%d] - Wrong token type", i)
+				}
+				if tok.Val != test.secondExpectedVal {
+					t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.secondExpectedVal, tok.Val)
+				}
+			}
+			count++
+
+		}
+
+		stringStateFn(s, e)
+	}
+}
+
 func TestNumberStateFn(t *testing.T) {
 	tests := []struct {
 		input        string

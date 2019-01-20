@@ -241,10 +241,10 @@ func defaultStateFn(s *state, e emitter) stateFn {
 	case ch == '>':
 		if s.peek() == '=' {
 			s.next()
-			// <=
+			// >=
 			e.emit(s.cut(GTE))
 		} else {
-			// <
+			// >
 			e.emit(s.cut(GT))
 		}
 	case ch == ')':
@@ -257,6 +257,9 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		e.emit(s.cut(Lbrace))
 	case ch == ',':
 		e.emit(s.cut(Comma))
+	case ch == '"':
+		s.backup()
+		return stringStateFn
 	case ch == eof:
 		e.emit(s.cut(Eof))
 	case isSpace(ch):
@@ -274,6 +277,24 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		e.emit(s.cut(Illegal))
 	}
 
+	return defaultStateFn
+}
+
+// stringStateFn scans a string
+// After reading a string, it returns defaultStateFn.
+// string_literal = `"` { unicode_value | byte_value } `"`
+func stringStateFn(s *state, e emitter) stateFn {
+	s.next() //accept '"'
+
+	for s.next() != '"' {
+		ch := s.peek()
+		if ch == '\n' || ch == eof {
+			e.emit(Token{Illegal, "String not terminated", s.end, s.line})
+			break
+		}
+	}
+
+	e.emit(s.cut(String))
 	return defaultStateFn
 }
 

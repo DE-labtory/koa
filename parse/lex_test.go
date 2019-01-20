@@ -29,7 +29,9 @@ func TestLexer_NextToken(t *testing.T) {
 			3 / 10
 			int a = 5
 			int b = 315 + (5 * 7) / 3 - 10
-			<= >= == != = { } , 
+			<= >= == != = { } , "string"
+			"First
+second
 		}
 	}
 	`
@@ -85,6 +87,13 @@ func TestLexer_NextToken(t *testing.T) {
 		{parse.Lbrace, "{"},
 		{parse.Rbrace, "}"},
 		{parse.Comma, ","},
+		{parse.String, "\"string\""},
+		{parse.Eol, "\n"},
+
+		{parse.Illegal, "String not terminated"},
+		{parse.String, "\"First"},
+		{parse.Eol, "\n"},
+		{parse.Ident, "second"},
 		{parse.Eol, "\n"},
 
 		{parse.Rbrace, "}"},
