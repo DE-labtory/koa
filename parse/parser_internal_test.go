@@ -979,7 +979,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"string", "val: a, type: IDENT", `"hello"`,
+			"string", "[IDENT, a]", `"hello"`,
 			nil,
 		},
 		{
@@ -992,7 +992,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"int", "val: myInt, type: IDENT", "1",
+			"int", "[IDENT, myInt]", "1",
 			nil,
 		},
 		{
@@ -1005,7 +1005,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: ddd, type: IDENT", "true",
+			"bool", "[IDENT, ddd]", "true",
 			nil,
 		},
 		{
@@ -1019,7 +1019,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"int", "val: ddd2, type: IDENT", `"iam_string"`,
+			"int", "[IDENT, ddd2]", `"iam_string"`,
 			nil,
 		},
 		{
@@ -1033,7 +1033,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: foo, type: IDENT", `"iam_string"`,
+			"bool", "[IDENT, foo]", `"iam_string"`,
 			nil,
 		},
 		{
@@ -1046,7 +1046,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: foo, type: IDENT", `"iam_string"`,
+			"bool", "[IDENT, foo]", `"iam_string"`,
 			parseError{String, "token is not identifier"},
 		},
 		{
@@ -1058,7 +1058,7 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "val: foo, type: IDENT", `"iam_string"`,
+			"bool", "[IDENT, foo]", `"iam_string"`,
 			parseError{String, "token is not assign"},
 		},
 	}
@@ -1243,8 +1243,8 @@ func TestParseIfStatement(t *testing.T) {
 	}
 
 	tests := []string{
-		"if ( true ) { int val: a, type: IDENT = 0 }",
-		`if ( (a == 5) ) { int val: a, type: IDENT = 1 } else { string val: b, type: IDENT = "example" }`,
+		"if ( true ) { int [IDENT, a] = 0 }",
+		`if ( (a == 5) ) { int [IDENT, a] = 1 } else { string [IDENT, b] = "example" }`,
 		"INT_TYPE, is not a If",
 		"INT_TYPE, is not a Left brace",
 		"RBRACE, is not a Right paren",
@@ -1292,9 +1292,9 @@ func TestParseBlockStatement(t *testing.T) {
 		},
 	}
 	tests := []string{
-		"int val: a, type: IDENT = 0",
-		`int val: a, type: IDENT = 0/string val: b, type: IDENT = "abc"`,
-		`int val: a, type: IDENT = 0/string val: b, type: IDENT = "abc"/bool val: c, type: IDENT = true`,
+		"int [IDENT, a] = 0",
+		`int [IDENT, a] = 0/string [IDENT, b] = "abc"`,
+		`int [IDENT, a] = 0/string [IDENT, b] = "abc"/bool [IDENT, c] = true`,
 	}
 
 	for i, test := range tests {

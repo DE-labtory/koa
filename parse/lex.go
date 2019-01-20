@@ -139,7 +139,6 @@ func (s *state) next() rune {
 	return r
 }
 
-// TODO: implement me w/ test cases :-)
 // Peek returns but does not consume the next byte in the input.
 func (s *state) peek() rune {
 	ch := s.next()
@@ -148,7 +147,6 @@ func (s *state) peek() rune {
 	return ch
 }
 
-// TODO: implement me w/ test cases :-)
 // Backup steps back one rune. Can only be called once per call of next.
 func (s *state) backup() {
 	s.end -= s.width
@@ -198,7 +196,7 @@ func (s *state) acceptRun(valid string) {
 //	Lbrace // {
 //	Rbrace // }
 //
-// TODO: LTE, GTE, spaceStateFn, numberStateFn, identifierStateFn case
+
 func defaultStateFn(s *state, e emitter) stateFn {
 
 	switch ch := s.next(); {
@@ -224,7 +222,13 @@ func defaultStateFn(s *state, e emitter) stateFn {
 	case ch == '-':
 		e.emit(s.cut(Minus))
 	case ch == '/':
-		e.emit(s.cut(Slash))
+		second := s.next()
+		s.backup()
+		if second == '/' || second == '*' {
+			return commentStateFn
+		} else {
+			e.emit(s.cut(Slash))
+		}
 	case ch == '*':
 		e.emit(s.cut(Asterisk))
 	case ch == '%':
@@ -275,6 +279,31 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		return identifierStateFn
 	default:
 		e.emit(s.cut(Illegal))
+	}
+
+	return defaultStateFn
+}
+
+// commentStateFn scans a comment line or block
+// comment format : // or /**/
+func commentStateFn(s *state, e emitter) stateFn {
+	switch second := s.next(); {
+	case second == '/':
+		for {
+			if s.peek() == eof || s.peek() == '\n' {
+				break
+			}
+			s.next()
+		}
+		s.cut(Illegal)
+	case second == '*':
+		for s.peek() != eof {
+			if s.next() == '*' && s.peek() == '/' {
+				s.next() //consume last '/'
+				break
+			}
+		}
+		s.cut(Illegal)
 	}
 
 	return defaultStateFn
