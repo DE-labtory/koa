@@ -254,59 +254,89 @@ func (s *state) acceptRun(valid string) {
 //	Rbrace // }
 //
 
-func defaultStateFn(s *state, e emitter) stateFn {
+func (s *state) isNextToken(next rune) bool {
+	if s.peek() == next {
+		s.next()
+		return true
+	} else {
+		return false
+	}
+}
 
+func defaultStateFn(s *state, e emitter) stateFn {
 	switch ch := s.next(); {
 	case ch == '!':
-		if s.peek() == '=' {
-			s.next()
+		if s.isNextToken('=') {
 			e.emit(s.cut(NOT_EQ))
 		} else {
 			e.emit(s.cut(Bang))
 		}
 	case ch == '=':
-		if s.peek() == '=' {
-			s.next()
-			// ==
+		if s.isNextToken('=') {
 			e.emit(s.cut(EQ))
 		} else {
-			// =
 			e.emit(s.cut(Assign))
 		}
-
 	case ch == '+':
-		e.emit(s.cut(Plus))
+		if s.isNextToken('+') {
+			e.emit(s.cut(Inc))
+		} else if s.isNextToken('=') {
+			e.emit(s.cut(Plus_assign))
+		} else {
+			e.emit(s.cut(Plus))
+		}
 	case ch == '-':
-		e.emit(s.cut(Minus))
+		if s.isNextToken('-') {
+			e.emit(s.cut(Dec))
+		} else if s.isNextToken('=') {
+			e.emit(s.cut(Minus_assign))
+		} else {
+			e.emit(s.cut(Minus))
+		}
 	case ch == '/':
-		second := s.next()
-		s.backup()
+		second := s.peek()
 		if second == '/' || second == '*' {
 			return commentStateFn
 		} else {
-			e.emit(s.cut(Slash))
+			if s.isNextToken('=') {
+				e.emit(s.cut(Slash_assign))
+			} else {
+				e.emit(s.cut(Slash))
+			}
 		}
 	case ch == '*':
-		e.emit(s.cut(Asterisk))
+		if s.isNextToken('=') {
+			e.emit(s.cut(Asterisk_assign))
+		} else {
+			e.emit(s.cut(Asterisk))
+		}
 	case ch == '%':
-		e.emit(s.cut(Mod))
+		if s.isNextToken('=') {
+			e.emit(s.cut(Mod_assign))
+		} else {
+			e.emit(s.cut(Mod))
+		}
 	case ch == '<':
-		if s.peek() == '=' {
-			s.next()
-			// <=
+		if s.isNextToken('=') {
 			e.emit(s.cut(LTE))
 		} else {
-			// <
 			e.emit(s.cut(LT))
 		}
 	case ch == '>':
-		if s.peek() == '=' {
-			s.next()
-			// >=
+		if s.isNextToken('=') {
 			e.emit(s.cut(GTE))
 		} else {
-			// >
 			e.emit(s.cut(GT))
+		}
+	case ch == '&':
+		if s.peek() == '&' {
+			s.next()
+			e.emit(s.cut(Land))
+		}
+	case ch == '|':
+		if s.peek() == '|' {
+			s.next()
+			e.emit(s.cut(Lor))
 		}
 	case ch == ')':
 		e.emit(s.cut(Rparen))
