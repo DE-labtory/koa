@@ -71,7 +71,6 @@ func encodeInt(operand int) ([]byte, error) {
 // ex) string "abc" => 0x616263
 func encodeString(operand string) ([]byte, error) {
 	src := hex.EncodeToString([]byte(operand))
-
 	if len(src)&1 == 1 {
 		src = "0" + src
 	}
