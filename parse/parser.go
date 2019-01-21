@@ -377,6 +377,8 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	return &ast.StringLiteral{Value: token.Val}, nil
 }
 
+// parseFunctionLiteral parse functional expression
+// first parse name, and parse parameter, body
 func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	lit := &ast.FunctionLiteral{}
 	var err error
@@ -412,6 +414,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	return lit, nil
 }
 
+// parseFunctionParameters parse function's parameter using comma
 func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 	identifiers := []*ast.ParameterLiteral{}
 	var err error
@@ -633,9 +636,4 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		buf.Read()
 	}
 	return block, nil
-}
-
-// TODO: implement me w/ test cases :-)
-func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
-	return nil, nil
 }
