@@ -75,12 +75,7 @@ var precedenceMap = map[TokenType]precedence{
 	EQ:     EQUALS,
 	NOT_EQ: EQUALS,
 
-	Comma: LOWEST,
-
-	Lparen: LOWEST,
-	Rparen: LOWEST,
-	Lbrace: LOWEST,
-	Rbrace: LOWEST,
+	Lparen: CALL,
 
 	Eol: LOWEST,
 }
@@ -184,12 +179,10 @@ func Parse(buf TokenBuffer) (*ast.Contract, error) {
 	return contract, nil
 }
 
-// TODO: Currently there's no parsing function for statement
-// TODO: so when complete parsing statement function, add that function
-// TODO: to the map
 func initParseFnMap() {
 	prefixParseFnMap[Ident] = parseIdentifier
 	prefixParseFnMap[Int] = parseIntegerLiteral
+	prefixParseFnMap[String] = parseStringLiteral
 	prefixParseFnMap[Bang] = parsePrefixExpression
 	prefixParseFnMap[Minus] = parsePrefixExpression
 	prefixParseFnMap[True] = parseBooleanLiteral
@@ -207,11 +200,11 @@ func initParseFnMap() {
 	infixParseFnMap[GT] = parseInfixExpression
 	infixParseFnMap[LTE] = parseInfixExpression
 	infixParseFnMap[GTE] = parseInfixExpression
+	infixParseFnMap[Lparen] = parseCallExpression
 }
 
-// TODO: implement me w/ test cases :-)
 func parseStatement(buf TokenBuffer) (ast.Statement, error) {
-	switch buf.Peek(CURRENT).Type {
+	switch tt := buf.Peek(CURRENT).Type; tt {
 	case IntType:
 		return parseAssignStatement(buf)
 	case BoolType:
@@ -223,7 +216,10 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 	case Return:
 		return parseReturnStatement(buf)
 	default:
-		return nil, nil
+		return nil, parseError{
+			tokenType: tt,
+			reason:    "invalid token for parsing statement",
+		}
 	}
 }
 
@@ -552,6 +548,11 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 		}
 		args = append(args, exp)
 	}
+
+	if err := expectNext(buf, Rparen); err != nil {
+		return nil, err
+	}
+
 	return args, nil
 }
 
@@ -629,7 +630,12 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
 		}
-		//buf.Read()
+		buf.Read()
 	}
 	return block, nil
+}
+
+// TODO: implement me w/ test cases :-)
+func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
+	return nil, nil
 }

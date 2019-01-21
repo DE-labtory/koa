@@ -151,7 +151,7 @@ func TestCurPrecedence(t *testing.T) {
 			expected: PRODUCT,
 		},
 		{
-			expected: LOWEST,
+			expected: CALL,
 		},
 	}
 
@@ -186,7 +186,7 @@ func TestNextPrecedence(t *testing.T) {
 			expected: PRODUCT,
 		},
 		{
-			expected: LOWEST,
+			expected: CALL,
 		},
 	}
 
@@ -978,20 +978,20 @@ func TestParseCallExpression(t *testing.T) {
 		expected string
 	}{
 		{
-			function: &ast.StringLiteral{Value: "add"},
-			expected: `function "add"( (1 + 2) )`,
+			function: &ast.Identifier{Value: "add"},
+			expected: `function add( (1 + 2) )`,
 		},
 		{
-			function: &ast.StringLiteral{Value: "testFunc"},
-			expected: `function "testFunc"( "a", "b", 5 )`,
+			function: &ast.Identifier{Value: "testFunc"},
+			expected: `function testFunc( "a", "b", 5 )`,
 		},
 		{
-			function: &ast.StringLiteral{Value: "errorFunc"},
+			function: &ast.Identifier{Value: "errorFunc"},
 			expected: "ASTERISK, prefix parse function not defined",
 		},
 		{
-			function: &ast.StringLiteral{Value: "complexFunc"},
-			expected: `function "complexFunc"( ("a" + "b"), (5 * 3) )`,
+			function: &ast.Identifier{Value: "complexFunc"},
+			expected: `function complexFunc( ("a" + "b"), (5 * 3) )`,
 		},
 	}
 
@@ -1060,10 +1060,10 @@ func TestParseCallArguments(t *testing.T) {
 		},
 	}
 	tests := []string{
-		`function "testFunction"(  )`,
-		`function "testFunction"( 1 )`,
-		`function "testFunction"( "a", "b", 5 )`,
-		`function "testFunction"( ("a" + "b"), (5 * 3) )`,
+		`function testFunction(  )`,
+		`function testFunction( 1 )`,
+		`function testFunction( "a", "b", 5 )`,
+		`function testFunction( ("a" + "b"), (5 * 3) )`,
 		"ASTERISK, prefix parse function not defined",
 		"ASTERISK, prefix parse function not defined",
 	}
@@ -1078,7 +1078,7 @@ func TestParseCallArguments(t *testing.T) {
 		}
 
 		mockFn := &ast.CallExpression{
-			Function: &ast.StringLiteral{Value: "testFunction"},
+			Function: &ast.Identifier{Value: "testFunction"},
 		}
 		mockFn.Arguments = exp
 		if exp != nil && mockFn.String() != test {
@@ -1328,44 +1328,79 @@ func TestParseExpression(t *testing.T) {
 }
 
 func TestParseIfStatement(t *testing.T) {
-	prefixParseFnMap[True] = parseBooleanLiteral
-	prefixParseFnMap[False] = parseBooleanLiteral
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[Ident] = parseIdentifier
-	prefixParseFnMap[String] = parseStringLiteral
-	infixParseFnMap[EQ] = parseInfixExpression
+	initParseFnMap()
+
 	bufs := [][]Token{
 		{
-			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: True, Val: "true"}, {Type: Rparen, Val: ")"},
-
-			{Type: Lbrace, Val: "{"}, {Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
-			{Type: Int, Val: "0"}, {Type: Rbrace, Val: "}"},
-		},
-		{
-			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: Ident, Val: "a"}, {Type: EQ, Val: "=="},
-			{Type: Int, Val: "5"}, {Type: Rparen, Val: ")"},
-
-			{Type: Lbrace, Val: "{"}, {Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
-			{Type: Int, Val: "1"}, {Type: Rbrace, Val: "}"},
-
-			{Type: Else, Val: "else"}, {Type: Lbrace, Val: "{"}, {Type: StringType, Val: "string"},
-			{Type: Ident, Val: "b"}, {Type: Assign, Val: "="}, {Type: String, Val: "example"},
+			{Type: If, Val: "if"},
+			{Type: Lparen, Val: "("},
+			{Type: True, Val: "true"},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "0"},
+			{Type: Eol, Val: "\n"},
 			{Type: Rbrace, Val: "}"},
+			{Type: Eol, Val: "\n"},
 		},
 		{
-			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "5"},
+			{Type: If, Val: "if"},
+			{Type: Lparen, Val: "("},
+			{Type: Ident, Val: "a"},
+			{Type: EQ, Val: "=="},
+			{Type: Int, Val: "5"},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "1"},
+			{Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+			{Type: Else, Val: "else"},
+			{Type: Lbrace, Val: "{"},
+			{Type: StringType, Val: "string"},
+			{Type: Ident, Val: "b"},
+			{Type: Assign, Val: "="},
+			{Type: String, Val: "example"},
+			{Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+			{Type: Eol, Val: "\n"},
 		},
 		{
-			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: True, Val: "true"}, {Type: Rparen, Val: ")"},
-
-			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
-			{Type: Int, Val: "0"}, {Type: Rbrace, Val: "}"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "5"},
 		},
 		{
-			{Type: If, Val: "if"}, {Type: Lparen, Val: "("}, {Type: True, Val: "true"}, {Type: Rbrace, Val: "}"},
-
-			{Type: Lbrace, Val: "{"}, {Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="},
-			{Type: Int, Val: "0"}, {Type: Rbrace, Val: "}"},
+			{Type: If, Val: "if"},
+			{Type: Lparen, Val: "("},
+			{Type: True, Val: "true"},
+			{Type: Rparen, Val: ")"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "0"},
+			{Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+			{Type: Eol, Val: "\n"},
+		},
+		{
+			{Type: If, Val: "if"},
+			{Type: Lparen, Val: "("},
+			{Type: True, Val: "true"},
+			{Type: Rbrace, Val: "}"},
+			{Type: Lbrace, Val: "{"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "0"},
+			{Type: Eol, Val: "\n"},
+			{Type: Rbrace, Val: "}"},
+			{Type: Eol, Val: "\n"},
 		},
 	}
 
@@ -1403,18 +1438,42 @@ func TestParseBlockStatement(t *testing.T) {
 	infixParseFnMap[EQ] = parseInfixExpression
 	bufs := [][]Token{
 		{
-			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "0"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "0"},
+			{Type: Eol, Val: "\n"},
 			{Type: Rbrace, Val: "}"},
 		},
 		{
-			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "0"},
-			{Type: StringType, Val: "string"}, {Type: Ident, Val: "b"}, {Type: Assign, Val: "="}, {Type: String, Val: "abc"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "0"},
+			{Type: Eol, Val: "\n"},
+			{Type: StringType, Val: "string"},
+			{Type: Ident, Val: "b"},
+			{Type: Assign, Val: "="},
+			{Type: String, Val: "abc"},
+			{Type: Eol, Val: "\n"},
 			{Type: Rbrace, Val: "}"},
 		},
 		{
-			{Type: IntType, Val: "int"}, {Type: Ident, Val: "a"}, {Type: Assign, Val: "="}, {Type: Int, Val: "0"},
-			{Type: StringType, Val: "string"}, {Type: Ident, Val: "b"}, {Type: Assign, Val: "="}, {Type: String, Val: "abc"},
-			{Type: BoolType, Val: "bool"}, {Type: Ident, Val: "c"}, {Type: Assign, Val: "="}, {Type: True, Val: "true"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "a"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "0"},
+			{Type: Eol, Val: "\n"},
+			{Type: StringType, Val: "string"},
+			{Type: Ident, Val: "b"},
+			{Type: Assign, Val: "="},
+			{Type: String, Val: "abc"},
+			{Type: Eol, Val: "\n"},
+			{Type: BoolType, Val: "bool"},
+			{Type: Ident, Val: "c"},
+			{Type: Assign, Val: "="},
+			{Type: True, Val: "true"},
+			{Type: Eol, Val: "\n"},
 			{Type: Rbrace, Val: "}"},
 		},
 	}
@@ -1436,6 +1495,324 @@ func TestParseBlockStatement(t *testing.T) {
 		if exp != nil && exp.String() != test {
 			t.Fatalf("test[%d] - TestParseBlockStatement() wrong result. expected=%s, got=%s",
 				i, test, exp.String())
+		}
+	}
+}
+
+func TestParseStatement(t *testing.T) {
+	initParseFnMap()
+
+	tests := []struct {
+		tokens       []Token
+		expectedErr  error
+		expectedStmt string
+	}{
+		// tests for IntType
+		{
+			tokens: []Token{
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "1"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: "int [IDENT, a] = 1",
+		},
+		{
+			tokens: []Token{
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "1"},
+				{Type: Plus, Val: "+"},
+				{Type: Int, Val: "2"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: "int [IDENT, a] = (1 + 2)",
+		},
+		{
+			tokens: []Token{
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "1"},
+				{Type: Plus, Val: "+"},
+				{Type: Int, Val: "2"},
+				{Type: Asterisk, Val: "*"},
+				{Type: Int, Val: "3"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: "int [IDENT, a] = (1 + (2 * 3))",
+		},
+		{
+			tokens: []Token{
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: String, Val: "1"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `int [IDENT, a] = "1"`,
+		},
+
+		// tests for StringType
+		{
+			tokens: []Token{
+				{Type: StringType, Val: "string"},
+				{Type: Ident, Val: "abb"},
+				{Type: Assign, Val: "="},
+				{Type: String, Val: "do not merge, rebase!"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `string [IDENT, abb] = "do not merge, rebase!"`,
+		},
+		{
+			tokens: []Token{
+				{Type: StringType, Val: "string"},
+				{Type: Ident, Val: "abb"},
+				{Type: Assign, Val: "="},
+				{Type: String, Val: "hello,*+"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `string [IDENT, abb] = "hello,*+"`,
+		},
+		{
+			tokens: []Token{
+				{Type: StringType, Val: "string"},
+				{Type: Ident, Val: "abb"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "1"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `string [IDENT, abb] = 1`,
+		},
+
+		// tests for BoolType
+		{
+			tokens: []Token{
+				{Type: BoolType, Val: "bool"},
+				{Type: Ident, Val: "asdf"},
+				{Type: Assign, Val: "="},
+				{Type: True, Val: "true"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `bool [IDENT, asdf] = true`,
+		},
+		{
+			tokens: []Token{
+				{Type: BoolType, Val: "bool"},
+				{Type: Ident, Val: "asdf"},
+				{Type: Assign, Val: "="},
+				{Type: False, Val: "false"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `bool [IDENT, asdf] = false`,
+		},
+		{
+			tokens: []Token{
+				{Type: BoolType, Val: "bool"},
+				{Type: Ident, Val: "asdf"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "1"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `bool [IDENT, asdf] = 1`,
+		},
+
+		// tests for If statement
+		{
+			tokens: []Token{
+				{Type: If, Val: "if"},
+				{Type: Lparen, Val: "("},
+				{Type: True, Val: "true"},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `if ( true ) {  }`,
+		},
+		{
+			tokens: []Token{
+				{Type: If, Val: "if"},
+				{Type: Lparen, Val: "("},
+				{Type: Int, Val: "1"},
+				{Type: Plus, Val: "+"},
+				{Type: Int, Val: "2"},
+				{Type: EQ, Val: "=="},
+				{Type: Int, Val: "3"},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `if ( ((1 + 2) == 3) ) {  }`,
+		},
+		{
+			tokens: []Token{
+				{Type: If, Val: "if"},
+				{Type: Lparen, Val: "("},
+				{Type: True, Val: "true"},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Int, Val: "1"},
+				{Type: Plus, Val: "+"},
+				{Type: Int, Val: "2"},
+				{Type: EQ, Val: "=="},
+				{Type: Int, Val: "3"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  parseError{Int, "invalid token for parsing statement"},
+			expectedStmt: ``,
+		},
+		{
+			tokens: []Token{
+				{Type: If, Val: "if"},
+				{Type: Lparen, Val: "("},
+				{Type: True, Val: "true"},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "2"},
+				{Type: Eol, Val: "\n"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `if ( true ) { int [IDENT, a] = 2 }`,
+		},
+		{
+			tokens: []Token{
+				{Type: If, Val: "if"},
+				{Type: Lparen, Val: "("},
+				{Type: True, Val: "true"},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "2"},
+				{Type: Eol, Val: "\n"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Else, Val: "else"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else {  }`,
+		},
+		{
+			tokens: []Token{
+				{Type: If, Val: "if"},
+				{Type: Lparen, Val: "("},
+				{Type: True, Val: "true"},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "2"},
+				{Type: Eol, Val: "\n"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Else, Val: "else"},
+				{Type: Lbrace, Val: "{"},
+				{Type: StringType, Val: "string"},
+				{Type: Ident, Val: "b"},
+				{Type: Assign, Val: "="},
+				{Type: String, Val: "hello"},
+				{Type: Eol, Val: "\n"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else { string [IDENT, b] = "hello" }`,
+		},
+
+		// tests for Return statement
+		{
+			tokens: []Token{
+				{Type: Return, Val: "return"},
+				{Type: Ident, Val: "asdf"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `return asdf`,
+		},
+		{
+			tokens: []Token{
+				{Type: Return, Val: "return"},
+				{Type: Lparen, Val: "("},
+				{Type: Int, Val: "1"},
+				{Type: Plus, Val: "+"},
+				{Type: Int, Val: "2"},
+				{Type: Asterisk, Val: "*"},
+				{Type: Int, Val: "3"},
+				{Type: Rparen, Val: ")"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `return (1 + (2 * 3))`,
+		},
+		{
+			tokens: []Token{
+				{Type: Return, Val: "return"},
+				{Type: Lparen, Val: "("},
+				{Type: Ident, Val: "add"},
+				{Type: Lparen, Val: "("},
+				{Type: Int, Val: "1"},
+				{Type: Comma, Val: ","},
+				{Type: Int, Val: "2"},
+				{Type: Rparen, Val: ")"},
+				{Type: Plus, Val: "+"},
+				{Type: Int, Val: "2"},
+				{Type: Asterisk, Val: "*"},
+				{Type: Int, Val: "3"},
+				{Type: Rparen, Val: ")"},
+				{Type: Eol, Val: "\n"},
+			},
+			expectedErr:  nil,
+			expectedStmt: `return (function add( 1, 2 ) + (2 * 3))`,
+		},
+
+		// tests for Default
+		{
+			tokens: []Token{
+				{Type: Int, Val: "1"},
+			},
+			expectedErr:  parseError{Int, "invalid token for parsing statement"},
+			expectedStmt: ``,
+		},
+	}
+
+	for i, tt := range tests {
+		buf := &mockTokenBuffer{tt.tokens, 0}
+		stmt, err := parseStatement(buf)
+
+		if err != nil && err != tt.expectedErr {
+			t.Errorf(`test[%d] - parseStatement wrong error. expected="%v", got="%v"`,
+				i, tt.expectedErr, err)
+			continue
+		}
+
+		if err == nil && stmt.String() != tt.expectedStmt {
+			t.Errorf(`test[%d] - parseStatement wrong result. expected="%s", got="%s"`,
+				i, tt.expectedStmt, stmt.String())
 		}
 	}
 }
