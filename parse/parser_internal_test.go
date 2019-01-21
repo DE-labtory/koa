@@ -1851,7 +1851,7 @@ func TestParseStatement(t *testing.T) {
 				{Type: Rbrace, Val: "}"},
 				{Type: Eol, Val: "\n"},
 			},
-			expectedErr:  parseError{Int, "invalid token for parsing statement"},
+			expectedErr:  parseError{Int, "token is not identifier"},
 			expectedStmt: ``,
 		},
 		{
@@ -1971,7 +1971,7 @@ func TestParseStatement(t *testing.T) {
 			tokens: []Token{
 				{Type: Int, Val: "1"},
 			},
-			expectedErr:  parseError{Int, "invalid token for parsing statement"},
+			expectedErr:  parseError{Int, "token is not identifier"},
 			expectedStmt: ``,
 		},
 	}
@@ -1989,6 +1989,99 @@ func TestParseStatement(t *testing.T) {
 		if err == nil && stmt.String() != tt.expectedStmt {
 			t.Errorf(`test[%d] - parseStatement wrong result. expected="%s", got="%s"`,
 				i, tt.expectedStmt, stmt.String())
+		}
+	}
+}
+
+func TestParseExpressionStatement(t *testing.T) {
+	initParseFnMap()
+
+	tests := []struct {
+		tokens       []Token
+		expectedStmt string
+		expectedErr  string
+	}{
+		{
+			// add()
+			[]Token{
+				{Type: Ident, Val: "add"},
+				{Type: Lparen, Val: "("},
+				{Type: Rparen, Val: ")"},
+			},
+			"function add(  )",
+			"",
+		},
+		{
+			// read(x int)
+			[]Token{
+				{Type: Ident, Val: "read"},
+				{Type: Lparen, Val: "("},
+				{Type: Ident, Val: "x"},
+				{Type: Rparen, Val: ")"},
+			},
+			"function read( x )",
+			"",
+		},
+		{
+			// testFunction(a int, b string)
+			[]Token{
+				{Type: Ident, Val: "testFunction"},
+				{Type: Lparen, Val: "("},
+				{Type: Ident, Val: "a"},
+				{Type: Comma, Val: ","},
+				{Type: Ident, Val: "b"},
+				{Type: Rparen, Val: ")"},
+			},
+			"function testFunction( a, b )",
+			"",
+		},
+		{
+			// testFunction(a int b string) <= error case
+			[]Token{
+				{Type: Ident, Val: "testFunction"},
+				{Type: Lparen, Val: "("},
+				{Type: Ident, Val: "a"},
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "b"},
+				{Type: IntType, Val: "string"},
+				{Type: Rparen, Val: ")"},
+			},
+			"",
+			"INT_TYPE, expectNext() : expected [RPAREN], but got [INT_TYPE]",
+		},
+		{
+			// 1() <= error case
+			[]Token{
+				{Type: Int, Val: "1"},
+				{Type: Lparen, Val: "("},
+				{Type: Rparen, Val: ")"},
+			},
+			"",
+			"INT, token is not identifier",
+		},
+		{
+			// add) <= error case
+			[]Token{
+				{Type: Ident, Val: "add"},
+				{Type: Rparen, Val: ")"},
+			},
+			"",
+			"RPAREN, expectNext() : expected [LPAREN], but got [RPAREN]",
+		},
+	}
+
+	for i, test := range tests {
+		stmt, err := parseExpressionStatement(&mockTokenBuffer{test.tokens, 0})
+		if stmt != nil && stmt.String() != test.expectedStmt {
+			t.Fatalf("test[%d] - TestParseFunctionStatement wrong answer.\n"+
+				"expected= %s\n"+
+				"got= %s", i, test.expectedStmt, stmt.String())
+		}
+
+		if err != nil && err.Error() != test.expectedErr {
+			t.Fatalf("test[%d] - TestParseFunctionStatement wrong error.\n"+
+				"expected= %s\n"+
+				"got= %s", i, test.expectedErr, err.Error())
 		}
 	}
 }

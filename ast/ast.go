@@ -227,21 +227,14 @@ func (bs *BlockStatement) String() string {
 }
 
 // Represent function statement
-type FunctionStatement struct {
-	Name       *Identifier
-	Parameters []*ParameterLiteral
+type ExpressionStatement struct {
+	Expr Expression
 }
 
-func (fs *FunctionStatement) do() {}
+func (es *ExpressionStatement) do() {}
 
-func (fs *FunctionStatement) String() string {
-	var out bytes.Buffer
-	out.WriteString(fs.Name.String() + "(")
-	for _, parameter := range fs.Parameters {
-		out.WriteString(parameter.String())
-	}
-	out.WriteString(")")
-	return out.String()
+func (es *ExpressionStatement) String() string {
+	return es.Expr.String()
 }
 
 // Represent string literal

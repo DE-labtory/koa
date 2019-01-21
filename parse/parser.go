@@ -260,10 +260,7 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 	case Return:
 		return parseReturnStatement(buf)
 	default:
-		return nil, parseError{
-			tokenType: tt,
-			reason:    "invalid token for parsing statement",
-		}
+		return parseExpressionStatement(buf)
 	}
 }
 
@@ -648,7 +645,10 @@ func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, er
 // parseCallArguments parse arguments of function call
 func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 	args := []ast.Expression{}
-	buf.Read()
+	if err := expectNext(buf, Lparen); err != nil {
+		return nil, err
+	}
+
 	if curTokenIs(buf, Rparen) {
 		return args, nil
 	}
@@ -764,4 +764,24 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		buf.Read()
 	}
 	return block, nil
+}
+
+func parseExpressionStatement(buf TokenBuffer) (*ast.ExpressionStatement, error) {
+	stmt := &ast.ExpressionStatement{}
+	tok := buf.Read()
+	if tok.Type != Ident {
+		return nil, parseError{
+			tok.Type,
+			"token is not identifier",
+		}
+	}
+	ident := &ast.Identifier{Value: tok.Val}
+
+	exp, err := parseCallExpression(buf, ident)
+	if err != nil {
+		return nil, err
+	}
+
+	stmt.Expr = exp
+	return stmt, nil
 }
