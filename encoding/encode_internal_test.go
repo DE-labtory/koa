@@ -123,3 +123,41 @@ func Test_encodeBool(t *testing.T) {
 		}
 	}
 }
+
+func Test_convertTo4Bytes(t *testing.T) {
+
+	tests := []struct {
+		operand  int
+		expected string
+	}{
+		{
+			operand:  0,
+			expected: "00000000",
+		},
+		{
+			operand:  1,
+			expected: "00000001",
+		},
+		{
+			operand:  2147483647,
+			expected: "7fffffff",
+		},
+		{
+			operand:  4294967295,
+			expected: "ffffffff",
+		},
+	}
+
+	for i, test := range tests {
+		op := test.operand
+		convertedCode := convertTo4Bytes(op)
+
+		if len(convertedCode) != 8 {
+			t.Fatalf("test[%d] - convertTo4Byte() result wrong. \n expected=8, \n got=%d", i, len(convertedCode))
+		}
+
+		if convertedCode != test.expected {
+			t.Fatalf("test[%d] - convertTo4Bytes() result wrong. \n expected=%s, \n got=%s", i, test.expected, convertedCode)
+		}
+	}
+}
