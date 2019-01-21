@@ -226,6 +226,24 @@ func (bs *BlockStatement) String() string {
 	return strings.Join(str, "/")
 }
 
+// Represent function statement
+type FunctionStatement struct {
+	Name       *Identifier
+	Parameters []*ParameterLiteral
+}
+
+func (fs *FunctionStatement) do() {}
+
+func (fs *FunctionStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(fs.Name.String() + "(")
+	for _, parameter := range fs.Parameters {
+		out.WriteString(parameter.String())
+	}
+	out.WriteString(")")
+	return out.String()
+}
+
 // Represent string literal
 type StringLiteral struct {
 	Value string
