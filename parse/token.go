@@ -55,6 +55,7 @@ const (
 	IntType
 	StringType
 	BoolType
+	VoidType
 
 	Assign   // =
 	Plus     // +

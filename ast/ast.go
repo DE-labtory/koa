@@ -104,12 +104,14 @@ const (
 	IntType
 	StringType
 	BoolType
+	VoidType
 )
 
 var DataStructureMap = map[DataStructure]string{
 	IntType:    "int",
 	StringType: "string",
 	BoolType:   "bool",
+	VoidType:   "void",
 }
 
 func (ds DataStructure) String() string {
@@ -167,7 +169,7 @@ func (is *IfStatement) String() string {
 // e.g. func foo(int a) { ... }
 type FunctionLiteral struct {
 	Name       *Identifier
-	Parameters []*Identifier
+	Parameters []*ParameterLiteral
 	Body       *BlockStatement
 	ReturnType DataStructure
 }
@@ -240,23 +242,6 @@ func (bl *BooleanLiteral) produce() {}
 
 func (bl *BooleanLiteral) String() string {
 	return strconv.FormatBool(bl.Value)
-}
-
-// Represent Function expression
-type FunctionLiteral struct {
-	Parameters []*ParameterLiteral
-	Body       *BlockStatement
-}
-
-func (fl *FunctionLiteral) produce() {}
-
-func (fl *FunctionLiteral) String() string {
-	strs := make([]string, 0)
-	for _, parameter := range fl.Parameters {
-		strs = append(strs, parameter.String())
-	}
-	strs = append(strs, fl.Body.String())
-	return strings.Join(strs, ", ")
 }
 
 // Represent Function Parameter expression
