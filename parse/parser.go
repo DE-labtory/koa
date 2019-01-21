@@ -44,6 +44,7 @@ var datastructureMap = map[TokenType]ast.DataStructure{
 	IntType:    ast.IntType,
 	StringType: ast.StringType,
 	BoolType:   ast.BoolType,
+	VoidType:   ast.VoidType,
 }
 
 type precedence int
@@ -404,6 +405,14 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 
+	ds, ok := datastructureMap[buf.Peek(CURRENT).Type]
+	if ok {
+		buf.Read()
+	} else {
+		ds = ast.VoidType
+	}
+	lit.ReturnType = ds
+
 	if err := expectNext(buf, Lbrace); err != nil {
 		return nil, err
 	}
@@ -428,7 +437,14 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 	}
 
 	tok = buf.Read()
-	ident.Type = datastructureMap[tok.Type]
+	ds, ok := datastructureMap[tok.Type]
+	if !ok {
+		return nil, parseError{
+			tok.Type,
+			"Function parameter type missed",
+		}
+	}
+	ident.Type = ds
 
 	identifiers = append(identifiers, ident)
 	for curTokenIs(buf, Comma) {
@@ -439,7 +455,14 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 		}
 
 		curTok = buf.Read()
-		ident.Type = datastructureMap[curTok.Type]
+		ds, ok := datastructureMap[curTok.Type]
+		if !ok {
+			return nil, parseError{
+				curTok.Type,
+				"Function parameter type missed",
+			}
+		}
+		ident.Type = ds
 
 		identifiers = append(identifiers, ident)
 	}
@@ -607,12 +630,12 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	if err != nil {
 		return nil, err
 	}
-	buf.Read()
 
+	tok = buf.Read()
 	if curTokenIs(buf, Else) {
 		buf.Read()
-
-		if err := expectNext(buf, Lbrace); err != nil {
+		err := expectNext(buf, Lbrace)
+		if err != nil {
 			return nil, err
 		}
 
@@ -640,6 +663,5 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		}
 		buf.Read()
 	}
-
 	return block, nil
 }
