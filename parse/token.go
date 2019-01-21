@@ -64,6 +64,17 @@ const (
 	Slash    // /
 	Mod      // %
 
+	Plus_assign     // +=
+	Minus_assign    // -=
+	Asterisk_assign // *=
+	Slash_assign    // /=
+	Mod_assign      // %=
+
+	Land // &&
+	Lor  // ||
+	Inc  // ++
+	Dec  //--
+
 	LT     // <
 	GT     // >
 	LTE    // <=
@@ -109,6 +120,17 @@ var TokenTypeMap = map[TokenType]string{
 	Asterisk: "ASTERISK",
 	Slash:    "SLASH",
 	Mod:      "MOD",
+
+	Plus_assign:     "PLUS_ASSIGN",
+	Minus_assign:    "MINUS_ASSIGN",
+	Asterisk_assign: "ASTERISK_ASSIGN",
+	Slash_assign:    "SLASH_ASSIGN",
+	Mod_assign:      "MOD_ASSIGN",
+
+	Land: "LAND",
+	Lor:  "LOR",
+	Inc:  "INC",
+	Dec:  "DEC",
 
 	LT:     "LT",
 	GT:     "GT",

@@ -34,7 +34,7 @@ func TestLexer_NextToken(t *testing.T) {
 			3 / 10
 			int a = 5
 			int b = 315 + (5 * 7) / 3 - 10
-			<= >= == != = { } , "string"
+			++ -- && || += -= *= /= %= <= >= == != = { } , "string"
 			"First
 second
 		}
@@ -86,6 +86,15 @@ second
 		{parse.Int, "10"},
 		{parse.Eol, "\n"},
 
+		{parse.Inc, "++"},
+		{parse.Dec, "--"},
+		{parse.Land, "&&"},
+		{parse.Lor, "||"},
+		{parse.Plus_assign, "+="},
+		{parse.Minus_assign, "-="},
+		{parse.Asterisk_assign, "*="},
+		{parse.Slash_assign, "/="},
+		{parse.Mod_assign, "%="},
 		{parse.LTE, "<="},
 		{parse.GTE, ">="},
 		{parse.EQ, "=="},
