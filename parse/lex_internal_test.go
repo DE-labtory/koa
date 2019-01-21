@@ -234,6 +234,27 @@ func TestState_acceptRun(t *testing.T) {
 	}
 }
 
+func TestIsNextToken(t *testing.T) {
+	tests := []struct {
+		input string
+		ok    bool
+	}{
+		{"+a", false},
+		{"+=", false},
+		{"++", true},
+	}
+
+	for i, test := range tests {
+		s := state{
+			input: test.input,
+		}
+		s.next() //got first token
+		if test.ok != s.isNextToken('+') {
+			t.Errorf("tests[%d] - error", i)
+		}
+	}
+}
+
 type MockEmitter struct {
 	emitFunc func(t Token)
 }
