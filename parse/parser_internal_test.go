@@ -455,7 +455,7 @@ func TestParseStringLiteral(t *testing.T) {
 func TestParseFunctionLiteral(t *testing.T) {
 	bufs := [][]Token{
 		{
-			// fun example (a int, b string) {}
+			// func example (a int, b string) {}
 			{Type: Function, Val: "func"},
 			{Type: Ident, Val: "example"},
 			{Type: Lparen, Val: "("},
@@ -469,7 +469,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 			{Type: Rbrace, Val: "}"},
 		},
 		{
-			// fun name (a int, b string) {
+			// func name (a int, b string) {
 			//	int c = 5
 			// }
 			{Type: Function, Val: "func"},
@@ -487,16 +487,26 @@ func TestParseFunctionLiteral(t *testing.T) {
 			{Type: Assign, Val: "="},
 			{Type: Int, Val: "5"},
 			{Type: Rbrace, Val: "}"},
-			{Type: Eol, Val: ""},
 		},
 		{
+			// error case
 			{Type: Lbrace, Val: "{"},
+		},
+		{
+			// func example () {}
+			{Type: Function, Val: "func"},
+			{Type: Ident, Val: "example"},
+			{Type: Lparen, Val: "("},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: Rbrace, Val: "}"},
 		},
 	}
 	tests := []string{
 		"func example(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string))  {\n\n}",
 		"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string))  {\nint [IDENT, c] = 5\n}",
 		"LBRACE, expectNext() : expected [FUNCTION], but got [LBRACE]",
+		"func example()  {\n\n}",
 	}
 	prefixParseFnMap[Int] = parseIntegerLiteral
 	infixParseFnMap[Plus] = parseInfixExpression
