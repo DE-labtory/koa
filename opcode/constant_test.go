@@ -16,9 +16,86 @@
 
 package opcode_test
 
-import "testing"
+import (
+	"testing"
 
-// TODO: implement test cases :-)
+	"github.com/DE-labtory/koa/opcode"
+)
+
 func TestType_String(t *testing.T) {
+	tests := []struct {
+		input    opcode.Type
+		expected string
+	}{
+		{
+			opcode.Add,
+			"Add",
+		},
+		{
+			opcode.Mul,
+			"Mul",
+		},
+		{
+			opcode.Sub,
+			"Sub",
+		},
+		{
+			opcode.Div,
+			"Div",
+		},
+		{
+			opcode.Mod,
+			"Mod",
+		},
+		{
+			opcode.LT,
+			"LT",
+		},
+		{
+			opcode.GT,
+			"GT",
+		},
+		{
+			opcode.EQ,
+			"EQ",
+		},
+		{
+			opcode.NOT,
+			"NOT",
+		},
+		{
+			opcode.Pop,
+			"Pop",
+		},
+		{
+			opcode.Push,
+			"Push",
+		},
+		{
+			opcode.Mload,
+			"Mload",
+		},
+		{
+			opcode.Mstore,
+			"Mstore",
+		},
+		{
+			0x24,
+			"String() error - Not defined opcode",
+		},
+	}
 
+	for i, test := range tests {
+		str, err := test.input.String()
+		if str != "" && str != test.expected {
+			t.Fatalf("test[%d] - TestType_String() wrong result.\n"+
+				"expected: %s\n"+
+				"got: %s", i, test.expected, str)
+		}
+		if err != nil && err.Error() != test.expected {
+			t.Fatalf("test[%d] - TestType_String() wrong error.\n"+
+				"expected: %s\n"+
+				"got: %s", i, test.expected, err.Error())
+		}
+	}
 }
