@@ -377,6 +377,80 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	return &ast.StringLiteral{Value: token.Val}, nil
 }
 
+// parseFunctionLiteral parse functional expression
+// first parse name, and parse parameter, body
+func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
+	lit := &ast.FunctionLiteral{}
+	var err error
+
+	if err = expectNext(buf, Function); err != nil {
+		return nil, err
+	}
+
+	tok := buf.Read()
+	if tok.Type != Ident {
+		return nil, parseError{
+			tok.Type,
+			"token is not identifier",
+		}
+	}
+	lit.Name = &ast.Identifier{Value: tok.Val}
+
+	if err = expectNext(buf, Lparen); err != nil {
+		return nil, err
+	}
+
+	if lit.Parameters, err = parseFunctionParameters(buf); err != nil {
+		return nil, err
+	}
+
+	if err := expectNext(buf, Lbrace); err != nil {
+		return nil, err
+	}
+
+	if lit.Body, err = parseBlockStatement(buf); err != nil {
+		return nil, err
+	}
+	return lit, nil
+}
+
+// parseFunctionParameters parse function's parameter using comma
+func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
+	identifiers := []*ast.ParameterLiteral{}
+	var err error
+	if err = expectNext(buf, Rparen); err == nil {
+		return identifiers, nil
+	}
+
+	tok := buf.Read()
+	ident := &ast.ParameterLiteral{
+		Identifier: &ast.Identifier{Value: tok.Val},
+	}
+
+	tok = buf.Read()
+	ident.Type = datastructureMap[tok.Type]
+
+	identifiers = append(identifiers, ident)
+	for curTokenIs(buf, Comma) {
+		buf.Read()
+		curTok := buf.Read()
+		ident := &ast.ParameterLiteral{
+			Identifier: &ast.Identifier{Value: curTok.Val},
+		}
+
+		curTok = buf.Read()
+		ident.Type = datastructureMap[curTok.Type]
+
+		identifiers = append(identifiers, ident)
+	}
+
+	if err = expectNext(buf, Rparen); err != nil {
+		return nil, err
+	}
+
+	return identifiers, nil
+}
+
 func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	if err := expectNext(buf, Return); err != nil {
 		return nil, err
@@ -533,15 +607,10 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	if err != nil {
 		return nil, err
 	}
-	buf.Read()
 
-	if curTokenIs(buf, Else) {
-		buf.Read()
-
-		if err := expectNext(buf, Lbrace); err != nil {
-			return nil, err
-		}
-
+	tok = buf.Read()
+	if err := expectNext(buf, Else); err == nil {
+		tok = buf.Read()
 		expression.Alternative, err = parseBlockStatement(buf)
 		if err != nil {
 			return nil, err
@@ -566,11 +635,5 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		}
 		buf.Read()
 	}
-
 	return block, nil
-}
-
-// TODO: implement me w/ test cases :-)
-func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
-	return nil, nil
 }

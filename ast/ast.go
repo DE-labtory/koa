@@ -163,37 +163,6 @@ func (is *IfStatement) String() string {
 		is.Alternative.String())
 }
 
-// FunctionLiteral represents function definition
-// e.g. func foo(int a) { ... }
-type FunctionLiteral struct {
-	Name       *Identifier
-	Parameters []*Identifier
-	Body       *BlockStatement
-	ReturnType DataStructure
-}
-
-func (fl *FunctionLiteral) do() {}
-
-// TODO: Add test cases when Type field is added to Identifier
-func (fl *FunctionLiteral) String() string {
-	var out bytes.Buffer
-
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
-	}
-
-	out.WriteString("func " + fl.Name.String() + "(")
-
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
-	out.WriteString(fl.ReturnType.String() + " {\n")
-	out.WriteString(fl.Body.String() + "\n")
-	out.WriteString("}")
-
-	return out.String()
-}
-
 // Represent block statement
 type BlockStatement struct {
 	Statements []Statement
@@ -240,6 +209,47 @@ func (bl *BooleanLiteral) produce() {}
 
 func (bl *BooleanLiteral) String() string {
 	return strconv.FormatBool(bl.Value)
+}
+
+// Represent Function expression
+type FunctionLiteral struct {
+	Name       *Identifier
+	Parameters []*ParameterLiteral
+	Body       *BlockStatement
+	ReturnType DataStructure
+}
+
+func (fl *FunctionLiteral) do() {}
+
+func (fl *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, p := range fl.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("func " + fl.Name.String() + "(")
+
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") ")
+	out.WriteString(fl.ReturnType.String() + " {\n")
+	out.WriteString(fl.Body.String() + "\n")
+	out.WriteString("}")
+
+	return out.String()
+}
+
+// Represent Function Parameter expression
+type ParameterLiteral struct {
+	Identifier *Identifier
+	Type       DataStructure
+}
+
+func (pl *ParameterLiteral) produce() {}
+
+func (pl *ParameterLiteral) String() string {
+	return fmt.Sprintf("Parameter : (Identifier: %s, Type: %s)", pl.Identifier.String(), pl.Type.String())
 }
 
 // Represent prefix expression

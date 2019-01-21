@@ -149,7 +149,6 @@ func TestBooleanLiteral_String(t *testing.T) {
 	}
 }
 
-// TODO: Add test cases when Type field is added to Identifier
 func TestFunctionLiteral_String(t *testing.T) {
 	tests := []struct {
 		input    FunctionLiteral
@@ -158,7 +157,7 @@ func TestFunctionLiteral_String(t *testing.T) {
 		{
 			FunctionLiteral{
 				Name:       &Identifier{Value: "foo"},
-				Parameters: []*Identifier{},
+				Parameters: []*ParameterLiteral{},
 				Body:       &BlockStatement{},
 				ReturnType: StringType,
 			},
@@ -169,7 +168,7 @@ func TestFunctionLiteral_String(t *testing.T) {
 		{
 			FunctionLiteral{
 				Name:       &Identifier{Value: "foo"},
-				Parameters: []*Identifier{},
+				Parameters: []*ParameterLiteral{},
 				Body: &BlockStatement{
 					Statements: []Statement{
 						&AssignStatement{

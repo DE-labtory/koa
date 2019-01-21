@@ -30,7 +30,9 @@ type mockTokenBuffer struct {
 
 func (m *mockTokenBuffer) Read() Token {
 	ret := m.buf[m.sp]
-	m.sp++
+	if m.sp+1 < len(m.buf) {
+		m.sp++
+	}
 	return ret
 }
 
@@ -445,6 +447,141 @@ func TestParseStringLiteral(t *testing.T) {
 			if exp.String() != test.expected.String() {
 				t.Fatalf("test[%d] - TestParseStringLiteral() wrong result. expected=%s, got=%s",
 					i, test.expected, exp.String())
+			}
+		}
+	}
+}
+
+func TestParseFunctionLiteral(t *testing.T) {
+	bufs := [][]Token{
+		{
+			// func example (a int, b string) {}
+			{Type: Function, Val: "func"},
+			{Type: Ident, Val: "example"},
+			{Type: Lparen, Val: "("},
+			{Type: Ident, Val: "a"},
+			{Type: IntType, Val: "int"},
+			{Type: Comma, Val: ","},
+			{Type: Ident, Val: "b"},
+			{Type: StringType, Val: "string"},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: Rbrace, Val: "}"},
+		},
+		{
+			// func name (a int, b string) {
+			//	int c = 5
+			// }
+			{Type: Function, Val: "func"},
+			{Type: Ident, Val: "name"},
+			{Type: Lparen, Val: "("},
+			{Type: Ident, Val: "a"},
+			{Type: IntType, Val: "int"},
+			{Type: Comma, Val: ","},
+			{Type: Ident, Val: "b"},
+			{Type: StringType, Val: "string"},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: IntType, Val: "int"},
+			{Type: Ident, Val: "c"},
+			{Type: Assign, Val: "="},
+			{Type: Int, Val: "5"},
+			{Type: Rbrace, Val: "}"},
+		},
+		{
+			// error case
+			{Type: Lbrace, Val: "{"},
+		},
+		{
+			// func example () {}
+			{Type: Function, Val: "func"},
+			{Type: Ident, Val: "example"},
+			{Type: Lparen, Val: "("},
+			{Type: Rparen, Val: ")"},
+			{Type: Lbrace, Val: "{"},
+			{Type: Rbrace, Val: "}"},
+		},
+	}
+	tests := []string{
+		"func example(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string))  {\n\n}",
+		"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string))  {\nint [IDENT, c] = 5\n}",
+		"LBRACE, expectNext() : expected [FUNCTION], but got [LBRACE]",
+		"func example()  {\n\n}",
+	}
+	prefixParseFnMap[Int] = parseIntegerLiteral
+	infixParseFnMap[Plus] = parseInfixExpression
+
+	for i, test := range tests {
+		buf := mockTokenBuffer{bufs[i], 0}
+		exp, err := parseFunctionLiteral(&buf)
+		if err != nil && err.Error() != test {
+			t.Fatalf("test[%d] - TestParseFunctionLiteral() wrong error\n"+
+				"expected: %s\n"+
+				"got: %s", i, test, err.Error())
+		}
+
+		if exp != nil && exp.String() != test {
+			t.Fatalf("test[%d] - TestParseFunctionLiteral wrong result\n"+
+				"expected: %s\n"+
+				"got: %s", i, test, exp.String())
+		}
+	}
+}
+
+func TestParseFunctionParameter(t *testing.T) {
+	bufs := [][]Token{
+		{
+			{Type: Ident, Val: "a"},
+			{Type: IntType, Val: "int"},
+			{Type: Comma, Val: ","},
+			{Type: Ident, Val: "b"},
+			{Type: StringType, Val: "string"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Ident, Val: "arg"},
+			{Type: BoolType, Val: "bool"},
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Rparen, Val: ")"},
+		},
+		{
+			{Type: Ident, Val: "arg"},
+			{Type: IntType, Val: "int"},
+			{Type: Rbrace, Val: "}"},
+		},
+	}
+	tests := [][]string{
+		{
+			"Parameter : (Identifier: a, Type: int)",
+			"Parameter : (Identifier: b, Type: string)",
+		},
+		{
+			"Parameter : (Identifier: arg, Type: bool)",
+		},
+		{
+			"Parameter : ()",
+		},
+		{
+			"RBRACE, expectNext() : expected [RPAREN], but got [RBRACE]",
+		},
+	}
+
+	for i, test := range tests {
+		buf := mockTokenBuffer{bufs[i], 0}
+		idents, err := parseFunctionParameters(&buf)
+		if err != nil && err.Error() != test[0] {
+			t.Fatalf("test[%d] - TestParseFunctionParameter() wrong error.\n"+
+				"expected: %s\n"+
+				"got: %s", i, test[0], err.Error())
+		} else {
+			for j, ident := range idents {
+				if ident.String() != tests[i][j] {
+					t.Fatalf("test[%d-%d] - TestParseFunctionParameter() failed.\n"+
+						"expected: %s\n"+
+						"got: %s", i, j, tests[i][j], ident)
+				}
 			}
 		}
 	}
