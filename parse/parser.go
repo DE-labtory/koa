@@ -377,9 +377,24 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	return &ast.StringLiteral{Value: token.Val}, nil
 }
 
-func parseFunctionLiteral(buf TokenBuffer) (ast.Expression, error) {
+// parseFunctionLiteral parse functional expression
+// first parse name, and parse parameter, body
+func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	lit := &ast.FunctionLiteral{}
 	var err error
+
+	if err = expectNext(buf, Function); err != nil {
+		return nil, err
+	}
+
+	tok := buf.Read()
+	if tok.Type != Ident {
+		return nil, parseError{
+			tok.Type,
+			"token is not identifier",
+		}
+	}
+	lit.Name = &ast.Identifier{Value: tok.Val}
 
 	if err = expectNext(buf, Lparen); err != nil {
 		return nil, err
@@ -399,6 +414,7 @@ func parseFunctionLiteral(buf TokenBuffer) (ast.Expression, error) {
 	return lit, nil
 }
 
+// parseFunctionParameters parse function's parameter using comma
 func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 	identifiers := []*ast.ParameterLiteral{}
 	var err error
