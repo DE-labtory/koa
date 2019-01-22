@@ -98,6 +98,35 @@ func foo() void {
 			tokens: []Token{
 				{Type: Contract, Val: "contract"},
 				{Type: Lbrace, Val: "{"},
+				{Type: Function, Val: "func"},
+				{Type: Ident, Val: "foo"},
+				{Type: Lparen, Val: "("},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Function, Val: "func"},
+				{Type: Ident, Val: "bar"},
+				{Type: Lparen, Val: "("},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eof},
+			},
+			expected: `
+contract {
+func foo() void {
+
+}
+func bar() void {
+
+}
+}`,
+		},
+		{
+			tokens: []Token{
+				{Type: Contract, Val: "contract"},
+				{Type: Lbrace, Val: "{"},
 				{Type: IntType, Val: "int"},
 				{Type: Ident, Val: "a"},
 				{Type: Assign, Val: "="},
@@ -695,56 +724,88 @@ func TestParseFunctionParameter(t *testing.T) {
 	}
 }
 
-func TestParseExpAsPrefix(t *testing.T) {
-	// setup mockTokenBuffer
-	tokens := []Token{
-		{Type: Ident, Val: "a"},
-		{Type: String, Val: "hello"},
-		{Type: Plus, Val: "+"},
-	}
-	buf := mockTokenBuffer{tokens, 0}
-
-	// mock prefixParseFnMap
-	// In the case of Identifier, return normal expression
-	prefixParseFnMap[String] = func(buf TokenBuffer) (ast.Expression, error) {
-		return &ast.StringLiteral{"hello"}, nil
-	}
-	// In the case of Asterisk, return with errors
-	prefixParseFnMap[Plus] = func(buf TokenBuffer) (ast.Expression, error) {
-		return &ast.PrefixExpression{}, mockError
-	}
+func TestMakePrefixExpression(t *testing.T) {
+	initParseFnMap()
 
 	tests := []struct {
-		expectedExpression ast.Expression
-		expectedError      error
+		tokens      []Token
+		expected    string
+		expectedErr error
 	}{
 		{
-			nil,
-			parseError{Ident, "prefix parse function not defined"},
+			tokens: []Token{
+				{Type: Minus, Val: "-"},
+				{Type: Int, Val: "1"},
+			},
+			expected: "(-1)",
 		},
 		{
-			&ast.StringLiteral{"hello"},
-			nil,
+			tokens: []Token{
+				{Type: Minus, Val: "-"},
+				{Type: Ident, Val: "a"},
+			},
+			expected: "(-a)",
 		},
 		{
-			nil,
-			mockError,
+			tokens: []Token{
+				{Type: Bang, Val: "!"},
+				{Type: True, Val: "true"},
+			},
+			expected: "(!true)",
+		},
+		{
+			tokens: []Token{
+				{Type: Bang, Val: "!"},
+				{Type: Bang, Val: "!"},
+				{Type: True, Val: "false"},
+			},
+			expected: "(!(!false))",
+		},
+		{
+			tokens: []Token{
+				{Type: Bang, Val: "!"},
+				{Type: Minus, Val: "-"},
+				{Type: Ident, Val: "foo"},
+			},
+			expected: "(!(-foo))",
+		},
+		{
+			tokens: []Token{
+				{Type: Minus, Val: "-"},
+				{Type: Bang, Val: "!"},
+				{Type: Ident, Val: "foo"},
+			},
+			expected: "(-(!foo))",
+		},
+		{
+			tokens: []Token{
+				{Type: Minus, Val: "-"},
+				{Type: True, Val: "true"},
+			},
+			expected: "(-true)",
+		},
+		{
+			tokens: []Token{
+				{Type: Bang, Val: "!"},
+				{Type: String, Val: "hello"},
+			},
+			expected: `(!"hello")`,
 		},
 	}
 
-	for i, test := range tests {
-		exp, err := makePrefixExpression(&buf)
-		buf.Read()
+	for i, tt := range tests {
+		buf := &mockTokenBuffer{tt.tokens, 0}
+		exp, err := makePrefixExpression(buf)
 
-		if exp != nil && exp.String() != test.expectedExpression.String() {
-			t.Errorf("tests[%d] - Returned statements is not %s but got %s",
-				i, test.expectedExpression.String(), exp.String())
+		if err != nil && err != tt.expectedErr {
+			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
+				i, tt.expectedErr, err)
 			continue
 		}
 
-		if err != nil && err != test.expectedError {
-			t.Errorf("tests[%d] - Returend error is not %s but got %s",
-				i, test.expectedError, err)
+		if err == nil && exp.String() != tt.expected {
+			t.Errorf(`test[%d] - Wrong result returned expected="%s", got="%s"`,
+				i, tt.expected, exp.String())
 		}
 	}
 }
@@ -827,7 +888,7 @@ func TestParseInfixExpression(t *testing.T) {
 		{expected: "(1 + (2 * 3))"},
 		{expected: "(121 * 242)"},
 		{expected: "(-10 * 15)"},
-		{expected: mockError.Error()},
+		{expected: "PLUS, prefix parse function not defined"},
 	}
 
 	lefts := []ast.IntegerLiteral{{Value: 1}, {Value: 121}, {Value: -10}, {Value: 1}}
