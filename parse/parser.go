@@ -438,13 +438,10 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 
-	ds, ok := datastructureMap[buf.Peek(CURRENT).Type]
-	if ok {
-		buf.Read()
-	} else {
-		ds = ast.VoidType
+	lit.ReturnType, err = parseFunctionReturnType(buf)
+	if err != nil {
+		return nil, err
 	}
-	lit.ReturnType = ds
 
 	if err := expectNext(buf, Lbrace); err != nil {
 		return nil, err
@@ -454,6 +451,27 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 	return lit, nil
+}
+
+// parseFunctionReturnType parse function's return data structure type
+func parseFunctionReturnType(buf TokenBuffer) (ast.DataStructure, error) {
+	peekTok := buf.Peek(CURRENT)
+
+	ds, ok := datastructureMap[peekTok.Type]
+	if !ok && peekTok.Type != Lbrace {
+		return 0, parseError{
+			peekTok.Type,
+			"invalid function return type",
+		}
+	}
+
+	if !ok {
+		ds = ast.VoidType
+	} else {
+		buf.Read()
+	}
+
+	return ds, nil
 }
 
 // parseFunctionParameters parse function's parameters which
