@@ -502,12 +502,34 @@ func TestParseFunctionLiteral(t *testing.T) {
 			{Type: Lbrace, Val: "{"},
 			{Type: Rbrace, Val: "}"},
 		},
+		{
+			// func example () invalid {}
+			{Type: Function, Val: "func"},
+			{Type: Ident, Val: "example"},
+			{Type: Lparen, Val: "("},
+			{Type: Rparen, Val: ")"},
+			{Type: Illegal, Val: "invalid"},
+			{Type: Lbrace, Val: "{"},
+			{Type: Rbrace, Val: "}"},
+		},
+		{
+			// func example () invalid {}
+			{Type: Function, Val: "func"},
+			{Type: Ident, Val: "example"},
+			{Type: Lparen, Val: "("},
+			{Type: Rparen, Val: ")"},
+			{Type: Int, Val: "1"},
+			{Type: Lbrace, Val: "{"},
+			{Type: Rbrace, Val: "}"},
+		},
 	}
 	tests := []string{
 		"func example(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\n\n}",
 		"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\nint [IDENT, c] = 5\n}",
 		"LBRACE, expectNext() : expected [FUNCTION], but got [LBRACE]",
 		"func example() string {\n\n}",
+		"ILLEGAL, invalid function return type",
+		"INT, invalid function return type",
 	}
 	prefixParseFnMap[Int] = parseIntegerLiteral
 	infixParseFnMap[Plus] = parseInfixExpression
