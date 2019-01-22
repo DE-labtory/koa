@@ -46,6 +46,21 @@ type Contract struct {
 	Functions []*FunctionLiteral
 }
 
+func (c *Contract) do() {}
+func (c *Contract) String() string {
+	var buf bytes.Buffer
+
+	// start by change line for readability
+	buf.WriteString("\ncontract {\n")
+
+	for _, fn := range c.Functions {
+		buf.WriteString(fn.String() + "\n")
+	}
+	buf.WriteString("}")
+
+	return buf.String()
+}
+
 // Represent identifier
 type Identifier struct {
 	Value string

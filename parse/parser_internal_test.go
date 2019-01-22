@@ -42,6 +42,91 @@ func (m *mockTokenBuffer) Peek(n peekNumber) Token {
 
 var mockError = errors.New("error occurred for some reason")
 
+// TestParserOnly tests three things
+//
+// 1. "contract" keyword with its open-brace & close-brace
+// 2. When there's single & multiple function inside contract
+// 3. When there's statements other than function literal
+//
+func TestParserOnly(t *testing.T) {
+	tests := []struct {
+		tokens      []Token
+		expected    string
+		expectedErr error
+	}{
+		{
+			tokens: []Token{
+				{Type: Contract, Val: "contract"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eof},
+			},
+			expected: `
+contract {
+}`,
+		},
+		{
+			tokens: []Token{
+				{Type: Contract, Val: "contract"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Eof},
+			},
+			expected:    "",
+			expectedErr: parseError{Eof, "expectNext() : expected [RBRACE], but got [EOF]"},
+		},
+		{
+			tokens: []Token{
+				{Type: Contract, Val: "contract"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Function, Val: "func"},
+				{Type: Ident, Val: "foo"},
+				{Type: Lparen, Val: "("},
+				{Type: Rparen, Val: ")"},
+				{Type: Lbrace, Val: "{"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eof},
+			},
+			expected: `
+contract {
+func foo() void {
+
+}
+}`,
+		},
+		{
+			tokens: []Token{
+				{Type: Contract, Val: "contract"},
+				{Type: Lbrace, Val: "{"},
+				{Type: IntType, Val: "int"},
+				{Type: Ident, Val: "a"},
+				{Type: Assign, Val: "="},
+				{Type: Int, Val: "1"},
+				{Type: Rbrace, Val: "}"},
+				{Type: Eof},
+			},
+			expected:    ``,
+			expectedErr: parseError{IntType, "expectNext() : expected [RBRACE], but got [INT_TYPE]"},
+		},
+	}
+
+	for i, tt := range tests {
+		buf := &mockTokenBuffer{tt.tokens, 0}
+		stmt, err := Parse(buf)
+
+		if err != nil && err != tt.expectedErr {
+			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
+				i, tt.expectedErr, err)
+			continue
+		}
+
+		if err == nil && stmt.String() != tt.expected {
+			t.Errorf(`test[%d] - Wrong result returned expected="%s", got="%s"`,
+				i, tt.expected, stmt.String())
+		}
+	}
+}
+
 func TestCurTokenIs(t *testing.T) {
 	tokens := []Token{
 		{Type: Int, Val: "1"},
@@ -654,6 +739,7 @@ func TestParseExpAsPrefix(t *testing.T) {
 		if exp != nil && exp.String() != test.expectedExpression.String() {
 			t.Errorf("tests[%d] - Returned statements is not %s but got %s",
 				i, test.expectedExpression.String(), exp.String())
+			continue
 		}
 
 		if err != nil && err != test.expectedError {
@@ -664,6 +750,8 @@ func TestParseExpAsPrefix(t *testing.T) {
 }
 
 func TestMakeInfixExpression(t *testing.T) {
+	initParseFnMap()
+
 	bufs := [][]Token{
 		{{Type: Plus, Val: "+"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
 			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
@@ -675,12 +763,6 @@ func TestMakeInfixExpression(t *testing.T) {
 			{Type: Int, Val: "3"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "4"}, {Type: Eof, Val: ""}},
 		{{Type: Plus, Val: "+"}, {Type: Plus, Val: "+"}, {Type: Eof, Val: ""}},
 	}
-
-	infixParseFnMap[Plus] = parseInfixExpression
-	infixParseFnMap[Asterisk] = parseInfixExpression
-	infixParseFnMap[Minus] = parseInfixExpression
-
-	prefixParseFnMap[Int] = parseIntegerLiteral
 
 	prefixes := []ast.IntegerLiteral{
 		{Value: 1},
@@ -696,7 +778,7 @@ func TestMakeInfixExpression(t *testing.T) {
 		{expected: "((121 * 242) + 312)"},
 		{expected: "((-10 - 15) - 55)"},
 		{expected: "((1 - (2 * 3)) + 4)"},
-		{expected: mockError.Error()},
+		{expected: "PLUS, prefix parse function not defined"},
 	}
 
 	// Expected value is

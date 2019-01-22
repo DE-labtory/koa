@@ -175,7 +175,11 @@ func Parse(buf TokenBuffer) (*ast.Contract, error) {
 	contract := &ast.Contract{}
 	contract.Functions = []*ast.FunctionLiteral{}
 
-	for buf.Peek(CURRENT).Type != Eof {
+	if err := parseContractStart(buf); err != nil {
+		return nil, err
+	}
+
+	for buf.Peek(CURRENT).Type == Function {
 		fn, err := parseFunctionLiteral(buf)
 		if err != nil {
 			return nil, err
@@ -184,7 +188,32 @@ func Parse(buf TokenBuffer) (*ast.Contract, error) {
 		contract.Functions = append(contract.Functions, fn)
 	}
 
+	if err := parseContractEnd(buf); err != nil {
+		return nil, err
+	}
+
 	return contract, nil
+}
+
+// parseContractStart validates whether given token stream is
+// starts with "contract" keyword with left-brace, otherwise throw error
+func parseContractStart(buf TokenBuffer) error {
+	if err := expectNext(buf, Contract); err != nil {
+		return err
+	}
+	if err := expectNext(buf, Lbrace); err != nil {
+		return err
+	}
+	return nil
+}
+
+// parseContractEnd validates whether contracts finish with
+// right-brace, otherwise throw error
+func parseContractEnd(buf TokenBuffer) error {
+	if err := expectNext(buf, Rbrace); err != nil {
+		return err
+	}
+	return nil
 }
 
 // initParseFnMap initialize parsing function for each tokens.
@@ -450,6 +479,11 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	if lit.Body, err = parseBlockStatement(buf); err != nil {
 		return nil, err
 	}
+
+	// After exit from parseBlockStatement, consume right-brace
+	if err = expectNext(buf, Rbrace); err != nil {
+		return nil, err
+	}
 	return lit, nil
 }
 
@@ -691,7 +725,11 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 		return nil, err
 	}
 
-	tok = buf.Read()
+	// After exit from parseBlockStatement, consume right-brace
+	if err = expectNext(buf, Rbrace); err != nil {
+		return nil, err
+	}
+
 	if curTokenIs(buf, Else) {
 		buf.Read()
 		err := expectNext(buf, Lbrace)
