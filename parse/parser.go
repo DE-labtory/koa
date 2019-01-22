@@ -23,7 +23,7 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
-// OperatorTypeMap maps TokenType with OperatorType by doing this
+// OperatorTypeMap maps TokenType with OperatorType. By doing this
 // we can remove dependency for token's string value
 var operatorMap = map[TokenType]ast.Operator{
 	Plus:     ast.Plus,
@@ -40,6 +40,8 @@ var operatorMap = map[TokenType]ast.Operator{
 	NOT_EQ:   ast.NOT_EQ,
 }
 
+// datastructureMap maps TokenType with Datastructure. By doing this
+// we can remove dependency for token's string value
 var datastructureMap = map[TokenType]ast.DataStructure{
 	IntType:    ast.IntType,
 	StringType: ast.StringType,
@@ -47,6 +49,11 @@ var datastructureMap = map[TokenType]ast.DataStructure{
 	VoidType:   ast.VoidType,
 }
 
+// precedence determine which token is going to be grouped first when
+// parsing expression with Pratt Parsing.
+//
+// For example, 1 + 2 * 3, * has higher precedence value then +. So 2 * 3
+// is grouped first and result would be (1 + (2 * 3))
 type precedence int
 
 const (
@@ -161,7 +168,7 @@ type (
 var prefixParseFnMap = map[TokenType]prefixParseFn{}
 var infixParseFnMap = map[TokenType]infixParseFn{}
 
-// Parse function create an abstract syntax tree
+// Parse creates an abstract syntax tree
 func Parse(buf TokenBuffer) (*ast.Contract, error) {
 	initParseFnMap()
 
@@ -180,6 +187,12 @@ func Parse(buf TokenBuffer) (*ast.Contract, error) {
 	return contract, nil
 }
 
+// initParseFnMap initialize parsing function for each tokens.
+// Each token can have at most two parsing function:
+//
+//   - infix-parsing function
+//   - prefix-parsing function
+//
 func initParseFnMap() {
 	prefixParseFnMap[Ident] = parseIdentifier
 	prefixParseFnMap[Int] = parseIntegerLiteral
@@ -204,6 +217,7 @@ func initParseFnMap() {
 	infixParseFnMap[Lparen] = parseCallExpression
 }
 
+// parseStatement parse statement which don't produce value
 func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 	switch tt := buf.Peek(CURRENT).Type; tt {
 	case IntType:
@@ -226,6 +240,10 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 
 // ParseExpression parse expression in two ways, first
 // by considering expression as prefix, next as infix
+//
+// Parsing expression is done in Pratt Parsing way. So each
+// token has its own parsing function. And each token has its
+// parsing precedence.
 func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, error) {
 	exp, err := makePrefixExpression(buf)
 	if err != nil {
@@ -284,6 +302,11 @@ func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (a
 	return expression, nil
 }
 
+// parseInfixExprsesion parse expression when current token in TokenBuffer
+// works as infix of expression.
+//
+// Infix parsing is based on a precedence of given token which is defined
+// in precedenceMap
 func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression, error) {
 	var err error
 	curTok := buf.Read()
@@ -302,6 +325,11 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 	return expression, nil
 }
 
+// parsePrefixExprsesion parse expression when current token in TokenBuffer
+// works as prefix of expression.
+//
+// Prefix parsing is based on a precedence of given token which is defined
+// in precedenceMap.
 func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	var err error
 	tok := buf.Read()
@@ -318,6 +346,7 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	return exp, nil
 }
 
+// parseIdentifier parse identifier.
 func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 	if token.Type != Ident {
@@ -329,6 +358,7 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	return &ast.Identifier{Value: token.Val}, nil
 }
 
+// parseIntegerLiteral parse integer literal.
 func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 	if token.Type != Int {
@@ -347,6 +377,7 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	return lit, nil
 }
 
+// parseBooleanLiteral parse boolean literal.
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 
@@ -366,6 +397,8 @@ func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	return lit, nil
 }
 
+// parseStringLiteral parse string value which is
+// going to be assigned to variable
 func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 	if token.Type != String {
@@ -423,7 +456,8 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	return lit, nil
 }
 
-// parseFunctionParameters parse function's parameter using comma
+// parseFunctionParameters parse function's parameters which
+// separated by comma
 func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 	identifiers := []*ast.ParameterLiteral{}
 	var err error
@@ -474,6 +508,7 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 	return identifiers, nil
 }
 
+// parseReturnStatement parse "return" keyword with its expression
 func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	if err := expectNext(buf, Return); err != nil {
 		return nil, err
@@ -491,6 +526,8 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	return stmt, nil
 }
 
+// parseGroupedExpression parse grouped expression which
+// grouped using parenthesis
 func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
 	buf.Read()
 	exp, err := parseExpression(buf, LOWEST)
@@ -505,6 +542,8 @@ func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
 	return exp, nil
 }
 
+// parseAssignStatement parse assign statements which assign values
+// to its identifier. e.g. int a = 1
 func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	stmt := &ast.AssignStatement{}
 
@@ -542,6 +581,7 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	return stmt, nil
 }
 
+// parseCallExpression parse function call
 func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, error) {
 	exp := &ast.CallExpression{Function: fn}
 
@@ -553,6 +593,7 @@ func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, er
 	return exp, nil
 }
 
+// parseCallArguments parse arguments of function call
 func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 	args := []ast.Expression{}
 	buf.Read()
@@ -582,6 +623,7 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 	return args, nil
 }
 
+// parseIfStatement parse if-else statement. Else statement is optional
 func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	tok := buf.Read()
 	if tok.Type != If {
@@ -648,6 +690,8 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	return expression, nil
 }
 
+// parseBlockStatement parse block statement. Block statement is
+// statements which located between left-brace and right-brace.
 func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	block := &ast.BlockStatement{
 		Statements: []ast.Statement{},
