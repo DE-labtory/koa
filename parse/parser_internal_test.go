@@ -18,6 +18,7 @@ package parse
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
@@ -50,42 +51,51 @@ var mockError = errors.New("error occurred for some reason")
 //
 func TestParserOnly(t *testing.T) {
 	tests := []struct {
-		tokens      []Token
+		buf         TokenBuffer
 		expected    string
 		expectedErr error
 	}{
 		{
-			tokens: []Token{
-				{Type: Contract, Val: "contract"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eof},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Contract, Val: "contract"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eof},
+				},
+				0,
 			},
 			expected: `
 contract {
 }`,
 		},
 		{
-			tokens: []Token{
-				{Type: Contract, Val: "contract"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Eof},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Contract, Val: "contract"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Eof},
+				},
+				0,
 			},
 			expected:    "",
-			expectedErr: parseError{Eof, "expectNext() : expected [RBRACE], but got [EOF]"},
+			expectedErr: parseError{Eof, "expected [RBRACE], but got [EOF]", 0, 0},
 		},
 		{
-			tokens: []Token{
-				{Type: Contract, Val: "contract"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Function, Val: "func"},
-				{Type: Ident, Val: "foo"},
-				{Type: Lparen, Val: "("},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eof},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Contract, Val: "contract"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "foo"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eof},
+				},
+				0,
 			},
 			expected: `
 contract {
@@ -95,23 +105,26 @@ func foo() void {
 }`,
 		},
 		{
-			tokens: []Token{
-				{Type: Contract, Val: "contract"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Function, Val: "func"},
-				{Type: Ident, Val: "foo"},
-				{Type: Lparen, Val: "("},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Function, Val: "func"},
-				{Type: Ident, Val: "bar"},
-				{Type: Lparen, Val: "("},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eof},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Contract, Val: "contract"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "foo"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "bar"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eof},
+				},
+				0,
 			},
 			expected: `
 contract {
@@ -124,24 +137,26 @@ func bar() void {
 }`,
 		},
 		{
-			tokens: []Token{
-				{Type: Contract, Val: "contract"},
-				{Type: Lbrace, Val: "{"},
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "1"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eof},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Contract, Val: "contract"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eof},
+				},
+				0,
 			},
 			expected:    ``,
-			expectedErr: parseError{IntType, "expectNext() : expected [RBRACE], but got [INT_TYPE]"},
+			expectedErr: parseError{IntType, "expected [RBRACE], but got [INT_TYPE]", 0, 0},
 		},
 	}
 
 	for i, tt := range tests {
-		buf := &mockTokenBuffer{tt.tokens, 0}
-		stmt, err := Parse(buf)
+		stmt, err := Parse(tt.buf)
 
 		if err != nil && err != tt.expectedErr {
 			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
@@ -366,7 +381,7 @@ func TestExpectNext(t *testing.T) {
 		{
 			token:         Minus,
 			expectedBool:  false,
-			expectedError: errors.New("IDENT, [line 0, column 0] expected [MINUS], but got [IDENT]"),
+			expectedError: errors.New("[line 0, column 0] expected [MINUS], but got [IDENT]"),
 		},
 		{
 			token:         Plus,
@@ -376,7 +391,7 @@ func TestExpectNext(t *testing.T) {
 		{
 			token:         Rbrace,
 			expectedBool:  false,
-			expectedError: errors.New("ASTERISK, [line 0, column 0] expected [RBRACE], but got [ASTERISK]"),
+			expectedError: errors.New("[line 0, column 0] expected [RBRACE], but got [ASTERISK]"),
 		},
 	}
 
@@ -395,46 +410,114 @@ func TestExpectNext(t *testing.T) {
 }
 
 func TestParseIdentifier(t *testing.T) {
-	tokens := []Token{
-		{Type: Int, Val: "1"},
-		{Type: Ident, Val: "ADD"},
-		{Type: Plus, Val: "+"},
-		{Type: Asterisk, Val: "*"},
-		{Type: Lparen, Val: "("},
-	}
-	tokenBuf := mockTokenBuffer{tokens, 0}
 	tests := []struct {
+		buf          TokenBuffer
 		expected     ast.Expression
-		expectedErrs string
+		expectedErrs error
 	}{
 		{
-			expected:     nil,
-			expectedErrs: "INT, [line 0, column 0] 1 is not a identifier",
-		},
-		{
-			expected: &ast.Identifier{
-				Value: "ADD",
+			buf: &mockTokenBuffer{
+				[]Token{
+					{
+						Int,
+						"1",
+						24,
+						12,
+					},
+				},
+				0,
+			},
+			expected: nil,
+			expectedErrs: parseError{
+				Int,
+				"expected [IDENT], but got [INT]",
+				12,
+				24,
 			},
 		},
 		{
-			expected:     nil,
-			expectedErrs: "PLUS, [line 0, column 0] + is not a identifier",
+			buf: &mockTokenBuffer{
+				[]Token{
+					{
+						Ident,
+						"ADD",
+						125,
+						225,
+					},
+				},
+				0,
+			},
+			expected: &ast.Identifier{
+				Value: "ADD",
+			},
+			expectedErrs: nil,
 		},
 		{
-			expected:     nil,
-			expectedErrs: "ASTERISK, [line 0, column 0] * is not a identifier",
+			buf: &mockTokenBuffer{
+				[]Token{
+					{
+						Plus,
+						"+",
+						422,
+						12,
+					},
+				},
+				0,
+			},
+			expected: nil,
+			expectedErrs: parseError{
+				Plus,
+				"expected [IDENT], but got [PLUS]",
+				12,
+				422,
+			},
 		},
 		{
-			expected:     nil,
-			expectedErrs: "LPAREN, [line 0, column 0] ( is not a identifier",
+			buf: &mockTokenBuffer{
+				[]Token{
+					{
+						Asterisk,
+						"*",
+						12,
+						123,
+					},
+				},
+				0,
+			},
+			expected: nil,
+			expectedErrs: parseError{
+				Asterisk,
+				"expected [IDENT], but got [ASTERISK]",
+				123,
+				12,
+			},
+		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{
+						Lparen,
+						"(",
+						5,
+						876,
+					},
+				},
+				0,
+			},
+			expected: nil,
+			expectedErrs: parseError{
+				Lparen,
+				"expected [IDENT], but got [LPAREN]",
+				876,
+				5,
+			},
 		},
 	}
 
 	for i, test := range tests {
+		exp, err := parseIdentifier(test.buf)
 
-		exp, err := parseIdentifier(&tokenBuf)
-
-		if err != nil && err.Error() != test.expectedErrs {
+		if err != nil && err.Error() != test.expectedErrs.Error() {
 			t.Fatalf("test[%d] - wrong error. expected=%s, got=%s", i, test.expectedErrs, err)
 		}
 
@@ -464,11 +547,31 @@ func TestParseIntegerLiteral(t *testing.T) {
 		expected    *ast.IntegerLiteral
 		expectedErr error
 	}{
-		{expected: &ast.IntegerLiteral{Value: 12}, expectedErr: nil},
-		{expected: &ast.IntegerLiteral{Value: 55}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New(`strconv.ParseInt: parsing "a": invalid syntax`)},
-		{expected: nil, expectedErr: errors.New("STRING, [line 0, column 0] abcdefg is not integer")},
-		{expected: &ast.IntegerLiteral{Value: -13}, expectedErr: nil},
+		{
+			expected:    &ast.IntegerLiteral{Value: 12},
+			expectedErr: nil,
+		},
+		{
+			expected:    &ast.IntegerLiteral{Value: 55},
+			expectedErr: nil,
+		},
+		{
+			expected:    nil,
+			expectedErr: errors.New(`strconv.ParseInt: parsing "a": invalid syntax`),
+		},
+		{
+			expected: nil,
+			expectedErr: parseError{
+				String,
+				"expected [INT], but got [STRING]",
+				0,
+				0,
+			},
+		},
+		{
+			expected:    &ast.IntegerLiteral{Value: -13},
+			expectedErr: nil,
+		},
 	}
 
 	for i, test := range tests {
@@ -499,10 +602,27 @@ func TestParseBooleanLiteral(t *testing.T) {
 		expected    *ast.BooleanLiteral
 		expectedErr error
 	}{
-		{expected: &ast.BooleanLiteral{true}, expectedErr: nil},
-		{expected: &ast.BooleanLiteral{false}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New(`strconv.ParseBool: parsing "azzx": invalid syntax`)},
-		{expected: nil, expectedErr: errors.New("STRING, [line 0, column 0] abcdefg is not bool")},
+		{
+			expected:    &ast.BooleanLiteral{true},
+			expectedErr: nil,
+		},
+		{
+			expected:    &ast.BooleanLiteral{false},
+			expectedErr: nil,
+		},
+		{
+			expected:    nil,
+			expectedErr: errors.New(`strconv.ParseBool: parsing "azzx": invalid syntax`),
+		},
+		{
+			expected: nil,
+			expectedErr: parseError{
+				String,
+				fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[BoolType], TokenTypeMap[String]),
+				0,
+				0,
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -537,10 +657,27 @@ func TestParseStringLiteral(t *testing.T) {
 		expected    *ast.StringLiteral
 		expectedErr error
 	}{
-		{expected: &ast.StringLiteral{Value: "hello"}, expectedErr: nil},
-		{expected: &ast.StringLiteral{Value: "hihi"}, expectedErr: nil},
-		{expected: nil, expectedErr: errors.New("INT, [line 0, column 0] 3 is not string")},
-		{expected: &ast.StringLiteral{Value: "koa zzang"}, expectedErr: nil},
+		{
+			expected:    &ast.StringLiteral{Value: "hello"},
+			expectedErr: nil,
+		},
+		{
+			expected:    &ast.StringLiteral{Value: "hihi"},
+			expectedErr: nil,
+		},
+		{
+			expected: nil,
+			expectedErr: parseError{
+				Int,
+				fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[String], TokenTypeMap[Int]),
+				0,
+				0,
+			},
+		},
+		{
+			expected:    &ast.StringLiteral{Value: "koa zzang"},
+			expectedErr: nil,
+		},
 	}
 
 	for i, test := range tests {
@@ -567,157 +704,226 @@ func TestParseStringLiteral(t *testing.T) {
 }
 
 func TestParseFunctionLiteral(t *testing.T) {
-	bufs := [][]Token{
+	tests := []struct {
+		buf          TokenBuffer
+		expectedExpr string
+		expectedErr  error
+	}{
 		{
-			// func example (a int, b string) {}
-			{Type: Function, Val: "func"},
-			{Type: Ident, Val: "example"},
-			{Type: Lparen, Val: "("},
-			{Type: Ident, Val: "a"},
-			{Type: IntType, Val: "int"},
-			{Type: Comma, Val: ","},
-			{Type: Ident, Val: "b"},
-			{Type: StringType, Val: "string"},
-			{Type: Rparen, Val: ")"},
-			{Type: Lbrace, Val: "{"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					// func example (a int, b string) {}
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "example"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: IntType, Val: "int"},
+					{Type: Comma, Val: ","},
+					{Type: Ident, Val: "b"},
+					{Type: StringType, Val: "string"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"func example(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\n\n}",
+			nil,
 		},
 		{
-			// func name (a int, b string) {
-			//	int c = 5
-			// }
-			{Type: Function, Val: "func"},
-			{Type: Ident, Val: "name"},
-			{Type: Lparen, Val: "("},
-			{Type: Ident, Val: "a"},
-			{Type: IntType, Val: "int"},
-			{Type: Comma, Val: ","},
-			{Type: Ident, Val: "b"},
-			{Type: StringType, Val: "string"},
-			{Type: Rparen, Val: ")"},
-			{Type: Lbrace, Val: "{"},
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "c"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "5"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					// func name (a int, b string) {
+					//	int c = 5
+					// }
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "name"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: IntType, Val: "int"},
+					{Type: Comma, Val: ","},
+					{Type: Ident, Val: "b"},
+					{Type: StringType, Val: "string"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "c"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "5"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\nint [IDENT, c] = 5\n}",
+			nil,
 		},
 		{
-			// error case
-			{Type: Lbrace, Val: "{"},
+			&mockTokenBuffer{
+				[]Token{
+					// error case
+					{Type: Lbrace, Val: "{"},
+				},
+				0,
+			},
+			"",
+			parseError{
+				Lbrace,
+				fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Function], TokenTypeMap[Lbrace]),
+				0,
+				0,
+			},
 		},
 		{
-			// func example () string {}
-			{Type: Function, Val: "func"},
-			{Type: Ident, Val: "example"},
-			{Type: Lparen, Val: "("},
-			{Type: Rparen, Val: ")"},
-			{Type: StringType, Val: "string"},
-			{Type: Lbrace, Val: "{"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					// func example () string {}
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "example"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: StringType, Val: "string"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"func example() string {\n\n}",
+			nil,
 		},
 		{
-			// func example () invalid {}
-			{Type: Function, Val: "func"},
-			{Type: Ident, Val: "example"},
-			{Type: Lparen, Val: "("},
-			{Type: Rparen, Val: ")"},
-			{Type: Illegal, Val: "invalid"},
-			{Type: Lbrace, Val: "{"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					// func example () invalid {}
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "example"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: Illegal, Val: "invalid"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"",
+			parseError{
+				Illegal,
+				"invalid function return type",
+				0,
+				0,
+			},
 		},
 		{
-			// func example () invalid {}
-			{Type: Function, Val: "func"},
-			{Type: Ident, Val: "example"},
-			{Type: Lparen, Val: "("},
-			{Type: Rparen, Val: ")"},
-			{Type: Int, Val: "1"},
-			{Type: Lbrace, Val: "{"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					// func example () invalid {}
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "example"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: Int, Val: "1"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"",
+			parseError{
+				Int,
+				"invalid function return type",
+				0,
+				0,
+			},
 		},
-	}
-	tests := []string{
-		"func example(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\n\n}",
-		"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\nint [IDENT, c] = 5\n}",
-		"LBRACE, expectNext() : expected [FUNCTION], but got [LBRACE]",
-		"func example() string {\n\n}",
-		"ILLEGAL, invalid function return type",
-		"INT, invalid function return type",
 	}
 	prefixParseFnMap[Int] = parseIntegerLiteral
 	infixParseFnMap[Plus] = parseInfixExpression
 
 	for i, test := range tests {
-		buf := mockTokenBuffer{bufs[i], 0}
-		exp, err := parseFunctionLiteral(&buf)
-		if err != nil && err.Error() != test {
+		exp, err := parseFunctionLiteral(test.buf)
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionLiteral() wrong error\n"+
 				"expected: %s\n"+
-				"got: %s", i, test, err.Error())
+				"got: %s", i, test.expectedErr.Error(), err.Error())
 		}
 
-		if exp != nil && exp.String() != test {
+		if exp != nil && exp.String() != test.expectedExpr {
 			t.Fatalf("test[%d] - TestParseFunctionLiteral wrong result\n"+
 				"expected: %s\n"+
-				"got: %s", i, test, exp.String())
+				"got: %s", i, test.expectedExpr, exp.String())
 		}
 	}
 }
 
 func TestParseFunctionParameter(t *testing.T) {
-	bufs := [][]Token{
+	initParseFnMap()
+	tests := []struct {
+		buf         TokenBuffer
+		expected    []string
+		expectedErr error
+	}{
 		{
-			{Type: Ident, Val: "a"},
-			{Type: IntType, Val: "int"},
-			{Type: Comma, Val: ","},
-			{Type: Ident, Val: "b"},
-			{Type: StringType, Val: "string"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "a"},
+					{Type: IntType, Val: "int"},
+					{Type: Comma, Val: ","},
+					{Type: Ident, Val: "b"},
+					{Type: StringType, Val: "string"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected: []string{
+				"Parameter : (Identifier: a, Type: int)",
+				"Parameter : (Identifier: b, Type: string)",
+			},
+			expectedErr: nil,
 		},
 		{
-			{Type: Ident, Val: "arg"},
-			{Type: BoolType, Val: "bool"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "arg"},
+					{Type: BoolType, Val: "bool"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected: []string{
+				"Parameter : (Identifier: arg, Type: bool)",
+			},
+			expectedErr: nil,
 		},
 		{
-			{Type: Rparen, Val: ")"},
-		},
-		{
-			{Type: Ident, Val: "arg"},
-			{Type: IntType, Val: "int"},
-			{Type: Rbrace, Val: "}"},
-		},
-	}
-	tests := [][]string{
-		{
-			"Parameter : (Identifier: a, Type: int)",
-			"Parameter : (Identifier: b, Type: string)",
-		},
-		{
-			"Parameter : (Identifier: arg, Type: bool)",
-		},
-		{
-			"Parameter : ()",
-		},
-		{
-			"RBRACE, expectNext() : expected [RPAREN], but got [RBRACE]",
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "arg"},
+					{Type: IntType, Val: "int"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			expected: nil,
+			expectedErr: parseError{
+				Rbrace,
+				"expected [RPAREN], but got [RBRACE]",
+				0,
+				0,
+			},
 		},
 	}
 
 	for i, test := range tests {
-		buf := mockTokenBuffer{bufs[i], 0}
-		idents, err := parseFunctionParameters(&buf)
-		if err != nil && err.Error() != test[0] {
+		identifiers, err := parseFunctionParameters(test.buf)
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionParameter() wrong error.\n"+
 				"expected: %s\n"+
-				"got: %s", i, test[0], err.Error())
+				"got: %s", i, test.expectedErr.Error(), err.Error())
 		} else {
-			for j, ident := range idents {
-				if ident.String() != tests[i][j] {
+			for j, identifier := range identifiers {
+				if identifier.String() != test.expected[j] {
 					t.Fatalf("test[%d-%d] - TestParseFunctionParameter() failed.\n"+
 						"expected: %s\n"+
-						"got: %s", i, j, tests[i][j], ident)
+						"got: %s", i, j, test.expected[j], identifier)
 				}
 			}
 		}
@@ -726,78 +932,100 @@ func TestParseFunctionParameter(t *testing.T) {
 
 func TestMakePrefixExpression(t *testing.T) {
 	initParseFnMap()
-
 	tests := []struct {
-		tokens      []Token
+		buf         TokenBuffer
 		expected    string
 		expectedErr error
 	}{
 		{
-			tokens: []Token{
-				{Type: Minus, Val: "-"},
-				{Type: Int, Val: "1"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "1"},
+				},
+				0,
 			},
 			expected: "(-1)",
 		},
 		{
-			tokens: []Token{
-				{Type: Minus, Val: "-"},
-				{Type: Ident, Val: "a"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Ident, Val: "a"},
+				},
+				0,
 			},
 			expected: "(-a)",
 		},
 		{
-			tokens: []Token{
-				{Type: Bang, Val: "!"},
-				{Type: True, Val: "true"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Bang, Val: "!"},
+					{Type: True, Val: "true"},
+				},
+				0,
 			},
 			expected: "(!true)",
 		},
 		{
-			tokens: []Token{
-				{Type: Bang, Val: "!"},
-				{Type: Bang, Val: "!"},
-				{Type: True, Val: "false"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Bang, Val: "!"},
+					{Type: Bang, Val: "!"},
+					{Type: True, Val: "false"},
+				},
+				0,
 			},
 			expected: "(!(!false))",
 		},
 		{
-			tokens: []Token{
-				{Type: Bang, Val: "!"},
-				{Type: Minus, Val: "-"},
-				{Type: Ident, Val: "foo"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Bang, Val: "!"},
+					{Type: Minus, Val: "-"},
+					{Type: Ident, Val: "foo"},
+				},
+				0,
 			},
 			expected: "(!(-foo))",
 		},
 		{
-			tokens: []Token{
-				{Type: Minus, Val: "-"},
-				{Type: Bang, Val: "!"},
-				{Type: Ident, Val: "foo"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Bang, Val: "!"},
+					{Type: Ident, Val: "foo"},
+				},
+				0,
 			},
 			expected: "(-(!foo))",
 		},
 		{
-			tokens: []Token{
-				{Type: Minus, Val: "-"},
-				{Type: True, Val: "true"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: True, Val: "true"},
+				},
+				0,
 			},
 			expected: "(-true)",
 		},
 		{
-			tokens: []Token{
-				{Type: Bang, Val: "!"},
-				{Type: String, Val: "hello"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Bang, Val: "!"},
+					{Type: String, Val: "hello"},
+				},
+				0,
 			},
 			expected: `(!"hello")`,
 		},
 	}
 
 	for i, tt := range tests {
-		buf := &mockTokenBuffer{tt.tokens, 0}
-		exp, err := makePrefixExpression(buf)
+		exp, err := makePrefixExpression(tt.buf)
 
-		if err != nil && err != tt.expectedErr {
+		if err != nil && err.Error() != tt.expectedErr.Error() {
 			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
 				i, tt.expectedErr, err)
 			continue
@@ -812,34 +1040,102 @@ func TestMakePrefixExpression(t *testing.T) {
 
 func TestMakeInfixExpression(t *testing.T) {
 	initParseFnMap()
-
-	bufs := [][]Token{
-		{{Type: Plus, Val: "+"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
-		{{Type: Asterisk, Val: "*"}, {Type: Int, Val: "242"}, {Type: Plus, Val: "+"},
-			{Type: Int, Val: "312"}, {Type: Eof, Val: ""}},
-		{{Type: Minus, Val: "-"}, {Type: Int, Val: "15"}, {Type: Minus, Val: "-"},
-			{Type: Int, Val: "55"}, {Type: Eof, Val: ""}},
-		{{Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "3"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "4"}, {Type: Eof, Val: ""}},
-		{{Type: Plus, Val: "+"}, {Type: Plus, Val: "+"}, {Type: Eof, Val: ""}},
-	}
-
-	prefixes := []ast.IntegerLiteral{
-		{Value: 1},
-		{Value: 121},
-		{Value: -10},
-		{Value: 1},
-		{Value: 1}}
-
 	tests := []struct {
-		expected string
+		prefix      ast.IntegerLiteral
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
 	}{
-		{expected: "(1 + (2 * 3))"},
-		{expected: "((121 * 242) + 312)"},
-		{expected: "((-10 - 15) - 55)"},
-		{expected: "((1 - (2 * 3)) + 4)"},
-		{expected: "PLUS, prefix parse function not defined"},
+		{
+			prefix: ast.IntegerLiteral{
+				Value: 1,
+			},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Eof, Val: ""},
+				},
+				0,
+			},
+			expected:    "(1 + (2 * 3))",
+			expectedErr: nil,
+		},
+		{
+			prefix: ast.IntegerLiteral{
+				Value: 121,
+			},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "242"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "312"},
+					{Type: Eof, Val: ""},
+				},
+				0,
+			},
+			expected:    "((121 * 242) + 312)",
+			expectedErr: nil,
+		},
+		{
+			prefix: ast.IntegerLiteral{
+				Value: -10,
+			},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "15"},
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "55"},
+					{Type: Eof, Val: ""},
+				},
+				0,
+			},
+			expected:    "((-10 - 15) - 55)",
+			expectedErr: nil,
+		},
+		{
+			prefix: ast.IntegerLiteral{
+				Value: 1,
+			},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "4"},
+					{Type: Eof, Val: ""},
+				},
+				0,
+			},
+			expected:    "((1 - (2 * 3)) + 4)",
+			expectedErr: nil,
+		},
+		{
+			prefix: ast.IntegerLiteral{
+				Value: 1,
+			},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Plus, Val: "+"},
+					{Type: Plus, Val: "+"},
+					{Type: Eof, Val: ""},
+				},
+				0,
+			},
+			expected: "",
+			expectedErr: parseError{
+				Plus,
+				"prefix parse function not defined",
+				0,
+				0,
+			},
+		},
 	}
 
 	// Expected value is
@@ -851,12 +1147,9 @@ func TestMakeInfixExpression(t *testing.T) {
 	// result String() : 1+(2*3)
 
 	for i, test := range tests {
-		buf := mockTokenBuffer{bufs[i], 0}
-		//exp, _ := makePrefixExpression(&buf)
-		prefix := prefixes[i]
-		exp, err := makeInfixExpression(&buf, &prefix, LOWEST)
+		exp, err := makeInfixExpression(test.buf, &test.prefix, LOWEST)
 
-		if err != nil && test.expected != err.Error() {
+		if err != nil && test.expectedErr.Error() != err.Error() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
 				i, test.expected, err.Error())
 		}
@@ -868,40 +1161,96 @@ func TestMakeInfixExpression(t *testing.T) {
 }
 
 func TestParseInfixExpression(t *testing.T) {
-	bufs := [][]Token{
-		{{Type: Int, Val: "1"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "2"}, {Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "3"}, {Type: Eof, Val: ""}},
-		{{Type: Int, Val: "121"}, {Type: Asterisk, Val: "*"}, {Type: Int, Val: "242"}, {Type: Plus, Val: "+"},
-			{Type: Int, Val: "312"}, {Type: Eof, Val: ""}},
-		{{Type: Int, Val: "-10"}, {Type: Asterisk, Val: "*"}, {Type: Int, Val: "15"}, {Type: Plus, Val: "+"},
-			{Type: Int, Val: "55"}, {Type: Eof, Val: ""}},
-		{{Type: Int, Val: "1"}, {Type: Plus, Val: "+"}, {Type: Plus, Val: "+"}, {Type: Eof, Val: ""}},
-	}
-
-	infixParseFnMap[Plus] = parseInfixExpression
-	infixParseFnMap[Asterisk] = parseInfixExpression
-	prefixParseFnMap[Int] = parseIntegerLiteral
-
+	initParseFnMap()
 	tests := []struct {
-		expected string
+		buf         TokenBuffer
+		left        ast.IntegerLiteral
+		expected    string
+		expectedErr error
 	}{
-		{expected: "(1 + (2 * 3))"},
-		{expected: "(121 * 242)"},
-		{expected: "(-10 * 15)"},
-		{expected: "PLUS, prefix parse function not defined"},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Eof, Val: ""},
+				},
+				1,
+			},
+			left: ast.IntegerLiteral{
+				Value: 1,
+			},
+			expected:    "(1 + (2 * 3))",
+			expectedErr: nil,
+		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "121"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "242"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "312"},
+					{Type: Eof, Val: ""},
+				},
+				1,
+			},
+			left: ast.IntegerLiteral{
+				Value: 121,
+			},
+			expected:    "(121 * 242)",
+			expectedErr: nil,
+		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "-10"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "15"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "55"},
+					{Type: Eof, Val: ""},
+				},
+				1,
+			},
+			left: ast.IntegerLiteral{
+				Value: -10,
+			},
+			expected:    "(-10 * 15)",
+			expectedErr: nil,
+		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Plus, Val: "+"},
+					{Type: Eof, Val: ""},
+				},
+				1,
+			},
+			left: ast.IntegerLiteral{
+				Value: 1,
+			},
+			expected: "",
+			expectedErr: parseError{
+				Plus,
+				"prefix parse function not defined",
+				0,
+				0,
+			},
+		},
 	}
-
-	lefts := []ast.IntegerLiteral{{Value: 1}, {Value: 121}, {Value: -10}, {Value: 1}}
 
 	for i, test := range tests {
-		buf := mockTokenBuffer{bufs[i], 1}
+		exp, err := parseInfixExpression(test.buf, &test.left)
 
-		left := lefts[i]
-		exp, err := parseInfixExpression(&buf, &left)
-
-		if err != nil && test.expected != err.Error() {
+		if err != nil && test.expectedErr.Error() != err.Error() {
 			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
-				i, test.expected, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 
 		if err == nil && test.expected != exp.String() {
@@ -912,120 +1261,192 @@ func TestParseInfixExpression(t *testing.T) {
 }
 
 func TestParseGroupedExpression(t *testing.T) {
-	prefixParseFnMap[Lparen] = parseGroupedExpression
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[Ident] = parseIdentifier
-	infixParseFnMap[Plus] = parseInfixExpression
-	infixParseFnMap[Minus] = parseInfixExpression
-	bufs := [][]Token{
+	initParseFnMap()
+	tests := []struct {
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
+	}{
 		{
-			// ( 2 + 1 )
-			{Type: Lparen, Val: "("}, {Type: Int, Val: "2"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "1"}, {Type: Rparen, Val: ")"},
-			{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "2"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "1"},
+					{Type: Rparen, Val: ")"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected:    "(2 + 1)",
+			expectedErr: nil,
 		},
 		{
-			// ( a + ( 1 - 2 ) )
-			{Type: Lparen, Val: "("}, {Type: Ident, Val: "a"}, {Type: Plus, Val: "+"}, {Type: Lparen, Val: "("},
-			{Type: Int, Val: "1"}, {Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Rparen, Val: ")"}, {Type: Rparen, Val: ")"},
-			{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: Plus, Val: "+"},
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "2"},
+					{Type: Rparen, Val: ")"},
+					{Type: Rparen, Val: ")"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected:    "(a + (1 - 2))",
+			expectedErr: nil,
 		},
 		{
-			// ( a + ( 1 - 2 ) + 3 )
-			{Type: Lparen, Val: "("}, {Type: Ident, Val: "a"}, {Type: Plus, Val: "+"}, {Type: Lparen, Val: "("},
-			{Type: Int, Val: "1"}, {Type: Minus, Val: "-"}, {Type: Int, Val: "2"}, {Type: Rparen, Val: ")"},
-			{Type: Plus, Val: "+"}, {Type: Int, Val: "3"}, {Type: Rparen, Val: ")"}, {Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: Plus, Val: "+"},
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "2"},
+					{Type: Rparen, Val: ")"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "3"},
+					{Type: Rparen, Val: ")"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected:    "((a + (1 - 2)) + 3)",
+			expectedErr: nil,
 		},
 		{
-			{Type: Lparen, Val: "("}, {Type: Int, Val: "2"}, {Type: Plus, Val: "+"}, {Type: Int, Val: "1"},
-			{Type: Rbrace, Val: "}"}, {Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "2"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "1"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected: "",
+			expectedErr: parseError{
+				Rbrace,
+				"expected [RPAREN], but got [RBRACE]",
+				0,
+				0,
+			},
 		},
-	}
-	tests := []string{
-		"(2 + 1)",
-		"(a + (1 - 2))",
-		"((a + (1 - 2)) + 3)",
-		"RBRACE, [line 0, column 0] expected [RPAREN], but got [RBRACE]",
 	}
 
 	for i, test := range tests {
-		mockBuf := mockTokenBuffer{bufs[i], 0}
-		exp, err := parseGroupedExpression(&mockBuf)
+		exp, err := parseGroupedExpression(test.buf)
 
-		if err != nil && err.Error() != test {
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong error.\n"+
 				"expected=%s,\n"+
 				"got=%s",
-				i, test, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 
-		if exp != nil && exp.String() != test {
+		if exp != nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong answer.\n"+
 				"expected=%s,\n"+
 				"got=%s",
-				i, test, exp.String())
+				i, test.expected, exp.String())
 		}
 	}
 }
 
 func TestParseReturnStatement(t *testing.T) {
-	prefixParseFnMap[True] = parseBooleanLiteral
-	prefixParseFnMap[False] = parseBooleanLiteral
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	infixParseFnMap[Plus] = parseInfixExpression
-	infixParseFnMap[Asterisk] = parseInfixExpression
-
-	bufs := [][]Token{
+	initParseFnMap()
+	tests := []struct {
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
+	}{
 		{
-			{Type: Return, Val: "return"},
-			{Type: True, Val: "true"},
-			{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: True, Val: "true"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected:    "return true",
+			expectedErr: nil,
 		},
 		{
-			{Type: Return, Val: "return"},
-			{Type: Int, Val: "1"},
-			{Type: Plus, Val: "+"},
-			{Type: Int, Val: "2"},
-			{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected:    "return (1 + 2)",
+			expectedErr: nil,
 		},
 		{
-			{Type: Return, Val: "return"},
-			{Type: Int, Val: "1"},
-			{Type: Plus, Val: "+"},
-			{Type: Int, Val: "2"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "3"},
-			{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected:    "return (1 + (2 * 3))",
+			expectedErr: nil,
 		},
 		{
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "1"},
-			{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			expected: "",
+			expectedErr: parseError{
+				IntType,
+				"expected [RETURN], but got [INT_TYPE]",
+				0,
+				0,
+			},
 		},
-	}
-	tests := []string{
-		"return true",
-		"return (1 + 2)",
-		"return (1 + (2 * 3))",
-		"INT_TYPE, [line 0, column 0] expected [RETURN], but got [INT_TYPE]",
 	}
 
 	for i, test := range tests {
-		mockBufs := mockTokenBuffer{bufs[i], 0}
-		exp, err := parseReturnStatement(&mockBufs)
-		if err != nil && err.Error() != test {
+		exp, err := parseReturnStatement(test.buf)
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error.\n"+
 				"expected=%s,\n"+
 				"got=%s",
-				i, test, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 
-		if exp != nil && exp.String() != test {
+		if exp != nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong result.\n"+
 				"expected=%s,\n"+
 				"got=%s",
-				i, test, exp.String())
+				i, test.expected, exp.String())
 		}
 	}
 }
@@ -1107,76 +1528,93 @@ func TestParsePrefixExpression(t *testing.T) {
 }
 
 func TestParseCallExpression(t *testing.T) {
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[String] = parseStringLiteral
-	infixParseFnMap[Plus] = parseInfixExpression
-	infixParseFnMap[Asterisk] = parseInfixExpression
-	bufs := [][]Token{
-		{
-			{Type: Lparen, Val: "("},
-			{Type: Int, Val: "1"},
-			{Type: Plus, Val: "+"},
-			{Type: Int, Val: "2"},
-			{Type: Rparen, Val: ")"},
-		},
-		{
-			{Type: Lparen, Val: "("},
-			{Type: String, Val: "a"},
-			{Type: Comma, Val: ","},
-			{Type: String, Val: "b"},
-			{Type: Comma, Val: ","},
-			{Type: Int, Val: "5"},
-			{Type: Rparen, Val: ")"},
-		},
-		{
-			{Type: Lparen, Val: "("},
-			{Type: String, Val: "a"},
-			{Type: Comma, Val: ","},
-			{Type: Asterisk, Val: "*"},
-			{Type: Comma, Val: ","},
-			{Type: Int, Val: "5"},
-			{Type: Rparen, Val: ")"},
-		},
-		{
-			{Type: Lparen, Val: "("},
-			{Type: String, Val: "a"},
-			{Type: Plus, Val: "+"},
-			{Type: String, Val: "b"},
-			{Type: Comma, Val: ","},
-			{Type: Int, Val: "5"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "3"},
-			{Type: Rparen, Val: ")"},
-		},
-	}
+	initParseFnMap()
 	tests := []struct {
-		function ast.Expression
-		expected string
+		buf         TokenBuffer
+		function    ast.Expression
+		expected    string
+		expectedErr error
 	}{
 		{
-			function: &ast.Identifier{Value: "add"},
-			expected: `function add( (1 + 2) )`,
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			function:    &ast.Identifier{Value: "add"},
+			expected:    `function add( (1 + 2) )`,
+			expectedErr: nil,
 		},
 		{
-			function: &ast.Identifier{Value: "testFunc"},
-			expected: `function testFunc( "a", "b", 5 )`,
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: String, Val: "a"},
+					{Type: Comma, Val: ","},
+					{Type: String, Val: "b"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "5"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			function:    &ast.Identifier{Value: "testFunc"},
+			expected:    `function testFunc( "a", "b", 5 )`,
+			expectedErr: nil,
 		},
 		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: String, Val: "a"},
+					{Type: Comma, Val: ","},
+					{Type: Asterisk, Val: "*"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "5"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
 			function: &ast.Identifier{Value: "errorFunc"},
-			expected: "ASTERISK, prefix parse function not defined",
+			expected: "",
+			expectedErr: parseError{
+				Asterisk,
+				"prefix parse function not defined",
+				0,
+				0,
+			},
 		},
 		{
-			function: &ast.Identifier{Value: "complexFunc"},
-			expected: `function complexFunc( ("a" + "b"), (5 * 3) )`,
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: String, Val: "a"},
+					{Type: Plus, Val: "+"},
+					{Type: String, Val: "b"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "5"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			function:    &ast.Identifier{Value: "complexFunc"},
+			expected:    `function complexFunc( ("a" + "b"), (5 * 3) )`,
+			expectedErr: nil,
 		},
 	}
 
 	for i, test := range tests {
-		mockBuf := mockTokenBuffer{bufs[i], 0}
-		exp, err := parseCallExpression(&mockBuf, test.function)
-		if err != nil && err.Error() != test.expected {
+		exp, err := parseCallExpression(test.buf, test.function)
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - parseCallExpression() wrong error. expected=%s, got=%s",
-				i, test.expected, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 		if exp != nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - parseCallExpression() wrong answer. expected=%s, got=%s",
@@ -1186,85 +1624,129 @@ func TestParseCallExpression(t *testing.T) {
 }
 
 func TestParseCallArguments(t *testing.T) {
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[String] = parseStringLiteral
-	infixParseFnMap[Plus] = parseInfixExpression
-	infixParseFnMap[Asterisk] = parseInfixExpression
-	bufs := [][]Token{
+	initParseFnMap()
+	tests := []struct {
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
+	}{
 		{
-			{Type: Lparen, Val: "("},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected:    "function testFunction(  )",
+			expectedErr: nil,
 		},
 		{
-			{Type: Lparen, Val: "("},
-			{Type: Int, Val: "1"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected:    "function testFunction( 1 )",
+			expectedErr: nil,
 		},
 		{
-			{Type: Lparen, Val: "("},
-			{Type: String, Val: "a"},
-			{Type: Comma, Val: ","},
-			{Type: String, Val: "b"},
-			{Type: Comma, Val: ","},
-			{Type: Int, Val: "5"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: String, Val: "a"},
+					{Type: Comma, Val: ","},
+					{Type: String, Val: "b"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "5"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected:    `function testFunction( "a", "b", 5 )`,
+			expectedErr: nil,
 		},
 		{
-			{Type: Lparen, Val: "("},
-			{Type: String, Val: "a"},
-			{Type: Plus, Val: "+"},
-			{Type: String, Val: "b"},
-			{Type: Comma, Val: ","},
-			{Type: Int, Val: "5"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "3"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: String, Val: "a"},
+					{Type: Plus, Val: "+"},
+					{Type: String, Val: "b"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "5"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected:    `function testFunction( ("a" + "b"), (5 * 3) )`,
+			expectedErr: nil,
 		},
 		{
-			{Type: Lparen, Val: "("},
-			{Type: Asterisk, Val: "*"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: Asterisk, Val: "*"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected: "",
+			expectedErr: parseError{
+				Asterisk,
+				"prefix parse function not defined",
+				0,
+				0,
+			},
 		},
 		{
-			{Type: Lparen, Val: "("},
-			{Type: String, Val: "a"},
-			{Type: Comma, Val: ","},
-			{Type: Asterisk, Val: "*"},
-			{Type: Comma, Val: ","},
-			{Type: Int, Val: "5"},
-			{Type: Rparen, Val: ")"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Lparen, Val: "("},
+					{Type: String, Val: "a"},
+					{Type: Comma, Val: ","},
+					{Type: Asterisk, Val: "*"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "5"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			expected: "",
+			expectedErr: parseError{
+				Asterisk,
+				"prefix parse function not defined",
+				0,
+				0,
+			},
 		},
-	}
-	tests := []string{
-		`function testFunction(  )`,
-		`function testFunction( 1 )`,
-		`function testFunction( "a", "b", 5 )`,
-		`function testFunction( ("a" + "b"), (5 * 3) )`,
-		"ASTERISK, prefix parse function not defined",
-		"ASTERISK, prefix parse function not defined",
 	}
 
 	for i, test := range tests {
-		mockBufs := mockTokenBuffer{bufs[i], 0}
-		exp, err := parseCallArguments(&mockBufs)
-
-		if err != nil && err.Error() != test {
+		exp, err := parseCallArguments(test.buf)
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",
-				i, test, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 
 		mockFn := &ast.CallExpression{
 			Function: &ast.Identifier{Value: "testFunction"},
 		}
 		mockFn.Arguments = exp
-		if exp != nil && mockFn.String() != test {
+		if exp != nil && mockFn.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",
-				i, test, mockFn.String())
+				i, test.expected, mockFn.String())
 		}
 	}
 }
 
 func TestParseAssignStatement(t *testing.T) {
+	initParseFnMap()
 	tests := []struct {
 		tokenBuffer           TokenBuffer
 		expectedDataStructure string
@@ -1282,7 +1764,9 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"string", "[IDENT, a]", `"hello"`,
+			"string",
+			"[IDENT, a]",
+			`"hello"`,
 			nil,
 		},
 		{
@@ -1295,7 +1779,9 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"int", "[IDENT, myInt]", "1",
+			"int",
+			"[IDENT, myInt]",
+			"1",
 			nil,
 		},
 		{
@@ -1308,7 +1794,9 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "[IDENT, ddd]", "true",
+			"bool",
+			"[IDENT, ddd]",
+			"true",
 			nil,
 		},
 		{
@@ -1322,7 +1810,9 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"int", "[IDENT, ddd2]", `"iam_string"`,
+			"int",
+			"[IDENT, ddd2]",
+			`"iam_string"`,
 			nil,
 		},
 		{
@@ -1336,7 +1826,9 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "[IDENT, foo]", `"iam_string"`,
+			"bool",
+			"[IDENT, foo]",
+			`"iam_string"`,
 			nil,
 		},
 		{
@@ -1349,8 +1841,15 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "[IDENT, foo]", `"iam_string"`,
-			parseError{String, "token is not identifier"},
+			"bool",
+			"[IDENT, foo]",
+			`"iam_string"`,
+			parseError{
+				String,
+				"expected [IDENT], but got [STRING]",
+				0,
+				0,
+			},
 		},
 		{
 			&mockTokenBuffer{
@@ -1361,15 +1860,17 @@ func TestParseAssignStatement(t *testing.T) {
 					{Type: Eof}},
 				sp: 0,
 			},
-			"bool", "[IDENT, foo]", `"iam_string"`,
-			parseError{String, "token is not assign"},
+			"bool",
+			"[IDENT, foo]",
+			`"iam_string"`,
+			parseError{
+				String,
+				"expected [ASSIGN], but got [STRING]",
+				0,
+				0,
+			},
 		},
 	}
-
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[String] = parseStringLiteral
-	prefixParseFnMap[True] = parseBooleanLiteral
-	prefixParseFnMap[False] = parseBooleanLiteral
 
 	for i, tt := range tests {
 		exp, err := parseAssignStatement(tt.tokenBuffer)
@@ -1400,336 +1901,440 @@ func TestParseAssignStatement(t *testing.T) {
 // infix expression
 func TestParseExpression(t *testing.T) {
 	initParseFnMap()
-	tokens := [][]Token{
-		{
-			{Type: Minus, Val: "-"},
-			{Type: Ident, Val: "a"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Ident, Val: "b"},
-			{Type: Eof},
-		},
-
-		{
-			{Type: Bang, Val: "!"},
-			{Type: Minus, Val: "-"},
-			{Type: Ident, Val: "b"},
-			{Type: Eof},
-		},
-		{
-			{Type: Minus, Val: "-"},
-			{Type: Int, Val: "33"},
-			{Type: Slash, Val: "/"},
-			{Type: Int, Val: "67"},
-			{Type: Plus, Val: "+"},
-			{Type: Ident, Val: "a"},
-			{Type: Eof},
-		},
-		{
-			{Type: Int, Val: "33"},
-			{Type: Mod, Val: "%"},
-			{Type: Minus, Val: "-"},
-			{Type: Int, Val: "67"},
-			{Type: Plus, Val: "+"},
-			{Type: Ident, Val: "a"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Ident, Val: "c"},
-			{Type: Eof},
-		},
-		{
-			{Type: Int, Val: "33"},
-			{Type: Mod, Val: "%"},
-			{Type: Lparen, Val: "("},
-			{Type: Minus, Val: "-"},
-			{Type: Int, Val: "67"},
-			{Type: Plus, Val: "+"},
-			{Type: Ident, Val: "a"},
-			{Type: Rparen, Val: ")"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Ident, Val: "c"},
-			{Type: Eof},
-		},
-		{
-			{Type: Minus, Val: "-"},
-			{Type: Int, Val: "33"},
-			{Type: Slash, Val: "/"},
-			{Type: Int, Val: "67"},
-			{Type: LT, Val: "<"},
-			{Type: Ident, Val: "a"},
-			{Type: Asterisk, Val: "*"},
-			{Type: Int, Val: "67"},
-			{Type: Eof},
-		},
-		{
-			{Type: Minus, Val: "-"},
-			{Type: Int, Val: "33"},
-			{Type: Slash, Val: "/"},
-			{Type: Int, Val: "67"},
-			{Type: GTE, Val: ">="},
-			{Type: Ident, Val: "a"},
-			{Type: Plus, Val: "+"},
-			{Type: Int, Val: "67"},
-			{Type: Mod, Val: "%"},
-			{Type: Ident, Val: "z"},
-			{Type: Eof},
-		},
-	}
-
 	tests := []struct {
-		expected string
-		err      error
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
 	}{
-		{"((-a) * b)", nil},
-		{"(!(-b))", nil},
-		{"(((-33) / 67) + a)", nil},
-		{"((33 % (-67)) + (a * c))", nil},
-		{"((33 % ((-67) + a)) * c)", nil},
-		{"(((-33) / 67) < (a * 67))", nil},
-		{"(((-33) / 67) >= (a + (67 % z)))", nil},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Ident, Val: "a"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Ident, Val: "b"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"((-a) * b)",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Bang, Val: "!"},
+					{Type: Minus, Val: "-"},
+					{Type: Ident, Val: "b"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"(!(-b))",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "33"},
+					{Type: Slash, Val: "/"},
+					{Type: Int, Val: "67"},
+					{Type: Plus, Val: "+"},
+					{Type: Ident, Val: "a"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"(((-33) / 67) + a)",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "33"},
+					{Type: Mod, Val: "%"},
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "67"},
+					{Type: Plus, Val: "+"},
+					{Type: Ident, Val: "a"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Ident, Val: "c"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"((33 % (-67)) + (a * c))",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "33"},
+					{Type: Mod, Val: "%"},
+					{Type: Lparen, Val: "("},
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "67"},
+					{Type: Plus, Val: "+"},
+					{Type: Ident, Val: "a"},
+					{Type: Rparen, Val: ")"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Ident, Val: "c"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"((33 % ((-67) + a)) * c)",
+			nil},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "33"},
+					{Type: Slash, Val: "/"},
+					{Type: Int, Val: "67"},
+					{Type: LT, Val: "<"},
+					{Type: Ident, Val: "a"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "67"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"(((-33) / 67) < (a * 67))",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Minus, Val: "-"},
+					{Type: Int, Val: "33"},
+					{Type: Slash, Val: "/"},
+					{Type: Int, Val: "67"},
+					{Type: GTE, Val: ">="},
+					{Type: Ident, Val: "a"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "67"},
+					{Type: Mod, Val: "%"},
+					{Type: Ident, Val: "z"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"(((-33) / 67) >= (a + (67 % z)))",
+			nil},
 	}
 
-	for i, tt := range tests {
-		buf := &mockTokenBuffer{tokens[i], 0}
-		exp, err := parseExpression(buf, LOWEST)
+	for i, test := range tests {
+		exp, err := parseExpression(test.buf, LOWEST)
 
-		if err != nil {
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - parseExpression() with wrong error. expected=%s, got=%s",
-				i, tt.err, err)
+				i, test.expectedErr.Error(), err)
 		}
 
-		if err == nil && exp.String() != tt.expected {
+		if err == nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - parseExpression() with wrong expression. expected=%s, got=%s",
-				i, tt.expected, exp.String())
+				i, test.expected, exp.String())
 		}
 	}
 }
 
 func TestParseIfStatement(t *testing.T) {
 	initParseFnMap()
-
-	bufs := [][]Token{
+	tests := []struct {
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
+	}{
 		{
-			{Type: If, Val: "if"},
-			{Type: Lparen, Val: "("},
-			{Type: True, Val: "true"},
-			{Type: Rparen, Val: ")"},
-			{Type: Lbrace, Val: "{"},
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "0"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
-			{Type: Eol, Val: "\n"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			"if ( true ) { int [IDENT, a] = 0 }",
+			nil,
 		},
 		{
-			{Type: If, Val: "if"},
-			{Type: Lparen, Val: "("},
-			{Type: Ident, Val: "a"},
-			{Type: EQ, Val: "=="},
-			{Type: Int, Val: "5"},
-			{Type: Rparen, Val: ")"},
-			{Type: Lbrace, Val: "{"},
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "1"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
-			{Type: Else, Val: "else"},
-			{Type: Lbrace, Val: "{"},
-			{Type: StringType, Val: "string"},
-			{Type: Ident, Val: "b"},
-			{Type: Assign, Val: "="},
-			{Type: String, Val: "example"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
-			{Type: Eol, Val: "\n"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: EQ, Val: "=="},
+					{Type: Int, Val: "5"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Else, Val: "else"},
+					{Type: Lbrace, Val: "{"},
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "b"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "example"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			`if ( (a == 5) ) { int [IDENT, a] = 1 } else { string [IDENT, b] = "example" }`,
+			nil,
 		},
 		{
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "5"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "5"},
+				},
+				0,
+			},
+			"",
+			parseError{
+				IntType,
+				"expected [IF], but got [INT_TYPE]",
+				0,
+				0,
+			},
 		},
 		{
-			{Type: If, Val: "if"},
-			{Type: Lparen, Val: "("},
-			{Type: True, Val: "true"},
-			{Type: Rparen, Val: ")"},
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "0"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
-			{Type: Eol, Val: "\n"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			"",
+			parseError{
+				IntType,
+				"expected [LBRACE], but got [INT_TYPE]",
+				0,
+				0,
+			},
 		},
 		{
-			{Type: If, Val: "if"},
-			{Type: Lparen, Val: "("},
-			{Type: True, Val: "true"},
-			{Type: Rbrace, Val: "}"},
-			{Type: Lbrace, Val: "{"},
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "0"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
-			{Type: Eol, Val: "\n"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
+			},
+			"",
+			parseError{
+				Rbrace,
+				"expected [RPAREN], but got [RBRACE]",
+				0,
+				0,
+			},
 		},
-	}
-
-	tests := []string{
-		"if ( true ) { int [IDENT, a] = 0 }",
-		`if ( (a == 5) ) { int [IDENT, a] = 1 } else { string [IDENT, b] = "example" }`,
-		"INT_TYPE, is not a If",
-		"INT_TYPE, is not a Left brace",
-		"RBRACE, is not a Right paren",
 	}
 
 	for i, test := range tests {
-		mockBuf := mockTokenBuffer{bufs[i], 0}
-		stmt, err := parseIfStatement(&mockBuf)
+		stmt, err := parseIfStatement(test.buf)
 
-		if err != nil && err.Error() != test {
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseIfStatement() wrong error. expected=%s got=%s",
-				i, test, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 
-		if stmt != nil && stmt.String() != test {
+		if stmt != nil && stmt.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseIfStatement() wrong result. expected=%s, got=%s",
-				i, test, stmt.String())
+				i, test.expected, stmt.String())
 		}
 
 	}
 }
 
 func TestParseBlockStatement(t *testing.T) {
-	prefixParseFnMap[True] = parseBooleanLiteral
-	prefixParseFnMap[False] = parseBooleanLiteral
-	prefixParseFnMap[Int] = parseIntegerLiteral
-	prefixParseFnMap[Ident] = parseIdentifier
-	prefixParseFnMap[String] = parseStringLiteral
-	infixParseFnMap[EQ] = parseInfixExpression
-	bufs := [][]Token{
+	initParseFnMap()
+	tests := []struct {
+		buf         TokenBuffer
+		expected    string
+		expectedErr error
+	}{
 		{
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "0"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"int [IDENT, a] = 0",
+			nil,
 		},
 		{
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "0"},
-			{Type: Eol, Val: "\n"},
-			{Type: StringType, Val: "string"},
-			{Type: Ident, Val: "b"},
-			{Type: Assign, Val: "="},
-			{Type: String, Val: "abc"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Eol, Val: "\n"},
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "b"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "abc"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			`int [IDENT, a] = 0/string [IDENT, b] = "abc"`,
+			nil,
 		},
 		{
-			{Type: IntType, Val: "int"},
-			{Type: Ident, Val: "a"},
-			{Type: Assign, Val: "="},
-			{Type: Int, Val: "0"},
-			{Type: Eol, Val: "\n"},
-			{Type: StringType, Val: "string"},
-			{Type: Ident, Val: "b"},
-			{Type: Assign, Val: "="},
-			{Type: String, Val: "abc"},
-			{Type: Eol, Val: "\n"},
-			{Type: BoolType, Val: "bool"},
-			{Type: Ident, Val: "c"},
-			{Type: Assign, Val: "="},
-			{Type: True, Val: "true"},
-			{Type: Eol, Val: "\n"},
-			{Type: Rbrace, Val: "}"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Eol, Val: "\n"},
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "b"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "abc"},
+					{Type: Eol, Val: "\n"},
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "c"},
+					{Type: Assign, Val: "="},
+					{Type: True, Val: "true"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			`int [IDENT, a] = 0/string [IDENT, b] = "abc"/bool [IDENT, c] = true`,
+			nil,
 		},
-	}
-	tests := []string{
-		"int [IDENT, a] = 0",
-		`int [IDENT, a] = 0/string [IDENT, b] = "abc"`,
-		`int [IDENT, a] = 0/string [IDENT, b] = "abc"/bool [IDENT, c] = true`,
 	}
 
 	for i, test := range tests {
-		mockBuf := mockTokenBuffer{bufs[i], 0}
-		exp, err := parseBlockStatement(&mockBuf)
-
-		if err != nil && err.Error() != test {
+		exp, err := parseBlockStatement(test.buf)
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseBlockStatement() wrong error. expected=%s, got=%s",
-				i, test, err.Error())
+				i, test.expectedErr.Error(), err.Error())
 		}
 
-		if exp != nil && exp.String() != test {
+		if exp != nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseBlockStatement() wrong result. expected=%s, got=%s",
-				i, test, exp.String())
+				i, test.expected, exp.String())
 		}
 	}
 }
 
 func TestParseStatement(t *testing.T) {
 	initParseFnMap()
-
 	tests := []struct {
-		tokens       []Token
+		buf          TokenBuffer
 		expectedErr  error
 		expectedStmt string
 	}{
 		// tests for IntType
 		{
-			tokens: []Token{
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "1"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: "int [IDENT, a] = 1",
 		},
 		{
-			tokens: []Token{
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "1"},
-				{Type: Plus, Val: "+"},
-				{Type: Int, Val: "2"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: "int [IDENT, a] = (1 + 2)",
 		},
 		{
-			tokens: []Token{
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "1"},
-				{Type: Plus, Val: "+"},
-				{Type: Int, Val: "2"},
-				{Type: Asterisk, Val: "*"},
-				{Type: Int, Val: "3"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: "int [IDENT, a] = (1 + (2 * 3))",
 		},
 		{
-			tokens: []Token{
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: String, Val: "1"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "1"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `int [IDENT, a] = "1"`,
@@ -1737,34 +2342,43 @@ func TestParseStatement(t *testing.T) {
 
 		// tests for StringType
 		{
-			tokens: []Token{
-				{Type: StringType, Val: "string"},
-				{Type: Ident, Val: "abb"},
-				{Type: Assign, Val: "="},
-				{Type: String, Val: "do not merge, rebase!"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "abb"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "do not merge, rebase!"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `string [IDENT, abb] = "do not merge, rebase!"`,
 		},
 		{
-			tokens: []Token{
-				{Type: StringType, Val: "string"},
-				{Type: Ident, Val: "abb"},
-				{Type: Assign, Val: "="},
-				{Type: String, Val: "hello,*+"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "abb"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "hello,*+"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `string [IDENT, abb] = "hello,*+"`,
 		},
 		{
-			tokens: []Token{
-				{Type: StringType, Val: "string"},
-				{Type: Ident, Val: "abb"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "1"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "abb"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `string [IDENT, abb] = 1`,
@@ -1772,34 +2386,43 @@ func TestParseStatement(t *testing.T) {
 
 		// tests for BoolType
 		{
-			tokens: []Token{
-				{Type: BoolType, Val: "bool"},
-				{Type: Ident, Val: "asdf"},
-				{Type: Assign, Val: "="},
-				{Type: True, Val: "true"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "asdf"},
+					{Type: Assign, Val: "="},
+					{Type: True, Val: "true"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `bool [IDENT, asdf] = true`,
 		},
 		{
-			tokens: []Token{
-				{Type: BoolType, Val: "bool"},
-				{Type: Ident, Val: "asdf"},
-				{Type: Assign, Val: "="},
-				{Type: False, Val: "false"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "asdf"},
+					{Type: Assign, Val: "="},
+					{Type: False, Val: "false"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `bool [IDENT, asdf] = false`,
 		},
 		{
-			tokens: []Token{
-				{Type: BoolType, Val: "bool"},
-				{Type: Ident, Val: "asdf"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "1"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "asdf"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `bool [IDENT, asdf] = 1`,
@@ -1807,114 +2430,132 @@ func TestParseStatement(t *testing.T) {
 
 		// tests for If statement
 		{
-			tokens: []Token{
-				{Type: If, Val: "if"},
-				{Type: Lparen, Val: "("},
-				{Type: True, Val: "true"},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) {  }`,
 		},
 		{
-			tokens: []Token{
-				{Type: If, Val: "if"},
-				{Type: Lparen, Val: "("},
-				{Type: Int, Val: "1"},
-				{Type: Plus, Val: "+"},
-				{Type: Int, Val: "2"},
-				{Type: EQ, Val: "=="},
-				{Type: Int, Val: "3"},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: EQ, Val: "=="},
+					{Type: Int, Val: "3"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( ((1 + 2) == 3) ) {  }`,
 		},
 		{
-			tokens: []Token{
-				{Type: If, Val: "if"},
-				{Type: Lparen, Val: "("},
-				{Type: True, Val: "true"},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Int, Val: "1"},
-				{Type: Plus, Val: "+"},
-				{Type: Int, Val: "2"},
-				{Type: EQ, Val: "=="},
-				{Type: Int, Val: "3"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: EQ, Val: "=="},
+					{Type: Int, Val: "3"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
-			expectedErr:  parseError{Int, "token is not identifier"},
+			expectedErr:  parseError{Int, "expected [IDENT], but got [INT]", 0, 0},
 			expectedStmt: ``,
 		},
 		{
-			tokens: []Token{
-				{Type: If, Val: "if"},
-				{Type: Lparen, Val: "("},
-				{Type: True, Val: "true"},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "2"},
-				{Type: Eol, Val: "\n"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "2"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) { int [IDENT, a] = 2 }`,
 		},
 		{
-			tokens: []Token{
-				{Type: If, Val: "if"},
-				{Type: Lparen, Val: "("},
-				{Type: True, Val: "true"},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "2"},
-				{Type: Eol, Val: "\n"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Else, Val: "else"},
-				{Type: Lbrace, Val: "{"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "2"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Else, Val: "else"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else {  }`,
 		},
 		{
-			tokens: []Token{
-				{Type: If, Val: "if"},
-				{Type: Lparen, Val: "("},
-				{Type: True, Val: "true"},
-				{Type: Rparen, Val: ")"},
-				{Type: Lbrace, Val: "{"},
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "a"},
-				{Type: Assign, Val: "="},
-				{Type: Int, Val: "2"},
-				{Type: Eol, Val: "\n"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Else, Val: "else"},
-				{Type: Lbrace, Val: "{"},
-				{Type: StringType, Val: "string"},
-				{Type: Ident, Val: "b"},
-				{Type: Assign, Val: "="},
-				{Type: String, Val: "hello"},
-				{Type: Eol, Val: "\n"},
-				{Type: Rbrace, Val: "}"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "2"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Else, Val: "else"},
+					{Type: Lbrace, Val: "{"},
+					{Type: StringType, Val: "string"},
+					{Type: Ident, Val: "b"},
+					{Type: Assign, Val: "="},
+					{Type: String, Val: "hello"},
+					{Type: Eol, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else { string [IDENT, b] = "hello" }`,
@@ -1922,45 +2563,54 @@ func TestParseStatement(t *testing.T) {
 
 		// tests for Return statement
 		{
-			tokens: []Token{
-				{Type: Return, Val: "return"},
-				{Type: Ident, Val: "asdf"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: Ident, Val: "asdf"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `return asdf`,
 		},
 		{
-			tokens: []Token{
-				{Type: Return, Val: "return"},
-				{Type: Lparen, Val: "("},
-				{Type: Int, Val: "1"},
-				{Type: Plus, Val: "+"},
-				{Type: Int, Val: "2"},
-				{Type: Asterisk, Val: "*"},
-				{Type: Int, Val: "3"},
-				{Type: Rparen, Val: ")"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Rparen, Val: ")"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `return (1 + (2 * 3))`,
 		},
 		{
-			tokens: []Token{
-				{Type: Return, Val: "return"},
-				{Type: Lparen, Val: "("},
-				{Type: Ident, Val: "add"},
-				{Type: Lparen, Val: "("},
-				{Type: Int, Val: "1"},
-				{Type: Comma, Val: ","},
-				{Type: Int, Val: "2"},
-				{Type: Rparen, Val: ")"},
-				{Type: Plus, Val: "+"},
-				{Type: Int, Val: "2"},
-				{Type: Asterisk, Val: "*"},
-				{Type: Int, Val: "3"},
-				{Type: Rparen, Val: ")"},
-				{Type: Eol, Val: "\n"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "add"},
+					{Type: Lparen, Val: "("},
+					{Type: Int, Val: "1"},
+					{Type: Comma, Val: ","},
+					{Type: Int, Val: "2"},
+					{Type: Rparen, Val: ")"},
+					{Type: Plus, Val: "+"},
+					{Type: Int, Val: "2"},
+					{Type: Asterisk, Val: "*"},
+					{Type: Int, Val: "3"},
+					{Type: Rparen, Val: ")"},
+					{Type: Eol, Val: "\n"},
+				},
+				0,
 			},
 			expectedErr:  nil,
 			expectedStmt: `return (function add( 1, 2 ) + (2 * 3))`,
@@ -1968,27 +2618,29 @@ func TestParseStatement(t *testing.T) {
 
 		// tests for Default
 		{
-			tokens: []Token{
-				{Type: Int, Val: "1"},
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "1"},
+				},
+				0,
 			},
-			expectedErr:  parseError{Int, "token is not identifier"},
+			expectedErr:  parseError{Int, "expected [IDENT], but got [INT]", 0, 0},
 			expectedStmt: ``,
 		},
 	}
 
-	for i, tt := range tests {
-		buf := &mockTokenBuffer{tt.tokens, 0}
-		stmt, err := parseStatement(buf)
+	for i, test := range tests {
+		stmt, err := parseStatement(test.buf)
 
-		if err != nil && err != tt.expectedErr {
+		if err != nil && err != test.expectedErr {
 			t.Errorf(`test[%d] - parseStatement wrong error. expected="%v", got="%v"`,
-				i, tt.expectedErr, err)
+				i, test.expectedErr, err)
 			continue
 		}
 
-		if err == nil && stmt.String() != tt.expectedStmt {
+		if err == nil && stmt.String() != test.expectedStmt {
 			t.Errorf(`test[%d] - parseStatement wrong result. expected="%s", got="%s"`,
-				i, tt.expectedStmt, stmt.String())
+				i, test.expectedStmt, stmt.String())
 		}
 	}
 }
@@ -1997,91 +2649,124 @@ func TestParseExpressionStatement(t *testing.T) {
 	initParseFnMap()
 
 	tests := []struct {
-		tokens       []Token
+		buf          TokenBuffer
 		expectedStmt string
-		expectedErr  string
+		expectedErr  error
 	}{
 		{
 			// add()
-			[]Token{
-				{Type: Ident, Val: "add"},
-				{Type: Lparen, Val: "("},
-				{Type: Rparen, Val: ")"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "add"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
 			},
 			"function add(  )",
-			"",
+			nil,
 		},
 		{
 			// read(x int)
-			[]Token{
-				{Type: Ident, Val: "read"},
-				{Type: Lparen, Val: "("},
-				{Type: Ident, Val: "x"},
-				{Type: Rparen, Val: ")"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "read"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "x"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
 			},
 			"function read( x )",
-			"",
+			nil,
 		},
 		{
 			// testFunction(a int, b string)
-			[]Token{
-				{Type: Ident, Val: "testFunction"},
-				{Type: Lparen, Val: "("},
-				{Type: Ident, Val: "a"},
-				{Type: Comma, Val: ","},
-				{Type: Ident, Val: "b"},
-				{Type: Rparen, Val: ")"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "testFunction"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: Comma, Val: ","},
+					{Type: Ident, Val: "b"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
 			},
 			"function testFunction( a, b )",
-			"",
+			nil,
 		},
 		{
 			// testFunction(a int b string) <= error case
-			[]Token{
-				{Type: Ident, Val: "testFunction"},
-				{Type: Lparen, Val: "("},
-				{Type: Ident, Val: "a"},
-				{Type: IntType, Val: "int"},
-				{Type: Ident, Val: "b"},
-				{Type: IntType, Val: "string"},
-				{Type: Rparen, Val: ")"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "testFunction"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "b"},
+					{Type: IntType, Val: "string"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
 			},
 			"",
-			"INT_TYPE, expectNext() : expected [RPAREN], but got [INT_TYPE]",
+			parseError{
+				IntType,
+				"expected [RPAREN], but got [INT_TYPE]",
+				0,
+				0,
+			},
 		},
 		{
 			// 1() <= error case
-			[]Token{
-				{Type: Int, Val: "1"},
-				{Type: Lparen, Val: "("},
-				{Type: Rparen, Val: ")"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "1"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
 			},
 			"",
-			"INT, token is not identifier",
+			parseError{
+				Int,
+				"expected [IDENT], but got [INT]",
+				0,
+				0,
+			},
 		},
 		{
 			// add) <= error case
-			[]Token{
-				{Type: Ident, Val: "add"},
-				{Type: Rparen, Val: ")"},
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "add"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
 			},
 			"",
-			"RPAREN, expectNext() : expected [LPAREN], but got [RPAREN]",
+			parseError{
+				Rparen,
+				"expected [LPAREN], but got [RPAREN]",
+				0,
+				0,
+			},
 		},
 	}
 
 	for i, test := range tests {
-		stmt, err := parseExpressionStatement(&mockTokenBuffer{test.tokens, 0})
+		stmt, err := parseExpressionStatement(test.buf)
 		if stmt != nil && stmt.String() != test.expectedStmt {
 			t.Fatalf("test[%d] - TestParseFunctionStatement wrong answer.\n"+
 				"expected= %s\n"+
 				"got= %s", i, test.expectedStmt, stmt.String())
 		}
 
-		if err != nil && err.Error() != test.expectedErr {
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionStatement wrong error.\n"+
 				"expected= %s\n"+
-				"got= %s", i, test.expectedErr, err.Error())
+				"got= %s", i, test.expectedErr.Error(), err.Error())
 		}
 	}
 }
