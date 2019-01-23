@@ -28,7 +28,7 @@ var ErrInvalidOpcode = errors.New("invalid opcode")
 
 // The Execute function assemble the rawByteCode into an assembly code,
 // which in turn executes the assembly logic.
-func Execute(rawByteCode []byte) (*stack, error) {
+func Execute(rawByteCode []byte, memory *Memory, contract *Contract, callFunc *CallFunc) (*stack, error) {
 
 	s := newStack()
 	asm, err := disassemble(rawByteCode)
@@ -36,13 +36,16 @@ func Execute(rawByteCode []byte) (*stack, error) {
 		return &stack{}, err
 	}
 
+	contract.setAsm(asm)
+	contract.setCallFunc(callFunc)
+
 	for h := asm.code[0]; h != nil; h = asm.next() {
 		op, ok := h.(opCode)
 		if !ok {
 			return &stack{}, ErrInvalidOpcode
 		}
 
-		err := op.Do(s, asm)
+		err := op.Do(s, memory, contract)
 		if err != nil {
 			return s, err
 		}
@@ -52,7 +55,7 @@ func Execute(rawByteCode []byte) (*stack, error) {
 }
 
 type opCode interface {
-	Do(*stack, asmReader) error
+	Do(*stack, *Memory, *Contract) error
 	hexer
 }
 
@@ -71,7 +74,7 @@ type push struct{}
 type mload struct{}
 type mstore struct{}
 
-func (add) Do(stack *stack, _ asmReader) error {
+func (add) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y := stack.pop()
 	x := stack.pop()
 
@@ -84,7 +87,7 @@ func (add) hex() []uint8 {
 	return []uint8{uint8(opcode.Add)}
 }
 
-func (mul) Do(stack *stack, _ asmReader) error {
+func (mul) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y := stack.pop()
 	x := stack.pop()
 
@@ -97,7 +100,7 @@ func (mul) hex() []uint8 {
 	return []uint8{uint8(opcode.Mul)}
 }
 
-func (sub) Do(stack *stack, _ asmReader) error {
+func (sub) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y := stack.pop()
 	x := stack.pop()
 
@@ -111,7 +114,7 @@ func (sub) hex() []uint8 {
 }
 
 // Be careful! int.Div and int.Quo is different
-func (div) Do(stack *stack, _ asmReader) error {
+func (div) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y := stack.pop()
 	x := stack.pop()
 
@@ -126,7 +129,7 @@ func (div) hex() []uint8 {
 	return []uint8{uint8(opcode.Div)}
 }
 
-func (mod) Do(stack *stack, _ asmReader) error {
+func (mod) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y := stack.pop()
 	x := stack.pop()
 
@@ -141,7 +144,7 @@ func (mod) hex() []uint8 {
 	return []uint8{uint8(opcode.Mod)}
 }
 
-func (lt) Do(stack *stack, _ asmReader) error {
+func (lt) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y, x := stack.pop(), stack.pop()
 
 	if x < y { // x < y
@@ -157,7 +160,7 @@ func (lt) hex() []uint8 {
 	return []uint8{uint8(opcode.LT)}
 }
 
-func (gt) Do(stack *stack, _ asmReader) error {
+func (gt) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y, x := stack.pop(), stack.pop()
 
 	if x > y { // x > y
@@ -173,7 +176,7 @@ func (gt) hex() []uint8 {
 	return []uint8{uint8(opcode.GT)}
 }
 
-func (eq) Do(stack *stack, _ asmReader) error {
+func (eq) Do(stack *stack, _ *Memory, _ *Contract) error {
 	y, x := stack.pop(), stack.pop()
 
 	if x == y { // x == y
@@ -189,7 +192,7 @@ func (eq) hex() []uint8 {
 	return []uint8{uint8(opcode.EQ)}
 }
 
-func (not) Do(stack *stack, _ asmReader) error {
+func (not) Do(stack *stack, _ *Memory, _ *Contract) error {
 	x := stack.pop()
 
 	stack.push(^x)
@@ -200,7 +203,7 @@ func (not) hex() []uint8 {
 	return []uint8{uint8(opcode.NOT)}
 }
 
-func (pop) Do(stack *stack, _ asmReader) error {
+func (pop) Do(stack *stack, _ *Memory, _ *Contract) error {
 	_ = stack.pop()
 	return nil
 }
@@ -209,8 +212,8 @@ func (pop) hex() []uint8 {
 	return []uint8{uint8(opcode.Pop)}
 }
 
-func (push) Do(stack *stack, asm asmReader) error {
-	code := asm.next()
+func (push) Do(stack *stack, _ *Memory, contract *Contract) error {
+	code := contract.asm.next()
 	data, ok := code.(Data)
 	if !ok {
 		return ErrInvalidData
@@ -226,7 +229,7 @@ func (push) hex() []uint8 {
 }
 
 // TODO: implement me w/ test cases :-)
-func (mload) Do(stack *stack, _ asmReader) error {
+func (mload) Do(stack *stack, _ *Memory, _ *Contract) error {
 	return nil
 }
 
@@ -235,7 +238,7 @@ func (mload) hex() []uint8 {
 }
 
 // TODO: implement me w/ test cases :-)
-func (mstore) Do(stack *stack, _ asmReader) error {
+func (mstore) Do(stack *stack, _ *Memory, _ *Contract) error {
 	return nil
 }
 
