@@ -22,6 +22,11 @@ import (
 	"github.com/DE-labtory/koa/parse"
 )
 
+type lexTestCase struct {
+	expectedType  parse.TokenType
+	expectedValue string
+}
+
 func TestLexer_NextToken(t *testing.T) {
 	input := `
 	contract { //lexer does not return this comment as token
@@ -41,10 +46,7 @@ second
 	}
 	`
 
-	tests := []struct {
-		expectedType  parse.TokenType
-		expectedValue string
-	}{
+	tests := []lexTestCase{
 		{parse.Eol, "\n"},
 		{parse.Contract, "contract"},
 		{parse.Lbrace, "{"},
@@ -114,14 +116,66 @@ second
 	for i, test := range tests {
 		token := l.NextToken()
 
-		if token.Type != test.expectedType {
-			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
-				i, parse.TokenTypeMap[test.expectedType], parse.TokenTypeMap[token.Type])
-		}
+		compareToken(t, i, token, test)
+	}
+}
 
-		if token.Val != test.expectedValue {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
-				i, test.expectedValue, token.Val)
+func TestTokenBuffer(t *testing.T) {
+	input := `
+	contract { //lexer does not return this comment as token
+			/*abcdef*/ /*/**/
+			/*
+			lexer does not return this comment as token
+			lexer does not return this comment as token
+			lexer does not return this comment as token */
+			func (a int){
+			3 / 10
+			int a = 5
+			int b = 315 + (5 * 7) / 3 - 10
+			<= >= == != = { } , "string"
+			"First
+second
 		}
+	}
+	`
+	l := parse.NewLexer(input)
+	buf := parse.NewTokenBuffer(l)
+
+	tok := buf.Read()
+	compareToken(t, 1, tok, lexTestCase{parse.Eol, "\n"})
+
+	tok = buf.Read()
+	compareToken(t, 2, tok, lexTestCase{parse.Contract, "contract"})
+
+	tok = buf.Peek(parse.CURRENT)
+	compareToken(t, 3, tok, lexTestCase{parse.Lbrace, "{"})
+
+	tok = buf.Peek(parse.NEXT)
+	compareToken(t, 4, tok, lexTestCase{parse.Eol, "\n"})
+
+	// this token should be the same with buf.Peek(parse.CURRENT)
+	tok = buf.Read()
+	compareToken(t, 5, tok, lexTestCase{parse.Lbrace, "{"})
+
+	// this token should be the same with buf.Peek(parse.NEXT)
+	tok = buf.Read()
+	compareToken(t, 6, tok, lexTestCase{parse.Eol, "\n"})
+
+	// invalid peekNumber
+	tok = buf.Peek(3)
+	compareToken(t, 7, tok, lexTestCase{})
+}
+
+func compareToken(t *testing.T, i int, tok parse.Token, tt lexTestCase) {
+	t.Helper()
+
+	if tok.Type != tt.expectedType {
+		t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+			i, parse.TokenTypeMap[tt.expectedType], parse.TokenTypeMap[tok.Type])
+	}
+
+	if tok.Val != tt.expectedValue {
+		t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+			i, tt.expectedValue, tok.Val)
 	}
 }

@@ -523,3 +523,25 @@ func TestIsAlphaNumeric(t *testing.T) {
 		}
 	}
 }
+
+func TestNewTokenBuffer(t *testing.T) {
+	input := `
+	contract { 
+	`
+	l := NewLexer(input)
+	buf := NewTokenBuffer(l)
+
+	if buf.l != l {
+		t.Errorf("NewTokenBuffer has wrong lexer")
+	}
+
+	if buf.cur.Type != Eol {
+		t.Errorf("NewTokenBuffer has wrong cur token expected=%v, got=%v",
+			Eol, buf.cur.Type)
+	}
+
+	if buf.next.Type != Contract {
+		t.Errorf("NewTokenBuffer has wrong next token expected=%v, got=%v",
+			Contract, buf.next.Type)
+	}
+}

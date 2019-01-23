@@ -60,6 +60,69 @@ func (l *Lexer) emit(t Token) {
 	l.tokench <- t
 }
 
+// NextToken returns the next token from the input.
+// Called by the parser, not in the lexing goroutine.
+func (l *Lexer) NextToken() Token {
+	return <-l.tokench
+}
+
+// DefaultTokenBuffer is implementation for TokenBuffer interface
+// providing buffers to the client.
+//
+// cur, next work as buffer. Each store token as below
+//
+// ----------------------------------------------
+//    client   <- |  cur  |  next | <-  lexer
+//    ======   <- | token | token | <-  =====
+// ----------------------------------------------
+//
+type DefaultTokenBuffer struct {
+	l *Lexer
+
+	cur  Token
+	next Token
+}
+
+func NewTokenBuffer(l *Lexer) *DefaultTokenBuffer {
+	buf := &DefaultTokenBuffer{
+		l: l,
+	}
+	// read for filling cur, next token
+	buf.Read()
+	buf.Read()
+
+	return buf
+}
+
+// Read returns current token, then read from lexer
+// then change the cur, next token value
+func (b *DefaultTokenBuffer) Read() Token {
+	tok := b.l.NextToken()
+	out := b.cur
+
+	b.cur = b.next
+	b.next = tok
+
+	return out
+}
+
+// Peek returns token based on the peekNumber, this doesn't
+// change token value
+func (b *DefaultTokenBuffer) Peek(n peekNumber) Token {
+	if !n.isValid() {
+		return Token{}
+	}
+
+	switch n {
+	case CURRENT:
+		return b.cur
+	case NEXT:
+		return b.next
+	}
+
+	return Token{}
+}
+
 // The process of generating a token from an input string(codes) is generally implemented
 // by defining a state and determining how to process the state.
 // After the state is processed, it goes to the next state and it is repeated to determine
@@ -94,12 +157,6 @@ func (l *Lexer) emit(t Token) {
 // stateFn determines how to scan the current state.
 // stateFn also returns the stateFn to be scanned next after scanning the current state.
 type stateFn func(*state, emitter) stateFn
-
-// NextToken returns the next token from the input.
-// Called by the parser, not in the lexing goroutine.
-func (l *Lexer) NextToken() Token {
-	return <-l.tokench
-}
 
 // State has the input(codes) as a string and has the current position and the line.
 type state struct {
