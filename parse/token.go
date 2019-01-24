@@ -65,11 +65,11 @@ const (
 	Slash    // /
 	Mod      // %
 
-	Plus_assign     // +=
-	Minus_assign    // -=
-	Asterisk_assign // *=
-	Slash_assign    // /=
-	Mod_assign      // %=
+	PlusAssign     // +=
+	MinusAssign    // -=
+	AsteriskAssign // *=
+	SlashAssign    // /=
+	ModAssign      // %=
 
 	Land // &&
 	Lor  // ||
@@ -97,6 +97,7 @@ const (
 	Return // return
 	Eof    // end of file
 	Eol    // end of line
+	Semicolon
 )
 
 // TokenTypeMap mapping TokenType with its
@@ -122,11 +123,11 @@ var TokenTypeMap = map[TokenType]string{
 	Slash:    "SLASH",
 	Mod:      "MOD",
 
-	Plus_assign:     "PLUS_ASSIGN",
-	Minus_assign:    "MINUS_ASSIGN",
-	Asterisk_assign: "ASTERISK_ASSIGN",
-	Slash_assign:    "SLASH_ASSIGN",
-	Mod_assign:      "MOD_ASSIGN",
+	PlusAssign:     "PLUS_ASSIGN",
+	MinusAssign:    "MINUS_ASSIGN",
+	AsteriskAssign: "ASTERISK_ASSIGN",
+	SlashAssign:    "SLASH_ASSIGN",
+	ModAssign:      "MOD_ASSIGN",
 
 	Land: "LAND",
 	Lor:  "LOR",
@@ -153,8 +154,9 @@ var TokenTypeMap = map[TokenType]string{
 	Else:   "ELSE",
 	Return: "RETURN",
 
-	Eof: "EOF",
-	Eol: "EOL",
+	Eof:       "EOF",
+	Eol:       "EOL",
+	Semicolon: "SEMICOLON",
 }
 
 var keywords = map[string]TokenType{
