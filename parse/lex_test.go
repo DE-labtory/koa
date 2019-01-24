@@ -35,42 +35,40 @@ func TestLexer_NextToken(t *testing.T) {
 			lexer does not return this comment as token
 			lexer does not return this comment as token
 			lexer does not return this comment as token */
-			func (a int){
+			func name (a int){
 			3 / 10
 			int a = 5
 			int b = 315 + (5 * 7) / 3 - 10
+			a++ /*comment after semi */
+			a-- //comment after semicolon
+			
+			string this = "abc"
 			++ -- && || += -= *= /= %= <= >= == != = { } , "string"
-			"First
-second
-		}
+			}
 	}
 	`
 
 	tests := []lexTestCase{
-		{parse.Eol, "\n"},
 		{parse.Contract, "contract"},
 		{parse.Lbrace, "{"},
-		{parse.Eol, "\n"},
-		{parse.Eol, "\n"},
-		{parse.Eol, "\n"},
 		{parse.Function, "func"},
+		{parse.Ident, "name"},
 		{parse.Lparen, "("},
 		{parse.Ident, "a"},
 		{parse.IntType, "int"},
 		{parse.Rparen, ")"},
 		{parse.Lbrace, "{"},
 
-		{parse.Eol, "\n"},
 		{parse.Int, "3"},
 		{parse.Slash, "/"},
 		{parse.Int, "10"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
 		{parse.IntType, "int"},
 		{parse.Ident, "a"},
 		{parse.Assign, "="},
 		{parse.Int, "5"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
 		{parse.IntType, "int"},
 		{parse.Ident, "b"},
@@ -86,17 +84,30 @@ second
 		{parse.Int, "3"},
 		{parse.Minus, "-"},
 		{parse.Int, "10"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
+
+		{parse.Ident, "a"},
+		{parse.Inc, "++"},
+		{parse.Semicolon, "\n"},
+		{parse.Ident, "a"},
+		{parse.Dec, "--"},
+		{parse.Semicolon, "\n"},
+
+		{parse.StringType, "string"},
+		{parse.Ident, "this"},
+		{parse.Assign, "="},
+		{parse.String, "\"abc\""},
+		{parse.Semicolon, "\n"},
 
 		{parse.Inc, "++"},
 		{parse.Dec, "--"},
 		{parse.Land, "&&"},
 		{parse.Lor, "||"},
-		{parse.Plus_assign, "+="},
-		{parse.Minus_assign, "-="},
-		{parse.Asterisk_assign, "*="},
-		{parse.Slash_assign, "/="},
-		{parse.Mod_assign, "%="},
+		{parse.PlusAssign, "+="},
+		{parse.MinusAssign, "-="},
+		{parse.AsteriskAssign, "*="},
+		{parse.SlashAssign, "/="},
+		{parse.ModAssign, "%="},
 		{parse.LTE, "<="},
 		{parse.GTE, ">="},
 		{parse.EQ, "=="},
@@ -106,18 +117,12 @@ second
 		{parse.Rbrace, "}"},
 		{parse.Comma, ","},
 		{parse.String, "\"string\""},
-		{parse.Eol, "\n"},
-
-		{parse.Illegal, "String not terminated"},
-		{parse.String, "\"First"},
-		{parse.Eol, "\n"},
-		{parse.Ident, "second"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
 		{parse.Rbrace, "}"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 		{parse.Rbrace, "}"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 		{parse.Eof, ""},
 	}
 
@@ -137,38 +142,40 @@ func TestTokenBuffer(t *testing.T) {
 			lexer does not return this comment as token
 			lexer does not return this comment as token
 			lexer does not return this comment as token */
-			func (a int){
+			func name (a int){
 			3 / 10
 			int a = 5
 			int b = 315 + (5 * 7) / 3 - 10
-			<= >= == != = { } , "string"
-			"First
-second
-		}
+			a++ /*comment after semi */
+			a-- //comment after semicolon
+			
+			string this = "abc"
+			++ -- && || += -= *= /= %= <= >= == != = { } , "string"
+			}
 	}
 	`
 	l := parse.NewLexer(input)
 	buf := parse.NewTokenBuffer(l)
 
 	tok := buf.Read()
-	compareToken(t, 1, tok, lexTestCase{parse.Eol, "\n"})
+	compareToken(t, 1, tok, lexTestCase{parse.Contract, "contract"})
 
 	tok = buf.Read()
-	compareToken(t, 2, tok, lexTestCase{parse.Contract, "contract"})
+	compareToken(t, 2, tok, lexTestCase{parse.Lbrace, "{"})
 
 	tok = buf.Peek(parse.CURRENT)
-	compareToken(t, 3, tok, lexTestCase{parse.Lbrace, "{"})
+	compareToken(t, 3, tok, lexTestCase{parse.Function, "func"})
 
 	tok = buf.Peek(parse.NEXT)
-	compareToken(t, 4, tok, lexTestCase{parse.Eol, "\n"})
+	compareToken(t, 4, tok, lexTestCase{parse.Ident, "name"})
 
 	// this token should be the same with buf.Peek(parse.CURRENT)
 	tok = buf.Read()
-	compareToken(t, 5, tok, lexTestCase{parse.Lbrace, "{"})
+	compareToken(t, 5, tok, lexTestCase{parse.Function, "func"})
 
 	// this token should be the same with buf.Peek(parse.NEXT)
 	tok = buf.Read()
-	compareToken(t, 6, tok, lexTestCase{parse.Eol, "\n"})
+	compareToken(t, 6, tok, lexTestCase{parse.Ident, "name"})
 
 	// invalid peekNumber
 	tok = buf.Peek(3)
