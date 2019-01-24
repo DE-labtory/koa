@@ -782,14 +782,14 @@ func TestMakePrefixExpression(t *testing.T) {
 				{Type: Minus, Val: "-"},
 				{Type: True, Val: "true"},
 			},
-			expected: "(-true)",
+			expectedErr: errors.New("MINUS, parsePrefixExpression() - Invalid prefix of true"),
 		},
 		{
 			tokens: []Token{
 				{Type: Bang, Val: "!"},
 				{Type: String, Val: "hello"},
 			},
-			expected: `(!"hello")`,
+			expectedErr: errors.New("BANG, parsePrefixExpression() - Invalid prefix of \"hello\""),
 		},
 	}
 
@@ -797,7 +797,7 @@ func TestMakePrefixExpression(t *testing.T) {
 		buf := &mockTokenBuffer{tt.tokens, 0}
 		exp, err := makePrefixExpression(buf)
 
-		if err != nil && err != tt.expectedErr {
+		if err != nil && err.Error() != tt.expectedErr.Error() {
 			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
 				i, tt.expectedErr, err)
 			continue
