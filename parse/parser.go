@@ -18,7 +18,6 @@ package parse
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 
 	"github.com/DE-labtory/koa/ast"
@@ -360,28 +359,34 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	var err error
 	tok := buf.Read()
-
-	exp := &ast.PrefixExpression{
-		Operator: operatorMap[tok.Type],
-	}
-
-	exp.Right, err = parseExpression(buf, PREFIX)
+	op := operatorMap[tok.Type]
+	right, err := parseExpression(buf, PREFIX)
 	if err != nil {
 		return nil, err
 	}
-	if exp.Operator != operatorMap[Bang] && reflect.TypeOf(exp.Right).String() == "*ast.BooleanLiteral" {
-		return nil, parseError{
-			tok.Type,
-			fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", exp.Right.String()),
+	switch op {
+	case ast.Bang:
+		switch right.(type) {
+		case *ast.StringLiteral:
+			return nil, parseError{
+				tok.Type,
+				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
+			}
 		}
-	}
-	if exp.Operator == operatorMap[Bang] && reflect.TypeOf(exp.Right).String() == "*ast.StringLiteral" {
-		return nil, parseError{
-			tok.Type,
-			fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", exp.Right.String()),
+	case ast.Minus:
+		switch right.(type) {
+		case *ast.BooleanLiteral:
+			return nil, parseError{
+				tok.Type,
+				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
+			}
 		}
 	}
 
+	exp := &ast.PrefixExpression{
+		Operator: op,
+		Right:    right,
+	}
 	return exp, nil
 }
 
