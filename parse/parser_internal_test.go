@@ -1811,9 +1811,14 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"int",
-			"[IDENT, ddd2]",
-			`"iam_string"`,
-			nil,
+			"",
+			"",
+			parseError{
+				String,
+				"type mismatch: expected [int], buf got [STRING]",
+				0,
+				0,
+			},
 		},
 		{
 			// type mismatch tc - bool foo = "iam_string"
@@ -1827,9 +1832,14 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, foo]",
-			`"iam_string"`,
-			nil,
+			"",
+			"",
+			parseError{
+				String,
+				"type mismatch: expected [bool], buf got [STRING]",
+				0,
+				0,
+			},
 		},
 		{
 			&mockTokenBuffer{
@@ -1842,8 +1852,8 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, foo]",
-			`"iam_string"`,
+			"",
+			"",
 			parseError{
 				String,
 				"expected [IDENT], but got [STRING]",
@@ -1861,14 +1871,32 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, foo]",
-			`"iam_string"`,
+			"",
+			"",
 			parseError{
 				String,
 				"expected [ASSIGN], but got [STRING]",
 				0,
 				0,
 			},
+		},
+		{
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: BoolType, Val: "int"},
+					{Type: Ident, Val: "ddd"},
+					{Type: Assign, Val: "="},
+					{Type: Ident, Val: "add"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: Rparen, Val: ")"},
+					{Type: Eof}},
+				sp: 0,
+			},
+			"bool",
+			"[IDENT, ddd]",
+			"function add( a )",
+			nil,
 		},
 	}
 
@@ -2336,8 +2364,13 @@ func TestParseStatement(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr:  nil,
-			expectedStmt: `int [IDENT, a] = "1"`,
+			expectedErr: parseError{
+				String,
+				"type mismatch: expected [int], buf got [STRING]",
+				0,
+				0,
+			},
+			expectedStmt: "",
 		},
 
 		// tests for StringType
@@ -2380,8 +2413,13 @@ func TestParseStatement(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr:  nil,
-			expectedStmt: `string [IDENT, abb] = 1`,
+			expectedErr: parseError{
+				Int,
+				"type mismatch: expected [string], buf got [INT]",
+				0,
+				0,
+			},
+			expectedStmt: "",
 		},
 
 		// tests for BoolType
@@ -2424,8 +2462,13 @@ func TestParseStatement(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr:  nil,
-			expectedStmt: `bool [IDENT, asdf] = 1`,
+			expectedErr: parseError{
+				Int,
+				"type mismatch: expected [bool], buf got [INT]",
+				0,
+				0,
+			},
+			expectedStmt: "",
 		},
 
 		// tests for If statement

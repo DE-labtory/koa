@@ -49,6 +49,16 @@ var datastructureMap = map[TokenType]ast.DataStructure{
 	VoidType:   ast.VoidType,
 }
 
+// identifierTypeMap maps TokenType and TokenType.
+// It is used checking identifier and assigned check
+// for example, int a = "1234" will be failed.
+var identifierTypeMap = map[TokenType]ast.DataStructure{
+	Int:    ast.IntType,
+	True:   ast.BoolType,
+	False:  ast.BoolType,
+	String: ast.StringType,
+}
+
 // precedence determine which token is going to be grouped first when
 // parsing expression with Pratt Parsing.
 //
@@ -647,6 +657,15 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 			assign.Column,
 		}
 	}
+	peekTok := buf.Peek(CURRENT)
+	if isPrimitiveType(peekTok.Type) && identifierTypeMap[peekTok.Type] != stmt.Type {
+		return nil, parseError{
+			peekTok.Type,
+			fmt.Sprintf("type mismatch: expected [%s], buf got [%s]", ds.String(), TokenTypeMap[peekTok.Type]),
+			peekTok.Line,
+			peekTok.Column,
+		}
+	}
 
 	exp, err := parseExpression(buf, LOWEST)
 	if err != nil {
@@ -822,4 +841,8 @@ func parseExpressionStatement(buf TokenBuffer) (*ast.ExpressionStatement, error)
 
 	stmt.Expr = exp
 	return stmt, nil
+}
+
+func isPrimitiveType(t TokenType) bool {
+	return t == Int || t == True || t == False || t == String
 }
