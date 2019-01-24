@@ -18,6 +18,7 @@ package parse
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/DE-labtory/koa/ast"
@@ -396,6 +397,18 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	exp.Right, err = parseExpression(buf, PREFIX)
 	if err != nil {
 		return nil, err
+	}
+	if exp.Operator != operatorMap[Bang] && reflect.TypeOf(exp.Right).String() == "*ast.BooleanLiteral" {
+		return nil, parseError{
+			tok.Type,
+			fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", exp.Right.String()),
+		}
+	}
+	if exp.Operator == operatorMap[Bang] && reflect.TypeOf(exp.Right).String() == "*ast.StringLiteral" {
+		return nil, parseError{
+			tok.Type,
+			fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", exp.Right.String()),
+		}
 	}
 
 	return exp, nil

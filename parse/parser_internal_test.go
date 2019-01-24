@@ -1112,7 +1112,7 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expected: "(-true)",
+			expectedErr: errors.New("MINUS, parsePrefixExpression() - Invalid prefix of true"),
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -1122,7 +1122,7 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expected: `(!"hello")`,
+			expectedErr: errors.New("BANG, parsePrefixExpression() - Invalid prefix of \"hello\""),
 		},
 	}
 
