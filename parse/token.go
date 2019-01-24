@@ -96,6 +96,7 @@ const (
 	Return // return
 	Eof    // end of file
 	Eol    // end of line
+	Semicolon
 )
 
 // TokenTypeMap mapping TokenType with its
@@ -152,8 +153,9 @@ var TokenTypeMap = map[TokenType]string{
 	Else:   "ELSE",
 	Return: "RETURN",
 
-	Eof: "EOF",
-	Eol: "EOL",
+	Eof:       "EOF",
+	Eol:       "EOL",
+	Semicolon: "SEMICOLON",
 }
 
 var keywords = map[string]TokenType{

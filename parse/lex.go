@@ -103,11 +103,12 @@ func (l *Lexer) NextToken() Token {
 
 // State has the input(codes) as a string and has the current position and the line.
 type state struct {
-	input string
-	start Pos
-	end   Pos
-	line  int
-	width Pos
+	input      string
+	start      Pos
+	end        Pos
+	line       int
+	width      Pos
+	insertSemi bool //if true, insert semicolon
 }
 
 // Pos represents a byte position in the original input text from which
@@ -207,6 +208,8 @@ func (s *state) isNextToken(next rune) bool {
 }
 
 func defaultStateFn(s *state, e emitter) stateFn {
+	insertSemi := false //init
+
 	switch ch := s.next(); {
 	case ch == '!':
 		if s.isNextToken('=') {
@@ -222,6 +225,7 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		}
 	case ch == '+':
 		if s.isNextToken('+') {
+			insertSemi = true
 			e.emit(s.cut(Inc))
 		} else if s.isNextToken('=') {
 			e.emit(s.cut(Plus_assign))
@@ -230,6 +234,7 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		}
 	case ch == '-':
 		if s.isNextToken('-') {
+			insertSemi = true
 			e.emit(s.cut(Dec))
 		} else if s.isNextToken('=') {
 			e.emit(s.cut(Minus_assign))
@@ -272,21 +277,21 @@ func defaultStateFn(s *state, e emitter) stateFn {
 			e.emit(s.cut(GT))
 		}
 	case ch == '&':
-		if s.peek() == '&' {
-			s.next()
+		if s.isNextToken('&') {
 			e.emit(s.cut(Land))
 		}
 	case ch == '|':
-		if s.peek() == '|' {
-			s.next()
+		if s.isNextToken('|') {
 			e.emit(s.cut(Lor))
 		}
 	case ch == ')':
 		e.emit(s.cut(Rparen))
+		insertSemi = true
 	case ch == '(':
 		e.emit(s.cut(Lparen))
 	case ch == '}':
 		e.emit(s.cut(Rbrace))
+		insertSemi = true
 	case ch == '{':
 		e.emit(s.cut(Lbrace))
 	case ch == ',':
@@ -295,12 +300,22 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		s.backup()
 		return stringStateFn
 	case ch == eof:
+		if s.insertSemi {
+			e.emit(s.cut(Semicolon))
+		}
 		e.emit(s.cut(Eof))
 	case isSpace(ch):
 		s.backup()
 		return spaceStateFn
 	case ch == '\n':
-		e.emit(s.cut(Eol))
+		if s.insertSemi {
+			e.emit(s.cut(Semicolon))
+			s.insertSemi = false
+			return defaultStateFn
+		} else {
+			s.acceptRun(" \n\t") //skip whitespace
+			s.cut(Illegal)
+		}
 	case unicode.IsDigit(ch):
 		s.backup()
 		return numberStateFn
@@ -311,6 +326,7 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		e.emit(s.cut(Illegal))
 	}
 
+	s.insertSemi = insertSemi //update
 	return defaultStateFn
 }
 
@@ -343,6 +359,7 @@ func commentStateFn(s *state, e emitter) stateFn {
 // After reading a string, it returns defaultStateFn.
 // string_literal = `"` { unicode_value | byte_value } `"`
 func stringStateFn(s *state, e emitter) stateFn {
+	s.insertSemi = true
 	s.next() //accept '"'
 
 	for s.next() != '"' {
@@ -361,6 +378,7 @@ func stringStateFn(s *state, e emitter) stateFn {
 // After reading Number, it returns DefaultStateFn.
 // number = { decimal_digit }
 func numberStateFn(s *state, e emitter) stateFn {
+	s.insertSemi = true
 	const digits = "0123456789"
 
 	if !s.accept(digits) {
@@ -383,6 +401,7 @@ func numberStateFn(s *state, e emitter) stateFn {
 //
 // identifier = letter { letter | unicode_digit }.
 func identifierStateFn(s *state, e emitter) stateFn {
+	s.insertSemi = true
 	if !(unicode.IsLetter(s.peek()) || s.peek() == '_') {
 		errToken := Token{Illegal, "Invalid function call: identifierStateFn", s.end, s.line}
 		e.emit(errToken)
