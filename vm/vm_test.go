@@ -17,8 +17,9 @@
 package vm
 
 import (
-	"reflect"
 	"testing"
+
+	"reflect"
 
 	"github.com/DE-labtory/koa/opcode"
 )
@@ -47,8 +48,7 @@ func TestAdd(t *testing.T) {
 	)
 	testExpected := item(3)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -66,8 +66,7 @@ func TestAdd_negative(t *testing.T) {
 	)
 	testExpected := item(10)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -85,8 +84,7 @@ func TestMul(t *testing.T) {
 	)
 	testExpected := item(15)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,8 +102,7 @@ func TestMul_negative(t *testing.T) {
 	)
 	testExpected := item(-15)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -123,8 +120,7 @@ func TestSub(t *testing.T) {
 	)
 	testExpected := item(30)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,8 +138,7 @@ func TestSub_negative(t *testing.T) {
 	)
 	testExpected := item(-70)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -161,7 +156,7 @@ func TestDiv(t *testing.T) {
 	)
 	testExpected := item(2)
 
-	stack, err := Execute(testByteCode)
+	stack, err := Execute(testByteCode, nil, nil)
 
 	if err != nil {
 		t.Error(err)
@@ -181,8 +176,7 @@ func TestDiv_negative(t *testing.T) {
 	)
 	testExpected := item(-4)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -200,8 +194,7 @@ func TestMod(t *testing.T) {
 	)
 	testExpected := item(4)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -219,8 +212,7 @@ func TestMod_negative(t *testing.T) {
 	)
 	testExpected := item(4)
 
-	stack, err := Execute(testByteCode)
-
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -250,7 +242,7 @@ func TestLT(t *testing.T) {
 		)
 		testExpected := item(test.answer)
 
-		stack, err := Execute(testByteCode)
+		stack, err := Execute(testByteCode, nil, nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -281,7 +273,7 @@ func TestGT(t *testing.T) {
 		)
 		testExpected := item(test.answer)
 
-		stack, err := Execute(testByteCode)
+		stack, err := Execute(testByteCode, nil, nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -312,7 +304,7 @@ func TestEQ(t *testing.T) {
 		)
 		testExpected := item(test.answer)
 
-		stack, err := Execute(testByteCode)
+		stack, err := Execute(testByteCode, nil, nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -339,7 +331,7 @@ func TestNOT(t *testing.T) {
 		)
 		testExpected := item(test.answer)
 
-		stack, err := Execute(testByteCode)
+		stack, err := Execute(testByteCode, nil, nil)
 		if err != nil {
 			t.Error(err)
 		}
@@ -358,7 +350,7 @@ func TestPop(t *testing.T) {
 	)
 	testExpected := []item{1}
 
-	stack, err := Execute(testByteCode)
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -382,7 +374,7 @@ func TestPush(t *testing.T) {
 
 	testExpected := []item{1, 2}
 
-	stack, err := Execute(testByteCode)
+	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -404,7 +396,7 @@ func TestPush_invalid(t *testing.T) {
 		uint8(opcode.Push), int32ToBytes(3),
 	)
 
-	_, err := Execute(testByteCode)
+	_, err := Execute(testByteCode, nil, nil)
 
 	if err != ErrInvalidOpcode {
 		t.Error("The desired error was not found")
