@@ -124,3 +124,77 @@ func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) 
 func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
 	return nil
 }
+
+// TODO: implement me w/ test cases :-)
+// compileExpression() compiles a expression in statement.
+// Generates and adds ouput to bytecode.
+func compileExpression(e ast.Expression, bytecode *Bytecode) error {
+	switch expr := e.(type) {
+	case *ast.CallExpression:
+		return compileCallExpression(expr, bytecode)
+
+	case *ast.InfixExpression:
+		return compileInfixExpression(expr, bytecode)
+
+	case *ast.PrefixExpression:
+		return compilePrefixExpression(expr, bytecode)
+
+	case *ast.IntegerLiteral:
+		return compileIntegerLiteral(expr, bytecode)
+
+	case *ast.StringLiteral:
+		return compileStringLiteral(expr, bytecode)
+
+	case *ast.BooleanLiteral:
+		return compileBooleanLiteral(expr, bytecode)
+
+	case *ast.Identifier:
+		return compileIdentifier(expr, bytecode)
+
+	case *ast.ParameterLiteral:
+		return compileParameterLiteral(expr, bytecode)
+
+	default:
+		return nil
+	}
+}
+
+// TODO: implement me w/ test cases :-)
+func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compileIdentifier(e *ast.Identifier, bytecode *Bytecode) error {
+
+}
+
+// TODO: implement me w/ test cases :-)
+func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Bytecode) error {
+
+}
