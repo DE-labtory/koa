@@ -17,6 +17,8 @@
 package translate
 
 import (
+	"errors"
+
 	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/encoding"
@@ -180,7 +182,7 @@ func compileExpression(e ast.Expression, bytecode *Bytecode) error {
 		return compileParameterLiteral(expr, bytecode)
 
 	default:
-		return nil
+		return errors.New("compileExpression() error")
 	}
 }
 
@@ -216,7 +218,7 @@ func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
 		return err
 	}
 
-	bytecode.Emit(opcode.Push, operand)
+	bytecode.Emerge(opcode.Push, operand)
 	return nil
 }
 

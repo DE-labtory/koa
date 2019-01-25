@@ -30,8 +30,9 @@ type Bytecode struct {
 	Abi     abi.ABI
 }
 
-// Emit() translates instruction to bytecode
-func (b *Bytecode) Emit(operator opcode.Type, operands ...[]byte) int {
+// Emerge() translates instruction to bytecode
+// An operand of operands should be 4 bytes.
+func (b *Bytecode) Emerge(operator opcode.Type, operands ...[]byte) int {
 	// Translate operator to byte
 	b.RawByte = append(b.RawByte, byte(operator))
 
