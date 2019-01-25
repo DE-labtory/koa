@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func Test_encodeInt(t *testing.T) {
+func TestEncodeInt(t *testing.T) {
 	tests := []struct {
 		operand  int
 		expected []byte
@@ -54,7 +54,7 @@ func Test_encodeInt(t *testing.T) {
 	}
 }
 
-func Test_encodeString(t *testing.T) {
+func TestEncodeString(t *testing.T) {
 	tests := []struct {
 		operand  string
 		expected []byte
@@ -91,7 +91,7 @@ func Test_encodeString(t *testing.T) {
 		}
 	}
 }
-func Test_encodeBool(t *testing.T) {
+func TestEncodeBool(t *testing.T) {
 	tests := []struct {
 		operand  bool
 		expected []byte

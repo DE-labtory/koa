@@ -19,46 +19,91 @@ package translate
 import "testing"
 
 // TODO: implement test cases :-)
-func Test_compileFunction(t *testing.T) {
+func TestGenerateFuncJumper(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileStatement(t *testing.T) {
+func TestCompileFunction(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_generateFuncJumper(t *testing.T) {
+func TestCompileStatement(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileAssignStatement(t *testing.T) {
+func TestCompileAssignStatement(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileReturnStatement(t *testing.T) {
+func TestCompileReturnStatement(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileIfStatement(t *testing.T) {
+func TestCompileIfStatement(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileBlockStatement(t *testing.T) {
+func TestCompileBlockStatement(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileExpressionStatement(t *testing.T) {
+func TestCompileExpressionStatement(t *testing.T) {
 
 }
 
 // TODO: implement test cases :-)
-func Test_compileFunctionLiteral(t *testing.T) {
+func TestCompileFunctionLiteral(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileExpression(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileCallExpression(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileInfixExpression(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompilePrefixExpression(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileIntegerLiteral(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileStringLiteral(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileBooleanLiteral(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileIdentifier(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileParameterLiteral(t *testing.T) {
 
 }
