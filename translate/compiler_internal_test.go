@@ -32,3 +32,33 @@ func Test_compileStatement(t *testing.T) {
 func Test_generateFuncJumper(t *testing.T) {
 
 }
+
+// TODO: implement test cases :-)
+func Test_compileAssignStatement(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func Test_compileReturnStatement(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func Test_compileIfStatement(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func Test_compileBlockStatement(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func Test_compileExpressionStatement(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func Test_compileFunctionLiteral(t *testing.T) {
+
+}
