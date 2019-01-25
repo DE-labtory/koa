@@ -19,6 +19,8 @@ package translate
 import (
 	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
+	"github.com/DE-labtory/koa/encoding"
+	"github.com/DE-labtory/koa/opcode"
 )
 
 // TODO: implement me w/ test cases :-)
@@ -208,8 +210,13 @@ func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
 
 }
 
-// TODO: implement me w/ test cases :-)
 func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
+	operand, err := encoding.EncodeOperand(e.Value)
+	if err != nil {
+		return err
+	}
+
+	bytecode.Emit(opcode.Push, operand)
 	return nil
 }
 
