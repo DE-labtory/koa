@@ -60,6 +60,69 @@ func (l *Lexer) emit(t Token) {
 	l.tokench <- t
 }
 
+// NextToken returns the next token from the input.
+// Called by the parser, not in the lexing goroutine.
+func (l *Lexer) NextToken() Token {
+	return <-l.tokench
+}
+
+// DefaultTokenBuffer is implementation for TokenBuffer interface
+// providing buffers to the client.
+//
+// cur, next work as buffer. Each store token as below
+//
+// ----------------------------------------------
+//    client   <- |  cur  |  next | <-  lexer
+//    ======   <- | token | token | <-  =====
+// ----------------------------------------------
+//
+type DefaultTokenBuffer struct {
+	l *Lexer
+
+	cur  Token
+	next Token
+}
+
+func NewTokenBuffer(l *Lexer) *DefaultTokenBuffer {
+	buf := &DefaultTokenBuffer{
+		l: l,
+	}
+	// read for filling cur, next token
+	buf.Read()
+	buf.Read()
+
+	return buf
+}
+
+// Read returns current token, then read from lexer
+// then change the cur, next token value
+func (b *DefaultTokenBuffer) Read() Token {
+	tok := b.l.NextToken()
+	out := b.cur
+
+	b.cur = b.next
+	b.next = tok
+
+	return out
+}
+
+// Peek returns token based on the peekNumber, this doesn't
+// change token value
+func (b *DefaultTokenBuffer) Peek(n peekNumber) Token {
+	if !n.isValid() {
+		return Token{}
+	}
+
+	switch n {
+	case CURRENT:
+		return b.cur
+	case NEXT:
+		return b.next
+	}
+
+	return Token{}
+}
+
 // The process of generating a token from an input string(codes) is generally implemented
 // by defining a state and determining how to process the state.
 // After the state is processed, it goes to the next state and it is repeated to determine
@@ -95,19 +158,14 @@ func (l *Lexer) emit(t Token) {
 // stateFn also returns the stateFn to be scanned next after scanning the current state.
 type stateFn func(*state, emitter) stateFn
 
-// NextToken returns the next token from the input.
-// Called by the parser, not in the lexing goroutine.
-func (l *Lexer) NextToken() Token {
-	return <-l.tokench
-}
-
 // State has the input(codes) as a string and has the current position and the line.
 type state struct {
-	input string
-	start Pos
-	end   Pos
-	line  int
-	width Pos
+	input      string
+	start      Pos
+	end        Pos
+	line       int
+	width      Pos
+	insertSemi bool //if true, insert semicolon
 }
 
 // Pos represents a byte position in the original input text from which
@@ -197,66 +255,99 @@ func (s *state) acceptRun(valid string) {
 //	Rbrace // }
 //
 
+func (s *state) isNextToken(next rune) bool {
+	if s.peek() == next {
+		s.next()
+		return true
+	}
+	return false
+}
+
 func defaultStateFn(s *state, e emitter) stateFn {
+	insertSemi := false //init
 
 	switch ch := s.next(); {
 	case ch == '!':
-		if s.peek() == '=' {
-			s.next()
+		if s.isNextToken('=') {
 			e.emit(s.cut(NOT_EQ))
 		} else {
 			e.emit(s.cut(Bang))
 		}
 	case ch == '=':
-		if s.peek() == '=' {
-			s.next()
-			// ==
+		if s.isNextToken('=') {
 			e.emit(s.cut(EQ))
 		} else {
-			// =
 			e.emit(s.cut(Assign))
 		}
-
 	case ch == '+':
-		e.emit(s.cut(Plus))
+		if s.isNextToken('+') {
+			insertSemi = true
+			e.emit(s.cut(Inc))
+		} else if s.isNextToken('=') {
+			e.emit(s.cut(PlusAssign))
+		} else {
+			e.emit(s.cut(Plus))
+		}
 	case ch == '-':
-		e.emit(s.cut(Minus))
+		if s.isNextToken('-') {
+			insertSemi = true
+			e.emit(s.cut(Dec))
+		} else if s.isNextToken('=') {
+			e.emit(s.cut(MinusAssign))
+		} else {
+			e.emit(s.cut(Minus))
+		}
 	case ch == '/':
-		second := s.next()
-		s.backup()
+		second := s.peek()
 		if second == '/' || second == '*' {
 			return commentStateFn
 		} else {
-			e.emit(s.cut(Slash))
+			if s.isNextToken('=') {
+				e.emit(s.cut(SlashAssign))
+			} else {
+				e.emit(s.cut(Slash))
+			}
 		}
 	case ch == '*':
-		e.emit(s.cut(Asterisk))
+		if s.isNextToken('=') {
+			e.emit(s.cut(AsteriskAssign))
+		} else {
+			e.emit(s.cut(Asterisk))
+		}
 	case ch == '%':
-		e.emit(s.cut(Mod))
+		if s.isNextToken('=') {
+			e.emit(s.cut(ModAssign))
+		} else {
+			e.emit(s.cut(Mod))
+		}
 	case ch == '<':
-		if s.peek() == '=' {
-			s.next()
-			// <=
+		if s.isNextToken('=') {
 			e.emit(s.cut(LTE))
 		} else {
-			// <
 			e.emit(s.cut(LT))
 		}
 	case ch == '>':
-		if s.peek() == '=' {
-			s.next()
-			// >=
+		if s.isNextToken('=') {
 			e.emit(s.cut(GTE))
 		} else {
-			// >
 			e.emit(s.cut(GT))
+		}
+	case ch == '&':
+		if s.isNextToken('&') {
+			e.emit(s.cut(Land))
+		}
+	case ch == '|':
+		if s.isNextToken('|') {
+			e.emit(s.cut(Lor))
 		}
 	case ch == ')':
 		e.emit(s.cut(Rparen))
+		insertSemi = true
 	case ch == '(':
 		e.emit(s.cut(Lparen))
 	case ch == '}':
 		e.emit(s.cut(Rbrace))
+		insertSemi = true
 	case ch == '{':
 		e.emit(s.cut(Lbrace))
 	case ch == ',':
@@ -265,12 +356,22 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		s.backup()
 		return stringStateFn
 	case ch == eof:
+		if s.insertSemi {
+			e.emit(s.cut(Semicolon))
+		}
 		e.emit(s.cut(Eof))
 	case isSpace(ch):
 		s.backup()
 		return spaceStateFn
 	case ch == '\n':
-		e.emit(s.cut(Eol))
+		if s.insertSemi {
+			e.emit(s.cut(Semicolon))
+			s.insertSemi = false
+			return defaultStateFn
+		} else {
+			s.acceptRun(" \n\t") //skip whitespace
+			s.cut(Illegal)
+		}
 	case unicode.IsDigit(ch):
 		s.backup()
 		return numberStateFn
@@ -281,6 +382,7 @@ func defaultStateFn(s *state, e emitter) stateFn {
 		e.emit(s.cut(Illegal))
 	}
 
+	s.insertSemi = insertSemi //update
 	return defaultStateFn
 }
 
@@ -313,6 +415,7 @@ func commentStateFn(s *state, e emitter) stateFn {
 // After reading a string, it returns defaultStateFn.
 // string_literal = `"` { unicode_value | byte_value } `"`
 func stringStateFn(s *state, e emitter) stateFn {
+	s.insertSemi = true
 	s.next() //accept '"'
 
 	for s.next() != '"' {
@@ -331,6 +434,7 @@ func stringStateFn(s *state, e emitter) stateFn {
 // After reading Number, it returns DefaultStateFn.
 // number = { decimal_digit }
 func numberStateFn(s *state, e emitter) stateFn {
+	s.insertSemi = true
 	const digits = "0123456789"
 
 	if !s.accept(digits) {
@@ -353,6 +457,7 @@ func numberStateFn(s *state, e emitter) stateFn {
 //
 // identifier = letter { letter | unicode_digit }.
 func identifierStateFn(s *state, e emitter) stateFn {
+	s.insertSemi = true
 	if !(unicode.IsLetter(s.peek()) || s.peek() == '_') {
 		errToken := Token{Illegal, "Invalid function call: identifierStateFn", s.end, s.line}
 		e.emit(errToken)

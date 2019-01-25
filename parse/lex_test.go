@@ -22,6 +22,11 @@ import (
 	"github.com/DE-labtory/koa/parse"
 )
 
+type lexTestCase struct {
+	expectedType  parse.TokenType
+	expectedValue string
+}
+
 func TestLexer_NextToken(t *testing.T) {
 	input := `
 	contract { //lexer does not return this comment as token
@@ -30,45 +35,40 @@ func TestLexer_NextToken(t *testing.T) {
 			lexer does not return this comment as token
 			lexer does not return this comment as token
 			lexer does not return this comment as token */
-			func (a int){
+			func name (a int){
 			3 / 10
 			int a = 5
 			int b = 315 + (5 * 7) / 3 - 10
-			<= >= == != = { } , "string"
-			"First
-second
-		}
+			a++ /*comment after semi */
+			a-- //comment after semicolon
+			
+			string this = "abc"
+			++ -- && || += -= *= /= %= <= >= == != = { } , "string"
+			}
 	}
 	`
 
-	tests := []struct {
-		expectedType  parse.TokenType
-		expectedValue string
-	}{
-		{parse.Eol, "\n"},
+	tests := []lexTestCase{
 		{parse.Contract, "contract"},
 		{parse.Lbrace, "{"},
-		{parse.Eol, "\n"},
-		{parse.Eol, "\n"},
-		{parse.Eol, "\n"},
 		{parse.Function, "func"},
+		{parse.Ident, "name"},
 		{parse.Lparen, "("},
 		{parse.Ident, "a"},
 		{parse.IntType, "int"},
 		{parse.Rparen, ")"},
 		{parse.Lbrace, "{"},
 
-		{parse.Eol, "\n"},
 		{parse.Int, "3"},
 		{parse.Slash, "/"},
 		{parse.Int, "10"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
 		{parse.IntType, "int"},
 		{parse.Ident, "a"},
 		{parse.Assign, "="},
 		{parse.Int, "5"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
 		{parse.IntType, "int"},
 		{parse.Ident, "b"},
@@ -84,8 +84,30 @@ second
 		{parse.Int, "3"},
 		{parse.Minus, "-"},
 		{parse.Int, "10"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
+		{parse.Ident, "a"},
+		{parse.Inc, "++"},
+		{parse.Semicolon, "\n"},
+		{parse.Ident, "a"},
+		{parse.Dec, "--"},
+		{parse.Semicolon, "\n"},
+
+		{parse.StringType, "string"},
+		{parse.Ident, "this"},
+		{parse.Assign, "="},
+		{parse.String, "\"abc\""},
+		{parse.Semicolon, "\n"},
+
+		{parse.Inc, "++"},
+		{parse.Dec, "--"},
+		{parse.Land, "&&"},
+		{parse.Lor, "||"},
+		{parse.PlusAssign, "+="},
+		{parse.MinusAssign, "-="},
+		{parse.AsteriskAssign, "*="},
+		{parse.SlashAssign, "/="},
+		{parse.ModAssign, "%="},
 		{parse.LTE, "<="},
 		{parse.GTE, ">="},
 		{parse.EQ, "=="},
@@ -95,18 +117,12 @@ second
 		{parse.Rbrace, "}"},
 		{parse.Comma, ","},
 		{parse.String, "\"string\""},
-		{parse.Eol, "\n"},
-
-		{parse.Illegal, "String not terminated"},
-		{parse.String, "\"First"},
-		{parse.Eol, "\n"},
-		{parse.Ident, "second"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 
 		{parse.Rbrace, "}"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 		{parse.Rbrace, "}"},
-		{parse.Eol, "\n"},
+		{parse.Semicolon, "\n"},
 		{parse.Eof, ""},
 	}
 
@@ -114,14 +130,68 @@ second
 	for i, test := range tests {
 		token := l.NextToken()
 
-		if token.Type != test.expectedType {
-			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
-				i, parse.TokenTypeMap[test.expectedType], parse.TokenTypeMap[token.Type])
-		}
+		compareToken(t, i, token, test)
+	}
+}
 
-		if token.Val != test.expectedValue {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
-				i, test.expectedValue, token.Val)
-		}
+func TestTokenBuffer(t *testing.T) {
+	input := `
+	contract { //lexer does not return this comment as token
+			/*abcdef*/ /*/**/
+			/*
+			lexer does not return this comment as token
+			lexer does not return this comment as token
+			lexer does not return this comment as token */
+			func name (a int){
+			3 / 10
+			int a = 5
+			int b = 315 + (5 * 7) / 3 - 10
+			a++ /*comment after semi */
+			a-- //comment after semicolon
+			
+			string this = "abc"
+			++ -- && || += -= *= /= %= <= >= == != = { } , "string"
+			}
+	}
+	`
+	l := parse.NewLexer(input)
+	buf := parse.NewTokenBuffer(l)
+
+	tok := buf.Read()
+	compareToken(t, 1, tok, lexTestCase{parse.Contract, "contract"})
+
+	tok = buf.Read()
+	compareToken(t, 2, tok, lexTestCase{parse.Lbrace, "{"})
+
+	tok = buf.Peek(parse.CURRENT)
+	compareToken(t, 3, tok, lexTestCase{parse.Function, "func"})
+
+	tok = buf.Peek(parse.NEXT)
+	compareToken(t, 4, tok, lexTestCase{parse.Ident, "name"})
+
+	// this token should be the same with buf.Peek(parse.CURRENT)
+	tok = buf.Read()
+	compareToken(t, 5, tok, lexTestCase{parse.Function, "func"})
+
+	// this token should be the same with buf.Peek(parse.NEXT)
+	tok = buf.Read()
+	compareToken(t, 6, tok, lexTestCase{parse.Ident, "name"})
+
+	// invalid peekNumber
+	tok = buf.Peek(3)
+	compareToken(t, 7, tok, lexTestCase{})
+}
+
+func compareToken(t *testing.T, i int, tok parse.Token, tt lexTestCase) {
+	t.Helper()
+
+	if tok.Type != tt.expectedType {
+		t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+			i, parse.TokenTypeMap[tt.expectedType], parse.TokenTypeMap[tok.Type])
+	}
+
+	if tok.Val != tt.expectedValue {
+		t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+			i, tt.expectedValue, tok.Val)
 	}
 }

@@ -124,12 +124,13 @@ func nextTokenIs(buf TokenBuffer, t TokenType) bool {
 // type of token we want, and if true then return it
 // otherwise return with error
 func expectNext(buf TokenBuffer, t TokenType) error {
-	nextType := buf.Peek(CURRENT).Type
-	if nextType != t {
+	tok := buf.Peek(CURRENT)
+	if tok.Type != t {
 		return parseError{
-			nextType,
-			fmt.Sprintf("expectNext() : expected [%s], but got [%s]",
-				TokenTypeMap[t], TokenTypeMap[nextType]),
+			tok.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[t], TokenTypeMap[tok.Type]),
+			tok.Line,
+			tok.Column,
 		}
 	}
 	buf.Read()
@@ -154,10 +155,12 @@ func nextPrecedence(buf TokenBuffer) precedence {
 type parseError struct {
 	tokenType TokenType
 	reason    string
+	line      int
+	column    Pos
 }
 
 func (e parseError) Error() string {
-	return fmt.Sprintf("%s, %s", TokenTypeMap[e.tokenType], e.reason)
+	return fmt.Sprintf("[line %d, column %d] %s", e.line, e.column, e.reason)
 }
 
 type (
@@ -295,6 +298,8 @@ func makePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 		return nil, parseError{
 			curTok.Type,
 			"prefix parse function not defined",
+			curTok.Line,
+			curTok.Column,
 		}
 	}
 	exp, err := fn(buf)
@@ -312,11 +317,14 @@ func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (a
 	expression := exp
 
 	for pre < curPrecedence(buf) {
-		fn := infixParseFnMap[buf.Peek(CURRENT).Type]
+		token := buf.Peek(CURRENT)
+		fn := infixParseFnMap[token.Type]
 		if fn == nil {
 			return nil, parseError{
-				buf.Peek(CURRENT).Type,
+				token.Type,
 				"infix parse function not defined",
+				token.Line,
+				token.Column,
 			}
 		}
 
@@ -396,7 +404,9 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != Ident {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseIdentifier() - %s is not a identifier", token.Val),
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
 	return &ast.Identifier{Value: token.Val}, nil
@@ -408,7 +418,9 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != Int {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseIntegerLiteral() error - %s is not integer", token.Val),
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Int], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
 
@@ -428,7 +440,9 @@ func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != True && token.Type != False {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseBooleanLiteral() error - %s is not bool", token.Val),
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[BoolType], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
 
@@ -448,7 +462,9 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != String {
 		return nil, parseError{
 			token.Type,
-			fmt.Sprintf("parseStringLiteral() error - %s is not string", token.Val),
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[String], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
 
@@ -465,14 +481,16 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 
-	tok := buf.Read()
-	if tok.Type != Ident {
+	token := buf.Read()
+	if token.Type != Ident {
 		return nil, parseError{
-			tok.Type,
-			"token is not identifier",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
-	lit.Name = &ast.Identifier{Value: tok.Val}
+	lit.Name = &ast.Identifier{Value: token.Val}
 
 	if err = expectNext(buf, Lparen); err != nil {
 		return nil, err
@@ -511,6 +529,8 @@ func parseFunctionReturnType(buf TokenBuffer) (ast.DataStructure, error) {
 		return 0, parseError{
 			peekTok.Type,
 			"invalid function return type",
+			peekTok.Line,
+			peekTok.Column,
 		}
 	}
 
@@ -532,17 +552,19 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 		return identifiers, nil
 	}
 
-	tok := buf.Read()
+	token := buf.Read()
 	ident := &ast.ParameterLiteral{
-		Identifier: &ast.Identifier{Value: tok.Val},
+		Identifier: &ast.Identifier{Value: token.Val},
 	}
 
-	tok = buf.Read()
-	ds, ok := datastructureMap[tok.Type]
+	token = buf.Read()
+	ds, ok := datastructureMap[token.Type]
 	if !ok {
 		return nil, parseError{
-			tok.Type,
+			token.Type,
 			"Function parameter type missed",
+			token.Line,
+			token.Column,
 		}
 	}
 	ident.Type = ds
@@ -561,6 +583,8 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 			return nil, parseError{
 				curTok.Type,
 				"Function parameter type missed",
+				curTok.Line,
+				curTok.Column,
 			}
 		}
 		ident.Type = ds
@@ -614,27 +638,31 @@ func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
 func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	stmt := &ast.AssignStatement{}
 
-	tok := buf.Read()
+	token := buf.Read()
 
-	ds := datastructureMap[tok.Type]
+	ds := datastructureMap[token.Type]
 	stmt.Type = ds
 
-	tok = buf.Read()
-	if tok.Type != Ident {
+	token = buf.Read()
+	if token.Type != Ident {
 		return nil, parseError{
-			tok.Type,
-			"token is not identifier",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
 
 	stmt.Variable = ast.Identifier{
-		Value: tok.String(),
+		Value: token.String(),
 	}
 
 	if assign := buf.Read(); assign.Type != Assign {
 		return nil, parseError{
 			assign.Type,
-			"token is not assign",
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Assign], TokenTypeMap[assign.Type]),
+			assign.Line,
+			assign.Column,
 		}
 	}
 
@@ -695,20 +723,24 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 
 // parseIfStatement parse if-else statement. Else statement is optional
 func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
-	tok := buf.Read()
-	if tok.Type != If {
+	token := buf.Read()
+	if token.Type != If {
 		err := parseError{
-			tok.Type,
-			"is not a If",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[If], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 		return nil, err
 	}
 
-	tok = buf.Read()
-	if tok.Type != Lparen {
+	token = buf.Read()
+	if token.Type != Lparen {
 		err := parseError{
-			tok.Type,
-			"is not a Left paren",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Lparen], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 		return nil, err
 	}
@@ -720,20 +752,24 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 		return nil, err
 	}
 
-	tok = buf.Read()
-	if tok.Type != Rparen {
+	token = buf.Read()
+	if token.Type != Rparen {
 		err := parseError{
-			tok.Type,
-			"is not a Right paren",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Rparen], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 		return nil, err
 	}
 
-	tok = buf.Read()
-	if tok.Type != Lbrace {
+	token = buf.Read()
+	if token.Type != Lbrace {
 		err := parseError{
-			tok.Type,
-			"is not a Left brace",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Lbrace], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 		return nil, err
 	}
@@ -786,14 +822,16 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 
 func parseExpressionStatement(buf TokenBuffer) (*ast.ExpressionStatement, error) {
 	stmt := &ast.ExpressionStatement{}
-	tok := buf.Read()
-	if tok.Type != Ident {
+	token := buf.Read()
+	if token.Type != Ident {
 		return nil, parseError{
-			tok.Type,
-			"token is not identifier",
+			token.Type,
+			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
+			token.Line,
+			token.Column,
 		}
 	}
-	ident := &ast.Identifier{Value: tok.Val}
+	ident := &ast.Identifier{Value: token.Val}
 
 	exp, err := parseCallExpression(buf, ident)
 	if err != nil {

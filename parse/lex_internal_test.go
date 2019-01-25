@@ -205,12 +205,13 @@ func TestState_accept(t *testing.T) {
 
 func TestState_acceptRun(t *testing.T) {
 	// AcceptRun consumes a run of byte from the valid set.
-	valid := "12345abc"
+	valid := "\n\t12345abc"
 
 	tests := []struct {
 		input            string
 		expectedNextRune rune
 	}{
+		{"\t\n0123", '0'},
 		{"0", '0'},
 		{"12345a", eof},
 		{"aaabc123", eof},
@@ -231,6 +232,27 @@ func TestState_acceptRun(t *testing.T) {
 				i, test.expectedNextRune, nextRune)
 		}
 
+	}
+}
+
+func TestIsNextToken(t *testing.T) {
+	tests := []struct {
+		input string
+		ok    bool
+	}{
+		{"+a", false},
+		{"+=", false},
+		{"++", true},
+	}
+
+	for i, test := range tests {
+		s := state{
+			input: test.input,
+		}
+		s.next() //got first token
+		if test.ok != s.isNextToken('+') {
+			t.Errorf("tests[%d] - error", i)
+		}
 	}
 }
 
@@ -521,5 +543,27 @@ func TestIsAlphaNumeric(t *testing.T) {
 		if isAlphaNumeric(test.input) {
 			t.Errorf("error tests[%d] - %q is alphanumeric", i, test.input)
 		}
+	}
+}
+
+func TestNewTokenBuffer(t *testing.T) {
+	input := `
+	contract { 
+	`
+	l := NewLexer(input)
+	buf := NewTokenBuffer(l)
+
+	if buf.l != l {
+		t.Errorf("NewTokenBuffer has wrong lexer")
+	}
+
+	if buf.cur.Type != Contract {
+		t.Errorf("NewTokenBuffer has wrong cur token expected=%v, got=%v",
+			Eol, buf.cur.Type)
+	}
+
+	if buf.next.Type != Lbrace {
+		t.Errorf("NewTokenBuffer has wrong next token expected=%v, got=%v",
+			Contract, buf.next.Type)
 	}
 }
