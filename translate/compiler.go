@@ -16,7 +16,9 @@
 
 package translate
 
-import "github.com/DE-labtory/koa/ast"
+import (
+	"github.com/DE-labtory/koa/ast"
+)
 
 // TODO: parameter should be ast.Contract
 // TODO: implement me w/ test cases :-)
@@ -82,6 +84,12 @@ func compileStatement(s ast.Statement, bytecode *Bytecode) error {
 	case *ast.BlockStatement:
 		return compileBlockStatement(statement, bytecode)
 
+	case *ast.ExpressionStatement:
+		return compileExpressionStatement(statement, bytecode)
+
+	case *ast.FunctionLiteral:
+		return compileFunctionLiteral(statement, bytecode)
+
 	default:
 		return nil
 	}
@@ -104,5 +112,15 @@ func compileIfStatement(s *ast.IfStatement, bytecode *Bytecode) error {
 
 // TODO: implement me w/ test cases :-)
 func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
 	return nil
 }
