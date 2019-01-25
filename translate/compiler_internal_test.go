@@ -16,7 +16,14 @@
 
 package translate
 
-import "testing"
+import (
+	"bytes"
+	"reflect"
+	"testing"
+
+	"github.com/DE-labtory/koa/abi"
+	"github.com/DE-labtory/koa/ast"
+)
 
 // TODO: implement test cases :-)
 func TestGenerateFuncJumper(t *testing.T) {
@@ -100,7 +107,56 @@ func TestCompileStringLiteral(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompileBooleanLiteral(t *testing.T) {
+	tests := []struct {
+		expression *ast.BooleanLiteral
+		expected   Bytecode
+	}{
+		{
+			expression: &ast.BooleanLiteral{
+				Value: false,
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "00000000"},
+				Abi:     abi.ABI{},
+			},
+		},
+		{
+			expression: &ast.BooleanLiteral{
+				Value: true,
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
+				AsmCode: []string{"Push", "00000001"},
+				Abi:     abi.ABI{},
+			},
+		},
+	}
 
+	for i, test := range tests {
+		bytecode := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+			Abi:     abi.ABI{},
+		}
+		err := compileBooleanLiteral(test.expression, bytecode)
+
+		if err != nil {
+			t.Fatalf("test[%d] - compileBooleanLiteral() had error. err=%v", i, err)
+		}
+
+		expectedRawByte := test.expected.RawByte
+		resultRawByte := bytecode.RawByte
+		if !bytes.Equal(expectedRawByte, resultRawByte) {
+			t.Fatalf("test[%d] - compileBooleanLiteral() result wrong. expected %x, got=%x", i, expectedRawByte, resultRawByte)
+		}
+
+		expectedAsmCode := test.expected.AsmCode
+		resultAsmCode := bytecode.AsmCode
+		if !reflect.DeepEqual(expectedAsmCode, resultAsmCode) {
+			t.Fatalf("test[%d] - compileBooleanLiteral() result wrong. expected %v, got=%v", i, expectedAsmCode, resultAsmCode)
+		}
+	}
 }
 
 // TODO: implement test cases :-)
