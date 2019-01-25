@@ -24,6 +24,11 @@ func TestGenerateFuncJumper(t *testing.T) {
 }
 
 // TODO: implement test cases :-)
+func TestCompileAbi(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
 func TestCompileFunction(t *testing.T) {
 
 }

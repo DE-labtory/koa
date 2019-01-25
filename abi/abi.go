@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/crpyto"
 )
 
@@ -70,4 +71,10 @@ func EncodeWithSelector(selector []byte, params ...[]byte) []byte {
 // Get function selector(4bytes) from string of function signature
 func Selector(functionSignature string) []byte {
 	return crpyto.Keccak256([]byte(functionSignature))[:4]
+}
+
+// TODO: implement me w/ test cases :-)
+// Extract ABI from function of ast.
+func ExtractAbiFromFunction(f ast.FunctionLiteral) (Method, error) {
+	return Method{}, nil
 }

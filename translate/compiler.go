@@ -17,10 +17,10 @@
 package translate
 
 import (
+	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
 )
 
-// TODO: parameter should be ast.Contract
 // TODO: implement me w/ test cases :-)
 // CompileContract() compiles a smart contract.
 // returns bytecode and error.
@@ -28,19 +28,26 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 	bytecode := &Bytecode{
 		RawByte: make([]byte, 0),
 		AsmCode: make([]string, 0),
+		Abi: abi.ABI{
+			Methods: make([]abi.Method, 0),
+		},
 	}
 
 	for _, f := range c.Functions {
 		if err := compileFunction(*f, bytecode); err != nil {
 			return *bytecode, err
 		}
-
-		// TODO: use abi.ExtractAbi(f)
 	}
 
 	if err := generateFuncJumper(bytecode); err != nil {
 		return *bytecode, err
 	}
+
+	abiMethods, err := compileAbi(c.Functions)
+	if err != nil {
+		return *bytecode, err
+	}
+	bytecode.Abi.Methods = abiMethods
 
 	return *bytecode, nil
 }
@@ -49,6 +56,22 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 // Generates a bytecode of function jumper.
 func generateFuncJumper(bytecode *Bytecode) error {
 	return nil
+}
+
+// Generates the ABI of functions in contract.
+// Then, adds the ABI to bytecode.
+func compileAbi(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
+	methods := make([]abi.Method, 0)
+
+	for _, f := range functions {
+		m, err := abi.ExtractAbiFromFunction(*f)
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, m)
+	}
+
+	return methods, nil
 }
 
 // TODO: implement me w/ test cases :-)
@@ -161,40 +184,41 @@ func compileExpression(e ast.Expression, bytecode *Bytecode) error {
 
 // TODO: implement me w/ test cases :-)
 func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
-
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
-
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
-
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
-
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
+	return nil
 
 }
 
 // TODO: implement me w/ test cases :-)
 func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
-
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func compileIdentifier(e *ast.Identifier, bytecode *Bytecode) error {
-
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Bytecode) error {
-
+	return nil
 }

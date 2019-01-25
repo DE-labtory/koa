@@ -106,3 +106,8 @@ func TestSelector(t *testing.T) {
 		}
 	}
 }
+
+// TODO: implement test cases :-)
+func TestExtractAbiFromFunction(t *testing.T) {
+
+}
