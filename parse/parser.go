@@ -126,11 +126,11 @@ func nextTokenIs(buf TokenBuffer, t TokenType) bool {
 func expectNext(buf TokenBuffer, t TokenType) error {
 	tok := buf.Peek(CURRENT)
 	if tok.Type != t {
-		return parseError{
+		return parseExpectError{
 			tok.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[t], TokenTypeMap[tok.Type]),
-			tok.Line,
+			t,
 			tok.Column,
+			tok.Line,
 		}
 	}
 	buf.Read()
@@ -161,6 +161,19 @@ type parseError struct {
 
 func (e parseError) Error() string {
 	return fmt.Sprintf("[line %d, column %d] %s", e.line, e.column, e.reason)
+}
+
+// parsing error which happened during parsing expectNext
+type parseExpectError struct {
+	tokenType TokenType
+	expected  TokenType
+	column    Pos
+	line      int
+}
+
+func (e parseExpectError) Error() string {
+	return fmt.Sprintf("[line %d, column %d] expected [%s], but got [%s]",
+		e.line, e.column, TokenTypeMap[e.expected], TokenTypeMap[e.tokenType])
 }
 
 type (

@@ -78,8 +78,13 @@ contract {
 				},
 				0,
 			},
-			expected:    "",
-			expectedErr: parseError{Eof, "expected [RBRACE], but got [EOF]", 0, 0},
+			expected: "",
+			expectedErr: parseExpectError{
+				Eof,
+				Rbrace,
+				0,
+				0,
+			},
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -150,15 +155,20 @@ func bar() void {
 				},
 				0,
 			},
-			expected:    ``,
-			expectedErr: parseError{IntType, "expected [RBRACE], but got [INT_TYPE]", 0, 0},
+			expected: ``,
+			expectedErr: parseExpectError{
+				IntType,
+				Rbrace,
+				0,
+				0,
+			},
 		},
 	}
 
 	for i, tt := range tests {
 		stmt, err := Parse(tt.buf)
 
-		if err != nil && err != tt.expectedErr {
+		if err != nil && err.Error() != tt.expectedErr.Error() {
 			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
 				i, tt.expectedErr, err)
 			continue
@@ -379,9 +389,14 @@ func TestExpectNext(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			token:         Minus,
-			expectedBool:  false,
-			expectedError: errors.New("[line 0, column 0] expected [MINUS], but got [IDENT]"),
+			token:        Minus,
+			expectedBool: false,
+			expectedError: parseExpectError{
+				Ident,
+				Minus,
+				0,
+				0,
+			},
 		},
 		{
 			token:         Plus,
@@ -389,9 +404,14 @@ func TestExpectNext(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			token:         Rbrace,
-			expectedBool:  false,
-			expectedError: errors.New("[line 0, column 0] expected [RBRACE], but got [ASTERISK]"),
+			token:        Rbrace,
+			expectedBool: false,
+			expectedError: parseExpectError{
+				Asterisk,
+				Rbrace,
+				0,
+				0,
+			},
 		},
 	}
 
@@ -766,9 +786,9 @@ func TestParseFunctionLiteral(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
+			parseExpectError{
 				Lbrace,
-				fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Function], TokenTypeMap[Lbrace]),
+				Function,
 				0,
 				0,
 			},
@@ -903,9 +923,9 @@ func TestParseFunctionParameter(t *testing.T) {
 				0,
 			},
 			expected: nil,
-			expectedErr: parseError{
+			expectedErr: parseExpectError{
 				Rbrace,
-				"expected [RPAREN], but got [RBRACE]",
+				Rparen,
 				0,
 				0,
 			},
@@ -1335,9 +1355,9 @@ func TestParseGroupedExpression(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseError{
+			expectedErr: parseExpectError{
 				Rbrace,
-				"expected [RPAREN], but got [RBRACE]",
+				Rparen,
 				0,
 				0,
 			},
@@ -1424,9 +1444,9 @@ func TestParseReturnStatement(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseError{
+			expectedErr: parseExpectError{
 				IntType,
-				"expected [RETURN], but got [INT_TYPE]",
+				Return,
 				0,
 				0,
 			},
@@ -2711,9 +2731,9 @@ func TestParseExpressionStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
+			parseExpectError{
 				IntType,
-				"expected [RPAREN], but got [INT_TYPE]",
+				Rparen,
 				0,
 				0,
 			},
@@ -2746,9 +2766,9 @@ func TestParseExpressionStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
+			parseExpectError{
 				Rparen,
-				"expected [LPAREN], but got [RPAREN]",
+				Lparen,
 				0,
 				0,
 			},
