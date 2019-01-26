@@ -267,6 +267,15 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 	}
 }
 
+func ParseError(msg string, token Token) parseError {
+	return parseError{
+		token.Type,
+		msg,
+		token.Line,
+		token.Column,
+	}
+}
+
 // ParseExpression parse expression in two ways, first
 // by considering expression as prefix, next as infix
 //
@@ -295,12 +304,7 @@ func makePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	fn := prefixParseFnMap[curTok.Type]
 
 	if fn == nil {
-		return nil, parseError{
-			curTok.Type,
-			"prefix parse function not defined",
-			curTok.Line,
-			curTok.Column,
-		}
+		return nil, ParseError("prefix parse function not defined", curTok)
 	}
 	exp, err := fn(buf)
 	if err != nil {
@@ -320,12 +324,7 @@ func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (a
 		token := buf.Peek(CURRENT)
 		fn := infixParseFnMap[token.Type]
 		if fn == nil {
-			return nil, parseError{
-				token.Type,
-				"infix parse function not defined",
-				token.Line,
-				token.Column,
-			}
+			return nil, ParseError("infix parse function not defined", token)
 		}
 
 		expression, err = fn(buf, expression)
@@ -384,12 +383,7 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 	if token.Type != Ident {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]), token)
 	}
 	return &ast.Identifier{Value: token.Val}, nil
 }
@@ -398,12 +392,8 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 	if token.Type != Int {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Int], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[Int], TokenTypeMap[token.Type]), token)
 	}
 
 	value, err := strconv.ParseInt(token.Val, 0, 64)
@@ -420,12 +410,8 @@ func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 
 	if token.Type != True && token.Type != False {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[BoolType], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[BoolType], TokenTypeMap[token.Type]), token)
 	}
 
 	val, err := strconv.ParseBool(token.Val)
@@ -442,12 +428,7 @@ func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
 	if token.Type != String {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[String], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[String], TokenTypeMap[token.Type]), token)
 	}
 
 	return &ast.StringLiteral{Value: token.Val}, nil
@@ -465,12 +446,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 
 	token := buf.Read()
 	if token.Type != Ident {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[String], TokenTypeMap[token.Type]), token)
 	}
 	lit.Name = &ast.Identifier{Value: token.Val}
 
@@ -508,12 +484,7 @@ func parseFunctionReturnType(buf TokenBuffer) (ast.DataStructure, error) {
 
 	ds, ok := datastructureMap[peekTok.Type]
 	if !ok && peekTok.Type != Lbrace {
-		return 0, parseError{
-			peekTok.Type,
-			"invalid function return type",
-			peekTok.Line,
-			peekTok.Column,
-		}
+		return 0, ParseError(fmt.Sprintf("invalid function return type"), peekTok)
 	}
 
 	if !ok {
@@ -542,12 +513,7 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 	token = buf.Read()
 	ds, ok := datastructureMap[token.Type]
 	if !ok {
-		return nil, parseError{
-			token.Type,
-			"Function parameter type missed",
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError("Function parameter type missed", token)
 	}
 	ident.Type = ds
 
@@ -562,12 +528,7 @@ func parseFunctionParameters(buf TokenBuffer) ([]*ast.ParameterLiteral, error) {
 		curTok = buf.Read()
 		ds, ok := datastructureMap[curTok.Type]
 		if !ok {
-			return nil, parseError{
-				curTok.Type,
-				"Function parameter type missed",
-				curTok.Line,
-				curTok.Column,
-			}
+			return nil, ParseError("Function parameter type missed", curTok)
 		}
 		ident.Type = ds
 
@@ -627,12 +588,8 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 
 	token = buf.Read()
 	if token.Type != Ident {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[Ident], TokenTypeMap[token.Type]), token)
 	}
 
 	stmt.Variable = ast.Identifier{
@@ -640,12 +597,8 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	}
 
 	if assign := buf.Read(); assign.Type != Assign {
-		return nil, parseError{
-			assign.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Assign], TokenTypeMap[assign.Type]),
-			assign.Line,
-			assign.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[Assign], TokenTypeMap[assign.Type]), assign)
 	}
 
 	exp, err := parseExpression(buf, LOWEST)
@@ -707,24 +660,15 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 	token := buf.Read()
 	if token.Type != If {
-		err := parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[If], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
-		return nil, err
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[If], TokenTypeMap[token.Type]), token)
+
 	}
 
 	token = buf.Read()
 	if token.Type != Lparen {
-		err := parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Lparen], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
-		return nil, err
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[If], TokenTypeMap[token.Type]), token)
 	}
 
 	expression := &ast.IfStatement{}
@@ -736,24 +680,14 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 
 	token = buf.Read()
 	if token.Type != Rparen {
-		err := parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Rparen], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
-		return nil, err
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[Rparen], TokenTypeMap[token.Type]), token)
 	}
 
 	token = buf.Read()
 	if token.Type != Lbrace {
-		err := parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Lbrace], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
-		return nil, err
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[Lbrace], TokenTypeMap[token.Type]), token)
 	}
 
 	expression.Consequence, err = parseBlockStatement(buf)
@@ -806,15 +740,11 @@ func parseExpressionStatement(buf TokenBuffer) (*ast.ExpressionStatement, error)
 	stmt := &ast.ExpressionStatement{}
 	token := buf.Read()
 	if token.Type != Ident {
-		return nil, parseError{
-			token.Type,
-			fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[Ident], TokenTypeMap[token.Type]),
-			token.Line,
-			token.Column,
-		}
+		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
+			TokenTypeMap[Ident], TokenTypeMap[token.Type]), token)
 	}
-	ident := &ast.Identifier{Value: token.Val}
 
+	ident := &ast.Identifier{Value: token.Val}
 	exp, err := parseCallExpression(buf, ident)
 	if err != nil {
 		return nil, err
