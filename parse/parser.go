@@ -379,6 +379,8 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 			return nil, parseError{
 				tok.Type,
 				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
+				tok.Line,
+				tok.Column,
 			}
 		}
 	case ast.Minus:
@@ -387,6 +389,8 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 			return nil, parseError{
 				tok.Type,
 				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
+				tok.Line,
+				tok.Column,
 			}
 		}
 	}
