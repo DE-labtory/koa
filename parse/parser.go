@@ -216,6 +216,9 @@ func parseContractEnd(buf TokenBuffer) error {
 	if err := expectNext(buf, Rbrace); err != nil {
 		return err
 	}
+	if err := expectNext(buf, Semicolon); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -278,7 +281,6 @@ func parseExpression(buf TokenBuffer, pre precedence) (ast.Expression, error) {
 	if err != nil {
 		return exp, err
 	}
-
 	exp, err = makeInfixExpression(buf, exp, pre)
 	if err != nil {
 		return exp, err
@@ -315,8 +317,7 @@ func makePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, error) {
 	var err error
 	expression := exp
-
-	for pre < curPrecedence(buf) {
+	for !curTokenIs(buf, Semicolon) && pre < curPrecedence(buf) {
 		token := buf.Peek(CURRENT)
 		fn := infixParseFnMap[token.Type]
 		if fn == nil {
@@ -418,7 +419,6 @@ func parseIntegerLiteral(buf TokenBuffer) (ast.Expression, error) {
 // parseBooleanLiteral parse boolean literal.
 func parseBooleanLiteral(buf TokenBuffer) (ast.Expression, error) {
 	token := buf.Read()
-
 	if token.Type != True && token.Type != False {
 		return nil, parseError{
 			token.Type,
@@ -499,6 +499,11 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	if err = expectNext(buf, Rbrace); err != nil {
 		return nil, err
 	}
+
+	if err = expectNext(buf, Semicolon); err != nil {
+		return nil, err
+	}
+
 	return lit, nil
 }
 
@@ -588,7 +593,7 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	}
 
 	stmt := &ast.ReturnStatement{}
-	for !curTokenIs(buf, Eol) {
+	for !curTokenIs(buf, Semicolon) {
 		exp, err := parseExpression(buf, LOWEST)
 		if err != nil {
 			return nil, err
@@ -607,7 +612,6 @@ func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if err = expectNext(buf, Rparen); err != nil {
 		return nil, err
 	}
@@ -777,19 +781,23 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 		if err != nil {
 			return nil, err
 		}
+		if err = expectNext(buf, Rbrace); err != nil {
+			return nil, err
+		}
 	}
 
+	if err = expectNext(buf, Semicolon); err != nil {
+		return nil, err
+	}
 	return expression, nil
 }
 
 // parseBlockStatement parse block statement. Block statement is
 // statements which located between left-brace and right-brace.
 func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
-	block := &ast.BlockStatement{
-		Statements: []ast.Statement{},
-	}
+	block := &ast.BlockStatement{}
 
-	for !curTokenIs(buf, Rbrace) && !curTokenIs(buf, Eof) {
+	for !curTokenIs(buf, Rbrace) && !curTokenIs(buf, Semicolon) {
 		stmt, err := parseStatement(buf)
 		if err != nil {
 			return nil, err

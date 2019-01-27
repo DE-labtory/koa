@@ -28,8 +28,8 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	if t.Type == Eol {
-		return fmt.Sprintf("[EOL, End of line]")
+	if t.Type == Semicolon {
+		return fmt.Sprintf("\\n")
 	}
 
 	if t.Type == Eof {

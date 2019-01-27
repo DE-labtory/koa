@@ -15,3 +15,294 @@
  */
 
 package parse_test
+
+import (
+	"testing"
+
+	"github.com/DE-labtory/koa/ast"
+	"github.com/DE-labtory/koa/parse"
+)
+
+type parserTestCase struct {
+	returnTestCase []struct {
+		returnValue string
+	}
+	assignTestCase []struct {
+		ds ast.DataStructure
+		ident string
+		value string
+	}
+	conditionTestCase []struct {
+		condition string
+		consequence []string
+		alternative []string
+	}
+}
+
+/*
+TODO:
+ 	1. test bool as function return type
+	2. test bool as function parameter
+	3. test bool as variable type
+	4. function call
+*/
+func TestParse(t *testing.T) {
+	input := `
+	contract {
+		// testReturn must have return statements, this function is for 
+		// testing return statements.
+		//func testReturnStatement() {
+		//	return 1
+		//	return a
+		//	return a * b + 1
+		//	return a * (b + 1)
+		//	return (
+		//		a)
+		//}
+		//
+		///* testIntType  
+		//   is for testing int assign statements */
+		//func testAssignStatement(foo int) string {
+		//	int a = 1
+		//	int a = 1 + 2
+		//	int a =
+		//		1 + 2
+		//	int a = (foo + 1) * 2
+		//	string a = "hello"
+		//	string a = 
+		//		"hello"
+		//	//bool a = true
+		//	//bool b= false
+		//}
+		
+		// testIfElse is for testing if-else statements and should only contain
+		// if-else statements
+		func testIfStatement(foo int, bar string, baz string) int {
+			//if (true) {}
+			//if (1 != 1 + 2) {
+			//	int a = 1
+			//	string a = "hello"
+			//}
+			if (foo) {} else {}
+		}
+
+		//func testExpressionStatement() {}
+	}	
+`
+	tcs := parserTestCase{
+		returnTestCase: []struct {
+			returnValue string
+		}{
+			{"1"},
+			{"a"},
+			{"((a * b) + 1)"},
+			{"(a * (b + 1))"},
+			{"a"},
+		},
+		assignTestCase: []struct {
+			ds ast.DataStructure
+			ident string
+			value string
+		}{
+			{ast.IntType, "[IDENT, a]", "1"},
+			{ast.IntType, "[IDENT, a]", "(1 + 2)"},
+			{ast.IntType, "[IDENT, a]", "(1 + 2)"},
+			{ast.IntType, "[IDENT, a]", "((foo + 1) * 2)"},
+			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
+			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
+			//{ast.BoolType, "[IDENT, a]", "true"},
+			//{ast.BoolType, "[IDENT, b]", "false"},
+		},
+		conditionTestCase: []struct{
+			condition string
+			consequence []string
+			alternative []string
+		}{
+			//{
+			//	condition: "true",
+			//},
+			//{
+			//	condition: "(1 != (1 + 2))",
+			//	consequence: []string{
+			//		"int [IDENT, a] = 1",
+			//		"string [IDENT, a] = \"\"hello\"\"",
+			//	},
+			//},
+			{
+				condition: "foo",
+			},
+		},
+	}
+
+	l := parse.NewLexer(input)
+	buf := parse.NewTokenBuffer(l)
+	contract, err := parse.Parse(buf)
+
+	if err != nil {
+		buf.Read()
+		buf.Read()
+		t.Errorf("parser error: %q", err)
+		t.FailNow()
+	}
+	for _, fn := range contract.Functions {
+		testFunctionLiteral(t, fn, tcs)
+	}
+}
+
+func testFunctionLiteral(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Helper()
+	switch fn.Name.Value {
+	case "testReturnStatement":
+		testReturnStatementFunc(t, fn, tt)
+	case "testAssignStatement":
+		testAssignStatementFunc(t, fn, tt)
+	case "testIfStatement":
+		testIfElseStatementFunc(t, fn, tt)
+	}
+}
+
+func testReturnStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test return statement")
+
+	// test testReturn() function body, parameters, return type
+	if fn.ReturnType != ast.VoidType {
+		t.Errorf("testReturn() has wrong return type expected=%v, got=%v",
+			ast.VoidType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 0 {
+		t.Errorf("testReturn() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	// test testReturn's return statements
+	for i, stmt := range fn.Body.Statements {
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("function body stmt is not *ast.ReturnStatement. got=%T", stmt)
+		}
+
+		tc := tt.returnTestCase[i]
+		testExpression(t, returnStmt.ReturnValue, tc.returnValue)
+	}
+}
+
+func testAssignStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test assign statement")
+
+	// test testAssign() function body, parameters, return type
+	if fn.ReturnType != ast.StringType {
+		t.Errorf("testAssign() has wrong return type expected=%v, got=%v",
+			ast.StringType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 1 {
+		t.Errorf("testAssign() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	testFnParameters(t, fn.Parameters[0], ast.IntType, "foo")
+
+	// test testAssign()'s assign statements
+	for i, stmt := range fn.Body.Statements {
+		assignStmt, ok := stmt.(*ast.AssignStatement)
+		if !ok {
+			t.Errorf("function body stmt is not *ast.AssignStatement. got=%T", stmt)
+		}
+		tc := tt.assignTestCase[i]
+		testAssignStatement(t, assignStmt, tc.ds, tc.ident, tc.value)
+	}
+}
+
+func testIfElseStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test if-else statement")
+
+	// test testIfElse() function body, parameters, return type
+	if fn.ReturnType != ast.IntType {
+		t.Errorf("testIfElse() has wrong return type expected=%v, got=%v",
+			ast.StringType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 3 {
+		t.Errorf("testIfElse() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	testFnParameters(t, fn.Parameters[0], ast.IntType, "foo")
+	testFnParameters(t, fn.Parameters[1], ast.StringType, "bar")
+	testFnParameters(t, fn.Parameters[2], ast.StringType, "baz")
+
+	// test testIfElse()'s assign statements
+	for i, stmt := range fn.Body.Statements {
+		ifStmt, ok := stmt.(*ast.IfStatement)
+		if !ok {
+			t.Errorf("function body stmt is not *ast.IfStatement. got=%T", stmt)
+		}
+		tc := tt.conditionTestCase[i]
+		testIfStatement(t, ifStmt, tc.condition, tc.consequence, tc.alternative)
+	}
+}
+
+func testExpression(t *testing.T, exp ast.Expression, expected string) {
+	if exp.String() != expected {
+		t.Errorf(`expression is not "%s", bot got "%s"`, exp.String(), expected)
+	}
+}
+
+func testFnParameters(t *testing.T, p *ast.ParameterLiteral, ds ast.DataStructure, id string) {
+	if p.Type != ds {
+		t.Errorf("wrong parameter type expected=%s, got=%s",
+			p.Type.String(), ds.String())
+	}
+	if p.Identifier.Value != id {
+		t.Errorf("wrong parameter identifier expected=%T, got=%T",
+			p.Type, ds)
+	}
+}
+
+func testAssignStatement(t *testing.T, stmt *ast.AssignStatement, ds ast.DataStructure, ident string, value string) {
+	if stmt.Type != ds {
+		t.Errorf("wrong assign statement type expected=%T, got=%T",
+			ds, stmt.Type)
+	}
+	if stmt.Variable.Value != ident {
+		t.Errorf("wrong assign statement variable expected=%s, got=%s",
+			ident, stmt.Variable.Value)
+	}
+	if stmt.Value.String() != value {
+		t.Errorf("wrong assign statement value expected=%s, got=%s",
+			value, stmt.Value.String())
+	}
+}
+
+func testIfStatement(t *testing.T, stmt *ast.IfStatement, condition string, consequences []string, alternatives []string) {
+	if stmt.Condition.String() != condition {
+		t.Errorf("wrong condition statement type expected=%s, got=%s",
+			condition, stmt.Condition.String())
+	}
+
+	if len(stmt.Consequence.Statements) != len(consequences) {
+		t.Errorf("wrong condition statement consequences length expected=%d, got=%d",
+			len(consequences), len(stmt.Consequence.Statements))
+	}
+	for i, csq := range stmt.Consequence.Statements {
+		if csq.String() != consequences[i] {
+			t.Errorf("wrong condition statement consequences literal expected=%s, got=%s",
+				csq.String(), consequences[i])
+		}
+	}
+
+	if stmt.Alternative == nil {
+		return
+	}
+	if len(stmt.Alternative.Statements) != len(alternatives) {
+		t.Errorf("wrong condition statement alternatives length expected=%d, got=%d",
+			len(alternatives), len(stmt.Alternative.Statements))
+	}
+	for i, alt := range stmt.Alternative.Statements {
+		if alt.String() != alternatives[i] {
+			t.Errorf("wrong condition statement alternative literal expected=%s, got=%s",
+				alt.String(), alternatives[i])
+		}
+	}
+}
