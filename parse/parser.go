@@ -38,6 +38,8 @@ var operatorMap = map[TokenType]ast.Operator{
 	GTE:      ast.GTE,
 	EQ:       ast.EQ,
 	NOT_EQ:   ast.NOT_EQ,
+	Land:     ast.LAND,
+	Lor:      ast.LOR,
 }
 
 // datastructureMap maps TokenType with Datastructure. By doing this
@@ -59,6 +61,8 @@ type precedence int
 const (
 	_ precedence = iota
 	LOWEST
+	LOR         // ||
+	LAND        // &&
 	EQUALS      // ==
 	LESSGREATER // > or <
 	SUM         // +
@@ -85,7 +89,9 @@ var precedenceMap = map[TokenType]precedence{
 
 	Lparen: CALL,
 
-	Eol: LOWEST,
+	Eol:  LOWEST,
+	Land: LAND,
+	Lor:  LOR,
 }
 
 // PeekNumber restrict peek count from the TokenBuffer
@@ -259,6 +265,8 @@ func initParseFnMap() {
 	infixParseFnMap[GT] = parseInfixExpression
 	infixParseFnMap[LTE] = parseInfixExpression
 	infixParseFnMap[GTE] = parseInfixExpression
+	infixParseFnMap[Land] = parseInfixExpression
+	infixParseFnMap[Lor] = parseInfixExpression
 	infixParseFnMap[Lparen] = parseCallExpression
 }
 

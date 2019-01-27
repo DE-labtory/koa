@@ -2043,6 +2043,38 @@ func TestParseExpression(t *testing.T) {
 			},
 			"(((-33) / 67) >= (a + (67 % z)))",
 			nil},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Int, Val: "33"},
+					{Type: EQ, Val: "=="},
+					{Type: Int, Val: "3"},
+					{Type: Land, Val: "&&"},
+					{Type: Int, Val: "44"},
+					{Type: EQ, Val: "=="},
+					{Type: Int, Val: "67"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"((33 == 3) && (44 == 67))",
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: True, Val: "true"},
+					{Type: Lor, Val: "||"},
+					{Type: False, Val: "false"},
+					{Type: Land, Val: "&&"},
+					{Type: True, Val: "true"},
+					{Type: Eof},
+				},
+				0,
+			},
+			"(true || (false && true))",
+			nil,
+		},
 	}
 
 	for i, test := range tests {

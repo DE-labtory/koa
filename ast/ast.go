@@ -89,6 +89,8 @@ const (
 	GTE               // >=
 	EQ                // ==
 	NOT_EQ            // !=
+	LAND              // &&
+	LOR               // ||
 )
 
 var OperatorMap = map[Operator]string{
@@ -104,6 +106,8 @@ var OperatorMap = map[Operator]string{
 	GTE:      ">=",
 	EQ:       "==",
 	NOT_EQ:   "!=",
+	LAND:     "&&",
+	LOR:      "||",
 }
 
 func (o Operator) String() string {
