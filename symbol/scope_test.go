@@ -18,7 +18,7 @@ package symbol
 
 import "testing"
 
-func testNewEnclosedScope(t *testing.T) {
+func TestNewEnclosedScope(t *testing.T) {
 	outer := NewScope()
 	s := NewEnclosedScope(outer)
 
@@ -31,7 +31,7 @@ func testNewEnclosedScope(t *testing.T) {
 	}
 }
 
-func testNewScope(t *testing.T) {
+func TestNewScope(t *testing.T) {
 	s := NewScope()
 	if s.outer != nil {
 		t.Fatalf("testNewScope() failed. outer must be nil")
@@ -42,17 +42,77 @@ func testNewScope(t *testing.T) {
 	}
 }
 
+func TestScopeGetter(t *testing.T) {
+	tests := []struct {
+		scope        Scope
+		want         string
+		expectedSym  Symbol
+		expectedBool bool
+	}{
+		{
+			Scope{
+				map[string]Symbol{
+					"a": &Integer{0},
+					"b": &Integer{1},
+				},
+				nil,
+			},
+			"a",
+			&Integer{0},
+			true,
+		},
+		{
+			Scope{
+				map[string]Symbol{
+					"a": &Integer{0},
+					"b": &Integer{1},
+				},
+				&Scope{
+					map[string]Symbol{
+						"c": &String{"abc"},
+					},
+					nil,
+				},
+			},
+			"c",
+			&String{"abc"},
+			true,
+		},
+		{
+			Scope{
+				map[string]Symbol{
+					"a": &Integer{0},
+					"b": &Integer{1},
+				},
+				nil,
+			},
+			"c",
+			nil,
+			false,
+		},
+	}
+
+	for i, test := range tests {
+		sym, ok := test.scope.Get(test.want)
+		if sym != nil && test.expectedSym.String() != sym.String() {
+			t.Fatalf("test[%d] testScopeGetter() returns invalid symbol.\n"+
+				"expected=%s\n"+
+				"got=%s", i, test.expectedSym.String(), sym.String())
+		}
+		if ok != test.expectedBool {
+			t.Fatalf("test[%d] testScopeGetter() returns invalid ok.\n"+
+				"expected=%v\n"+
+				"got=%v", i, test.expectedBool, ok)
+		}
+	}
+}
+
 // TODO implement me w/ test cases :-)
-func testScopeGetter(t *testing.T) {
+func TestScopeSetter(t *testing.T) {
 
 }
 
 // TODO implement me w/ test cases :-)
-func testScopeSetter(t *testing.T) {
-
-}
-
-// TODO implement me w/ test cases :-)
-func testScopeString(t *testing.T) {
+func TestScopeString(t *testing.T) {
 
 }
