@@ -28,14 +28,17 @@ type parserTestCase struct {
 		returnValue string
 	}
 	assignTestCase []struct {
-		ds ast.DataStructure
+		ds    ast.DataStructure
 		ident string
 		value string
 	}
 	conditionTestCase []struct {
-		condition string
+		condition   string
 		consequence []string
 		alternative []string
+	}
+	expressionStmtTestCase []struct {
+		expression string
 	}
 }
 
@@ -44,49 +47,93 @@ TODO:
  	1. test bool as function return type
 	2. test bool as function parameter
 	3. test bool as variable type
-	4. function call
 */
 func TestParse(t *testing.T) {
 	input := `
 	contract {
 		// testReturn must have return statements, this function is for 
 		// testing return statements.
-		//func testReturnStatement() {
-		//	return 1
-		//	return a
-		//	return a * b + 1
-		//	return a * (b + 1)
-		//	return (
-		//		a)
-		//}
-		//
-		///* testIntType  
-		//   is for testing int assign statements */
-		//func testAssignStatement(foo int) string {
-		//	int a = 1
-		//	int a = 1 + 2
-		//	int a =
-		//		1 + 2
-		//	int a = (foo + 1) * 2
-		//	string a = "hello"
-		//	string a = 
-		//		"hello"
-		//	//bool a = true
-		//	//bool b= false
-		//}
+		func testReturnStatement() {
+			return 1
+			return a
+			return a * b + 1
+			return a * (b + 1)
+			return (
+				a)
+			return add(1, 2)
+			return add(
+				1,
+				2)
+			return add(
+				1,
+				2 /* at this point there's SEMICOLON, should consume */
+			)
+		}
+		
+		/* testIntType  
+		 is for testing int assign statements */
+		func testAssignStatement(foo int) string {
+			int a = 1
+			int a = 1 + 2
+			int a =
+				1 + 2
+			int a = (foo + 1) * 2
+			int a = add(1 + 2, 3) + 4
+			int a = add(1 % 2, 3) / 4
+			
+			// This is not working code according to go-spec
+			//
+			// int a = add(1 + 2, 3) 
+			//	 + 4
+			
+			string a = "hello"
+			string a = 
+				"hello"
+			string tabbed_string = "hello, \t world"
+
+			//bool a = true
+			//bool b= false
+		}
 		
 		// testIfElse is for testing if-else statements and should only contain
 		// if-else statements
 		func testIfStatement(foo int, bar string, baz string) int {
-			//if (true) {}
-			//if (1 != 1 + 2) {
-			//	int a = 1
-			//	string a = "hello"
-			//}
+			if (true) {}
+		
+			if (1 != 1 + 2) {
+				int a = 1
+				string a = "hello"
+			}
+		
 			if (foo) {} else {}
+		
+			if (foo) {
+				int a = 1
+				string a = "hello"
+			} else {
+				int a = 1
+				string a = "hello"
+			}
 		}
-
-		//func testExpressionStatement() {}
+		
+		// testExpressionStatement is for testing expression statement and should
+		// only contain expression statement
+		func testExpressionStatement() {
+			add(1, 2)
+			add(add(1, 2), 3)
+			add(add(1,
+				2), 3)
+			add(add(1, 2),
+				3)
+			add(
+				add(
+					1, 
+					2
+				),
+				3
+			)
+		
+		}
 	}	
 `
 	tcs := parserTestCase{
@@ -98,9 +145,12 @@ func TestParse(t *testing.T) {
 			{"((a * b) + 1)"},
 			{"(a * (b + 1))"},
 			{"a"},
+			{"function add( 1, 2 )"},
+			{"function add( 1, 2 )"},
+			{"function add( 1, 2 )"},
 		},
 		assignTestCase: []struct {
-			ds ast.DataStructure
+			ds    ast.DataStructure
 			ident string
 			value string
 		}{
@@ -108,29 +158,52 @@ func TestParse(t *testing.T) {
 			{ast.IntType, "[IDENT, a]", "(1 + 2)"},
 			{ast.IntType, "[IDENT, a]", "(1 + 2)"},
 			{ast.IntType, "[IDENT, a]", "((foo + 1) * 2)"},
+			{ast.IntType, "[IDENT, a]", "(function add( (1 + 2), 3 ) + 4)"},
+			{ast.IntType, "[IDENT, a]", "(function add( (1 % 2), 3 ) / 4)"},
 			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
 			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
+			{ast.StringType, "[IDENT, tabbed_string]", "\"\"hello, \\t world\"\""},
 			//{ast.BoolType, "[IDENT, a]", "true"},
 			//{ast.BoolType, "[IDENT, b]", "false"},
 		},
-		conditionTestCase: []struct{
-			condition string
+		conditionTestCase: []struct {
+			condition   string
 			consequence []string
 			alternative []string
 		}{
-			//{
-			//	condition: "true",
-			//},
-			//{
-			//	condition: "(1 != (1 + 2))",
-			//	consequence: []string{
-			//		"int [IDENT, a] = 1",
-			//		"string [IDENT, a] = \"\"hello\"\"",
-			//	},
-			//},
+			{
+				condition: "true",
+			},
+			{
+				condition: "(1 != (1 + 2))",
+				consequence: []string{
+					"int [IDENT, a] = 1",
+					"string [IDENT, a] = \"\"hello\"\"",
+				},
+			},
 			{
 				condition: "foo",
 			},
+			{
+				condition: "foo",
+				consequence: []string{
+					"int [IDENT, a] = 1",
+					"string [IDENT, a] = \"\"hello\"\"",
+				},
+				alternative: []string{
+					"int [IDENT, a] = 1",
+					"string [IDENT, a] = \"\"hello\"\"",
+				},
+			},
+		},
+		expressionStmtTestCase: []struct {
+			expression string
+		}{
+			{"function add( 1, 2 )"},
+			{"function add( function add( 1, 2 ), 3 )"},
+			{"function add( function add( 1, 2 ), 3 )"},
+			{"function add( function add( 1, 2 ), 3 )"},
+			{"function add( function add( 1, 2 ), 3 )"},
 		},
 	}
 
@@ -139,8 +212,6 @@ func TestParse(t *testing.T) {
 	contract, err := parse.Parse(buf)
 
 	if err != nil {
-		buf.Read()
-		buf.Read()
 		t.Errorf("parser error: %q", err)
 		t.FailNow()
 	}
@@ -158,6 +229,8 @@ func testFunctionLiteral(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCas
 		testAssignStatementFunc(t, fn, tt)
 	case "testIfStatement":
 		testIfElseStatementFunc(t, fn, tt)
+	case "testExpressionStatement":
+		testExpressionStatementFunc(t, fn, tt)
 	}
 }
 
@@ -240,6 +313,32 @@ func testIfElseStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTes
 		}
 		tc := tt.conditionTestCase[i]
 		testIfStatement(t, ifStmt, tc.condition, tc.consequence, tc.alternative)
+	}
+}
+
+func testExpressionStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test expression-statement statement")
+
+	// test testExpressionStatement() function body, parameters, return type
+	if fn.ReturnType != ast.VoidType {
+		t.Errorf("testExpressionS	tatement() has wrong return type expected=%v, got=%v",
+			ast.VoidType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 0 {
+		t.Errorf("testExpressionStatement() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	// test testExpressionStatement()'s return statements
+	for i, stmt := range fn.Body.Statements {
+		expStmt, ok := stmt.(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", expStmt)
+		}
+
+		tc := tt.expressionStmtTestCase[i]
+		testExpression(t, expStmt.Expr, tc.expression)
 	}
 }
 

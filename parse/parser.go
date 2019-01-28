@@ -637,6 +637,7 @@ func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, er
 	if err != nil {
 		return nil, err
 	}
+
 	return exp, nil
 }
 
@@ -664,6 +665,10 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 			return nil, err
 		}
 		args = append(args, exp)
+	}
+
+	if curTokenIs(buf, Semicolon) {
+		buf.Read()
 	}
 
 	if err := expectNext(buf, Rparen); err != nil {
@@ -733,9 +738,6 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 		}
 	}
 
-	if err = expectNext(buf, Semicolon); err != nil {
-		return nil, err
-	}
 	return expression, nil
 }
 
@@ -744,7 +746,7 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	block := &ast.BlockStatement{}
 
-	for !curTokenIs(buf, Rbrace) && !curTokenIs(buf, Semicolon) {
+	for !curTokenIs(buf, Rbrace) && !curTokenIs(buf, Eof) {
 		stmt, err := parseStatement(buf)
 		if err != nil {
 			return nil, err
