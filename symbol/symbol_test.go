@@ -22,13 +22,13 @@ import (
 
 func TestInteger(t *testing.T) {
 	tests := []struct {
-		input          Integer
+		input          Symbol
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
-		{Integer{10}, "10", IntegerSymbol},
-		{Integer{20}, "20", IntegerSymbol},
-		{Integer{30}, "30", IntegerSymbol},
+		{&Integer{10}, "10", IntegerSymbol},
+		{&Integer{20}, "20", IntegerSymbol},
+		{&Integer{30}, "30", IntegerSymbol},
 	}
 
 	for i, test := range tests {
@@ -51,13 +51,13 @@ func TestInteger(t *testing.T) {
 
 func TestString(t *testing.T) {
 	tests := []struct {
-		input          String
+		input          Symbol
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
-		{String{"abcd"}, "abcd", StringSymbol},
-		{String{"Hi"}, "Hi", StringSymbol},
-		{String{"@Aa1231"}, "@Aa1231", StringSymbol},
+		{&String{"abcd"}, "abcd", StringSymbol},
+		{&String{"Hi"}, "Hi", StringSymbol},
+		{&String{"@Aa1231"}, "@Aa1231", StringSymbol},
 	}
 
 	for i, test := range tests {
@@ -80,12 +80,12 @@ func TestString(t *testing.T) {
 
 func TestBoolean(t *testing.T) {
 	tests := []struct {
-		input       Boolean
+		input       Symbol
 		expectedStr string
 		expectedObj SymbolType
 	}{
-		{Boolean{true}, "true", BooleanSymbol},
-		{Boolean{false}, "false", BooleanSymbol},
+		{&Boolean{true}, "true", BooleanSymbol},
+		{&Boolean{false}, "false", BooleanSymbol},
 	}
 
 	for i, test := range tests {
@@ -108,12 +108,12 @@ func TestBoolean(t *testing.T) {
 
 func TestFunction(t *testing.T) {
 	tests := []struct {
-		input          Function
+		input          Symbol
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
 		{
-			Function{
+			&Function{
 				"add",
 				&Scope{},
 			},
