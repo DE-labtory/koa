@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
 )
 
@@ -95,9 +94,54 @@ func TestCompilePrefixExpression(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
 func TestCompileIntegerLiteral(t *testing.T) {
+	tests := []struct {
+		expression *ast.IntegerLiteral
+		expected   Bytecode
+	}{
+		{
+			expression: &ast.IntegerLiteral{
+				Value: 10,
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x0a},
+				AsmCode: []string{"Push", "0000000a"},
+			},
+		},
+		{
+			expression: &ast.IntegerLiteral{
+				Value: 20,
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x14},
+				AsmCode: []string{"Push", "00000014"},
+			},
+		},
+	}
 
+	for i, test := range tests {
+		bytecode := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+		}
+		err := compileIntegerLiteral(test.expression, bytecode)
+
+		if err != nil {
+			t.Fatalf("test[%d] - compileIntegerLiteral() had error. err=%v", i, err)
+		}
+
+		expectedRawByte := test.expected.RawByte
+		resultRawByte := bytecode.RawByte
+		if !bytes.Equal(expectedRawByte, resultRawByte) {
+			t.Fatalf("test[%d] - compileIntegerLiteral() result wrong. expected %x, got=%x", i, expectedRawByte, resultRawByte)
+		}
+
+		expectedAsmCode := test.expected.AsmCode
+		resultAsmCode := bytecode.AsmCode
+		if !reflect.DeepEqual(expectedAsmCode, resultAsmCode) {
+			t.Fatalf("test[%d] - compileIntegerLiteral() result wrong. expected %v, got=%v", i, expectedAsmCode, resultAsmCode)
+		}
+	}
 }
 
 // TODO: implement test cases :-)
@@ -118,7 +162,6 @@ func TestCompileBooleanLiteral(t *testing.T) {
 			expected: Bytecode{
 				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00},
 				AsmCode: []string{"Push", "00000000"},
-				Abi:     abi.ABI{},
 			},
 		},
 		{
@@ -128,7 +171,6 @@ func TestCompileBooleanLiteral(t *testing.T) {
 			expected: Bytecode{
 				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
 				AsmCode: []string{"Push", "00000001"},
-				Abi:     abi.ABI{},
 			},
 		},
 	}
@@ -137,7 +179,6 @@ func TestCompileBooleanLiteral(t *testing.T) {
 		bytecode := &Bytecode{
 			RawByte: make([]byte, 0),
 			AsmCode: make([]string, 0),
-			Abi:     abi.ABI{},
 		}
 		err := compileBooleanLiteral(test.expression, bytecode)
 
