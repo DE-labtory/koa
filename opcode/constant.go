@@ -153,6 +153,33 @@ const (
 	//
 	// memory[offset:offset+32] = value
 	Mstore Type = 0x23
+
+	// Get the function selector information in the CallFunc.
+	// `Func` data is 4bytes of Keccak(function(params))
+	//
+	// Ex)
+	//           [CallFunc.Func]
+	// [x]  ==>  [x]
+	// [y]       [y]
+	// [x] is 4byte which encoded as function selector
+	LoadFunc Type = 0x24
+
+	// Get the function arguments in the CallFunc.
+	// 'Args' is arguments encoded as a bytes value according to abi.
+	// Args's first 4 bytes is pointing to encoded size and value.
+	// Ex)
+	//
+	// [index]  ==>  [Callfunc.Args[index]]
+	// [y]           [y]
+	LoadArgs Type = 0x25
+
+	// Push the data which stored in 'memory' to stack or remain in memory when return type is string
+	//
+	// Ex)
+	//           [offset]
+	//      ==>  [size]
+	// [y]       [y]
+	Returning Type = 0x26
 )
 
 // Change the bytecode of an opcode to string.
@@ -184,6 +211,12 @@ func (p Type) String() (string, error) {
 		return "Mload", nil
 	case 0x23:
 		return "Mstore", nil
+	case 0x24:
+		return "LoadFunc", nil
+	case 0x25:
+		return "LoadArgs", nil
+	case 0x26:
+		return "Returning", nil
 
 	default:
 		return "", errors.New("String() error - Not defined opcode")

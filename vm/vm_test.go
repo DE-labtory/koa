@@ -412,3 +412,28 @@ func TestMload(t *testing.T) {
 func TestMstore(t *testing.T) {
 
 }
+
+// TODO: implement test cases :-)
+func TestLoadFunc(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestLoadArgs(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestReturning(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCallFunc_function(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCallFunc_arguments(t *testing.T) {
+
+}

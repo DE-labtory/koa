@@ -56,6 +56,24 @@ type CallFunc struct {
 	Args []byte
 }
 
+// function return the Func in CallFunc
+// TODO: Implements test case :-)
+func (cf CallFunc) function() []byte {
+	return cf.Func
+}
+
+// Example)
+// Pointer : 4bytes
+// Size : 4bytes
+// Value : dynamic
+// arguments(n) : if the number of arguments is 4, range of n is 0~3
+// cf.Args[n:n+4] : Pointer which point to value's size
+// after we know size, next to size is value.
+// TODO: Implements me w/ test case :-)
+func (cf CallFunc) arguments(n int) []byte {
+	return nil
+}
+
 type opCode interface {
 	Do(*stack, asmReader, *Memory, *CallFunc) error
 	hexer
@@ -75,6 +93,9 @@ type pop struct{}
 type push struct{}
 type mload struct{}
 type mstore struct{}
+type loadfunc struct{}
+type loadargs struct{}
+type returning struct{}
 
 func (add) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 	y := stack.pop()
@@ -246,6 +267,33 @@ func (mstore) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 
 func (mstore) hex() []uint8 {
 	return []uint8{uint8(opcode.Mstore)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (loadfunc) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
+	return nil
+}
+
+func (loadfunc) hex() []uint8 {
+	return []uint8{uint8(opcode.LoadFunc)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (loadargs) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
+	return nil
+}
+
+func (loadargs) hex() []uint8 {
+	return []uint8{uint8(opcode.LoadFunc)}
+}
+
+// TODO: implement me w/ test cases :-)
+func (returning) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	return nil
+}
+
+func (returning) hex() []uint8 {
+	return []uint8{uint8(opcode.Returning)}
 }
 
 func int32ToBytes(int32 int32) []byte {
