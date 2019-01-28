@@ -806,6 +806,77 @@ func TestParseFunctionLiteral(t *testing.T) {
 		{
 			&mockTokenBuffer{
 				[]Token{
+					// func example () string {}
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "example"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: StringType, Val: "string"},
+					{Type: Lbrace, Val: "{"},
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Else, Val: "else"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					//{Type: Semicolon, Val: "\n"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+				},
+				0,
+			},
+			`func example() string {
+if ( true ) {  } else {  }
+}`,
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					// func example () string {}
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "example"},
+					{Type: Lparen, Val: "("},
+					{Type: Rparen, Val: ")"},
+					{Type: StringType, Val: "string"},
+					{Type: Lbrace, Val: "{"},
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Else, Val: "else"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: If, Val: "if"},
+					{Type: Lparen, Val: "("},
+					{Type: True, Val: "true"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Else, Val: "else"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+				},
+				0,
+			},
+			`func example() string {
+if ( true ) {  } else {  }/if ( true ) {  } else {  }
+}`,
+			nil,
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
 					// func example () invalid {}
 					{Type: Function, Val: "func"},
 					{Type: Ident, Val: "example"},

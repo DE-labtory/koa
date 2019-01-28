@@ -29,7 +29,7 @@ type Token struct {
 
 func (t Token) String() string {
 	if t.Type == Semicolon {
-		return fmt.Sprintf("\\n")
+		return fmt.Sprintf("[%s, \\n]", TokenTypeMap[Semicolon])
 	}
 
 	if t.Type == Eof {
