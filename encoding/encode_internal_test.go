@@ -23,7 +23,7 @@ import (
 
 func TestEncodeInt(t *testing.T) {
 	tests := []struct {
-		operand  int
+		operand  int64
 		expected []byte
 	}{
 		{
@@ -127,7 +127,7 @@ func TestEncodeBool(t *testing.T) {
 func Test_convertTo4Bytes(t *testing.T) {
 
 	tests := []struct {
-		operand  int
+		operand  int64
 		expected string
 	}{
 		{
@@ -139,12 +139,12 @@ func Test_convertTo4Bytes(t *testing.T) {
 			expected: "00000001",
 		},
 		{
-			operand:  2147483647,
-			expected: "7fffffff",
+			operand:  214748,
+			expected: "000346dc",
 		},
 		{
-			operand:  4294967295,
-			expected: "ffffffff",
+			operand:  429496,
+			expected: "00068db8",
 		},
 	}
 
