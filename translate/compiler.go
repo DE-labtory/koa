@@ -32,9 +32,6 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 	bytecode := &Bytecode{
 		RawByte: make([]byte, 0),
 		AsmCode: make([]string, 0),
-		Abi: abi.ABI{
-			Methods: make([]abi.Method, 0),
-		},
 	}
 
 	for _, f := range c.Functions {
@@ -47,13 +44,18 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		return *bytecode, err
 	}
 
-	abiMethods, err := compileAbi(c.Functions)
-	if err != nil {
-		return *bytecode, err
-	}
-	bytecode.Abi.Methods = abiMethods
-
 	return *bytecode, nil
+}
+
+func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
+	abiMethods, err := toAbiMethods(c.Functions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &abi.ABI{
+		Methods: abiMethods,
+	}, nil
 }
 
 // TODO: implement me w/ test cases :-)
@@ -64,7 +66,7 @@ func generateFuncJumper(bytecode *Bytecode) error {
 
 // Generates the ABI of functions in contract.
 // Then, adds the ABI to bytecode.
-func compileAbi(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
+func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 	methods := make([]abi.Method, 0)
 
 	for _, f := range functions {
@@ -201,8 +203,13 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error 
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
+	operand, err := encoding.EncodeOperand(e.Value)
+	if err != nil {
+		return err
+	}
+
+	bytecode.Emerge(opcode.Push, operand)
 	return nil
 }
 

@@ -19,7 +19,6 @@ package translate
 import (
 	"fmt"
 
-	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/opcode"
 )
 
@@ -27,7 +26,6 @@ import (
 type Bytecode struct {
 	RawByte []byte
 	AsmCode []string
-	Abi     abi.ABI
 }
 
 // Emerge() translates instruction to bytecode
