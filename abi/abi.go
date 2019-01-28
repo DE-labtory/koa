@@ -59,12 +59,7 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 // https://solidity.readthedocs.io/en/develop/abi-spec.html
 
 // Encode abi parameters
-func Encode(params ...[]byte) []byte {
-	return nil
-}
-
-// Encode abi parameters with function Selector
-func EncodeWithSelector(selector []byte, params ...[]byte) []byte {
+func Encode(params ...interface{}) []byte {
 	return nil
 }
 

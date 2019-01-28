@@ -80,7 +80,19 @@ func TestType_String(t *testing.T) {
 			"Mstore",
 		},
 		{
-			0x24,
+			opcode.LoadFunc,
+			"LoadFunc",
+		},
+		{
+			opcode.LoadArgs,
+			"LoadArgs",
+		},
+		{
+			opcode.Returning,
+			"Returning",
+		},
+		{
+			0x27,
 			"String() error - Not defined opcode",
 		},
 	}
