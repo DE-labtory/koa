@@ -36,7 +36,7 @@ func (e EncodeError) Error() string {
 // EncodeOperand() encodes operand to bytes.
 func EncodeOperand(operand interface{}) ([]byte, error) {
 	switch op := operand.(type) {
-	case int:
+	case int64:
 		return encodeInt(op)
 
 	case string:
@@ -52,7 +52,7 @@ func EncodeOperand(operand interface{}) ([]byte, error) {
 
 // Encode integer to hexadecimal bytes
 // ex) int 123 => 0x7b
-func encodeInt(operand int) ([]byte, error) {
+func encodeInt(operand int64) ([]byte, error) {
 	s := convertTo4Bytes(operand)
 
 	b, err := hex.DecodeString(s)
@@ -105,7 +105,7 @@ func encodeBool(operand bool) ([]byte, error) {
 }
 
 // convert to 4 byte
-func convertTo4Bytes(operand int) string {
+func convertTo4Bytes(operand int64) string {
 	var zeroSet string
 
 	src := strconv.FormatUint(uint64(operand), 16)

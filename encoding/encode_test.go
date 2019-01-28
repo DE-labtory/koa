@@ -61,17 +61,17 @@ func TestEncodeOperand(t *testing.T) {
 			expectedErr:  nil,
 		},
 		{
-			operand:      1,
+			operand:      int64(1),
 			expectedByte: []byte{0x00, 0x00, 0x00, 0x01},
 			expectedErr:  nil,
 		},
 		{
-			operand:      23,
+			operand:      int64(23),
 			expectedByte: []byte{0x00, 0x00, 0x00, 0x17},
 			expectedErr:  nil,
 		},
 		{
-			operand:      456,
+			operand:      int64(456),
 			expectedByte: []byte{0x00, 0x00, 0x01, 0xc8},
 			expectedErr:  nil,
 		},
