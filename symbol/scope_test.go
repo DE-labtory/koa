@@ -107,8 +107,50 @@ func TestScopeGetter(t *testing.T) {
 	}
 }
 
-// TODO implement me w/ test cases :-)
 func TestScopeSetter(t *testing.T) {
+	tests := []struct {
+		Scope  *Scope
+		Name   string
+		Symbol Symbol
+	}{
+		{
+			&Scope{
+				map[string]Symbol{},
+				&Scope{},
+			},
+			"testInt",
+			&Integer{1},
+		},
+		{
+			&Scope{
+				map[string]Symbol{},
+				&Scope{},
+			},
+			"testBool",
+			&Boolean{true},
+		},
+		{
+			&Scope{
+				map[string]Symbol{},
+				&Scope{},
+			},
+			"testString",
+			&String{"abcd"},
+		},
+	}
+
+	for i, test := range tests {
+		symbol := test.Scope.Set(test.Name, test.Symbol)
+		if symbol != test.Symbol {
+			t.Fatalf("test[%d] - TestScopeSetter() wrong result.\n"+
+				"expected=%s\n"+
+				"got=%s", i, test.Symbol.String(), symbol.String())
+		}
+
+		if _, ok := test.Scope.Get(test.Name); !ok {
+			t.Fatalf("test[%d] - TestScopeSetter() must set in scope store", i)
+		}
+	}
 
 }
 
