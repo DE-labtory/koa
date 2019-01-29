@@ -27,12 +27,12 @@ func TestState_cut(t *testing.T) {
 		expectedToken  Token
 	}{
 		{
-			inputState:     state{input: "hello", start: 0, end: 5, line: 0},
+			inputState:     state{input: "hello", start: 0, end: 5, column: 5, line: 0},
 			inputTokenType: Ident,
 			expectedToken:  Token{Line: 0, Val: "hello", Type: Ident, Column: 5},
 		},
 		{
-			inputState:     state{input: "5", start: 0, end: 1, line: 0},
+			inputState:     state{input: "5", start: 0, end: 1, column: 1, line: 0},
 			inputTokenType: Int,
 			expectedToken:  Token{Line: 0, Val: "5", Type: Int, Column: 1},
 		},
@@ -54,35 +54,36 @@ func TestState_next(t *testing.T) {
 
 	tests := []struct {
 		expectedCh rune
+		col        Pos
 	}{
-		{rune('h')},
-		{rune('e')},
-		{rune('l')},
-		{rune('l')},
-		{rune('o')},
-		{rune(' ')},
-		{rune('w')},
-		{rune('o')},
-		{rune('r')},
-		{rune('l')},
-		{rune('d')},
-		{rune('!')},
-		{rune(' ')},
-		{rune('\n')},
-		{rune(' ')},
-		{rune('h')},
-		{rune('e')},
-		{rune('l')},
-		{rune('l')},
-		{rune('o')},
-		{rune(' ')},
-		{rune('w')},
-		{rune('o')},
-		{rune('r')},
-		{rune('l')},
-		{rune('d')},
-		{rune('2')},
-		{rune(-1)},
+		{rune('h'), 1},
+		{rune('e'), 2},
+		{rune('l'), 3},
+		{rune('l'), 4},
+		{rune('o'), 5},
+		{rune(' '), 6},
+		{rune('w'), 7},
+		{rune('o'), 8},
+		{rune('r'), 9},
+		{rune('l'), 10},
+		{rune('d'), 11},
+		{rune('!'), 12},
+		{rune(' '), 13},
+		{rune('\n'), 0}, // init col
+		{rune(' '), 1},
+		{rune('h'), 2},
+		{rune('e'), 3},
+		{rune('l'), 4},
+		{rune('l'), 5},
+		{rune('o'), 6},
+		{rune(' '), 7},
+		{rune('w'), 8},
+		{rune('o'), 9},
+		{rune('r'), 10},
+		{rune('l'), 11},
+		{rune('d'), 12},
+		{rune('2'), 13},
+		{rune(-1), 13}, //column don't increase
 	}
 
 	s := state{
@@ -94,6 +95,10 @@ func TestState_next(t *testing.T) {
 		if ch != test.expectedCh {
 			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
 				i, test.expectedCh, ch)
+		}
+		if s.column != test.col {
+			t.Errorf("tests[%d] - column wrong. expected=%d, got=%d",
+				i, test.col, s.column)
 		}
 	}
 
@@ -108,14 +113,15 @@ func TestState_backup(t *testing.T) {
 
 	tests := []struct {
 		expectedPeekCh rune
+		col            Pos
 	}{
-		{rune('h')},
-		{rune('e')},
-		{rune('l')},
-		{rune('l')},
-		{rune('o')},
-		{rune('\n')},
-		{rune(-1)},
+		{rune('h'), 1},
+		{rune('e'), 2},
+		{rune('l'), 3},
+		{rune('l'), 4},
+		{rune('o'), 5},
+		{rune('\n'), 0},
+		{rune(-1), 0},
 	}
 
 	s := state{
@@ -130,6 +136,10 @@ func TestState_backup(t *testing.T) {
 		if ch != test.expectedPeekCh {
 			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
 				i, test.expectedPeekCh, ch)
+		}
+		if s.column != test.col {
+			t.Errorf("tests[%d] - column wrong. expected=%d, got=%d",
+				i, test.col, s.column)
 		}
 
 		if ch == rune('\n') {

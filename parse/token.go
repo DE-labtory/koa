@@ -166,6 +166,7 @@ var keywords = map[string]TokenType{
 	"else":     Else,
 	"int":      IntType,
 	"string":   StringType,
+	"bool":     BoolType,
 	"return":   Return,
 	"true":     True,
 	"false":    False,

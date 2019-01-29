@@ -166,6 +166,8 @@ type state struct {
 	line       int
 	width      Pos
 	insertSemi bool //if true, insert semicolon
+	column     Pos
+	columnBuf  Pos // save column when '\n' comes
 }
 
 // Pos represents a byte position in the original input text from which
@@ -174,7 +176,7 @@ type Pos int
 
 // Cut return a token and set start position to pos
 func (s *state) cut(t TokenType) Token {
-	token := Token{t, s.input[s.start:s.end], s.end, s.line}
+	token := Token{t, s.input[s.start:s.end], s.column, s.line}
 	s.start = s.end
 
 	return token
@@ -190,9 +192,12 @@ func (s *state) next() rune {
 	r, w := utf8.DecodeRuneInString(s.input[s.end:])
 	s.width = Pos(w)
 	s.end += s.width
+	s.column += s.width
 
 	if r == '\n' {
 		s.line++
+		s.columnBuf = s.column
+		s.column = 0
 	}
 	return r
 }
@@ -208,9 +213,11 @@ func (s *state) peek() rune {
 // Backup steps back one rune. Can only be called once per call of next.
 func (s *state) backup() {
 	s.end -= s.width
+	s.column -= s.width
 	// Correct newline count.
 	if s.width == 1 && s.input[s.end] == '\n' {
 		s.line--
+		s.column = s.columnBuf
 	}
 }
 
