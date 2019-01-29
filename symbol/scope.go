@@ -16,6 +16,11 @@
 
 package symbol
 
+import (
+	"bytes"
+	"fmt"
+)
+
 // NewScope() makes a new scope.
 func NewScope() *Scope {
 	s := make(map[string]Symbol)
@@ -52,7 +57,16 @@ func (s *Scope) Set(name string, val Symbol) Symbol {
 	return val
 }
 
-// TODO implement me w/ test cases for debugging.
 func (s *Scope) String() string {
-	return ""
+	var out bytes.Buffer
+	scope := s
+	div := ""
+	for scope != nil {
+		out.WriteString(div)
+		out.WriteString("[ Scope ] ")
+		out.WriteString(fmt.Sprintln(scope.store))
+		div += "  "
+		scope = scope.outer
+	}
+	return out.String()
 }

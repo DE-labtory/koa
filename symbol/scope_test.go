@@ -154,7 +154,34 @@ func TestScopeSetter(t *testing.T) {
 
 }
 
-// TODO implement me w/ test cases :-)
 func TestScopeString(t *testing.T) {
+	tests := []struct {
+		scope    Scope
+		expected string
+	}{
+		{
+			Scope{
+				map[string]Symbol{
+					"a": &Integer{0},
+					"b": &Integer{1},
+				},
+				&Scope{
+					map[string]Symbol{
+						"c": &String{"abc"},
+					},
+					nil,
+				},
+			},
+			"[ Scope ] map[a:0 b:1]\n  [ Scope ] map[c:abc]\n",
+		},
+	}
 
+	for i, test := range tests {
+		str := test.scope.String()
+		if str != test.expected {
+			t.Fatalf("test[%d] - TestScopeString() wrong result.\n"+
+				"expected :\n%s\n"+
+				"got :\n%s\n", i, test.expected, str)
+		}
+	}
 }
