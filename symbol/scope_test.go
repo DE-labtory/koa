@@ -17,8 +17,10 @@
 package symbol
 
 import (
-	"github.com/DE-labtory/koa/ast"
+	"errors"
 	"testing"
+
+	"github.com/DE-labtory/koa/ast"
 )
 
 func TestNewEnclosedScope(t *testing.T) {
@@ -47,10 +49,10 @@ func TestNewScope(t *testing.T) {
 
 func TestScopeGetter(t *testing.T) {
 	tests := []struct {
-		scope        Scope
-		want         string
-		expectedSym  Symbol
-		expectedBool bool
+		scope       Scope
+		want        string
+		expectedSym Symbol
+		expectedErr error
 	}{
 		{
 			Scope{
@@ -62,7 +64,7 @@ func TestScopeGetter(t *testing.T) {
 			},
 			"a",
 			&Integer{&ast.Identifier{Value: "a"}},
-			true,
+			nil,
 		},
 		{
 			Scope{
@@ -72,14 +74,14 @@ func TestScopeGetter(t *testing.T) {
 				},
 				&Scope{
 					map[string]Symbol{
-						"c": &String{&ast.Identifier{Value: "abc"}},
+						"c": &String{&ast.Identifier{Value: "c"}},
 					},
 					nil,
 				},
 			},
 			"c",
-			&String{&ast.Identifier{Value: "abc"}},
-			true,
+			&String{&ast.Identifier{Value: "c"}},
+			nil,
 		},
 		{
 			Scope{
@@ -91,21 +93,21 @@ func TestScopeGetter(t *testing.T) {
 			},
 			"c",
 			nil,
-			false,
+			errors.New("c is not defined"),
 		},
 	}
 
 	for i, test := range tests {
-		sym, ok := test.scope.Get(test.want)
+		sym, err := test.scope.Get(test.want)
 		if sym != nil && test.expectedSym.String() != sym.String() {
 			t.Fatalf("test[%d] testScopeGetter() returns invalid symbol.\n"+
 				"expected=%s\n"+
 				"got=%s", i, test.expectedSym.String(), sym.String())
 		}
-		if ok != test.expectedBool {
-			t.Fatalf("test[%d] testScopeGetter() returns invalid ok.\n"+
-				"expected=%v\n"+
-				"got=%v", i, test.expectedBool, ok)
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] testScopeGetter() returns invalid error.\n"+
+				"expected=%s\n"+
+				"got=%s", i, test.expectedErr.Error(), err.Error())
 		}
 	}
 }
@@ -150,7 +152,7 @@ func TestScopeSetter(t *testing.T) {
 				"got=%s", i, test.Symbol.String(), symbol.String())
 		}
 
-		if _, ok := test.Scope.Get(test.Name); !ok {
+		if _, err := test.Scope.Get(test.Name); err != nil {
 			t.Fatalf("test[%d] - TestScopeSetter() must set in scope store", i)
 		}
 	}

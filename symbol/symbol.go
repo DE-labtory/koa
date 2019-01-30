@@ -18,6 +18,7 @@ package symbol
 
 import (
 	"fmt"
+
 	"github.com/DE-labtory/koa/ast"
 )
 
