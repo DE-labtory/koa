@@ -17,8 +17,9 @@
 package symbol
 
 import (
-	"github.com/DE-labtory/koa/ast"
 	"testing"
+
+	"github.com/DE-labtory/koa/ast"
 )
 
 func TestInteger(t *testing.T) {
