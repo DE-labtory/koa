@@ -16,7 +16,10 @@
 
 package symbol
 
-import "testing"
+import (
+	"github.com/DE-labtory/koa/ast"
+	"testing"
+)
 
 func TestNewEnclosedScope(t *testing.T) {
 	outer := NewScope()
@@ -52,37 +55,37 @@ func TestScopeGetter(t *testing.T) {
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{0},
-					"b": &Integer{1},
+					"a": &Integer{&ast.Identifier{Value: "a"}},
+					"b": &Integer{&ast.Identifier{Value: "b"}},
 				},
 				nil,
 			},
 			"a",
-			&Integer{0},
+			&Integer{&ast.Identifier{Value: "a"}},
 			true,
 		},
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{0},
-					"b": &Integer{1},
+					"a": &Integer{&ast.Identifier{Value: "a"}},
+					"b": &Integer{&ast.Identifier{Value: "b"}},
 				},
 				&Scope{
 					map[string]Symbol{
-						"c": &String{"abc"},
+						"c": &String{&ast.Identifier{Value: "abc"}},
 					},
 					nil,
 				},
 			},
 			"c",
-			&String{"abc"},
+			&String{&ast.Identifier{Value: "abc"}},
 			true,
 		},
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{0},
-					"b": &Integer{1},
+					"a": &Integer{&ast.Identifier{Value: "a"}},
+					"b": &Integer{&ast.Identifier{Value: "b"}},
 				},
 				nil,
 			},
@@ -119,7 +122,7 @@ func TestScopeSetter(t *testing.T) {
 				&Scope{},
 			},
 			"testInt",
-			&Integer{1},
+			&Integer{&ast.Identifier{Value: "testInt"}},
 		},
 		{
 			&Scope{
@@ -127,7 +130,7 @@ func TestScopeSetter(t *testing.T) {
 				&Scope{},
 			},
 			"testBool",
-			&Boolean{true},
+			&Boolean{&ast.Identifier{Value: "testBool"}},
 		},
 		{
 			&Scope{
@@ -135,7 +138,7 @@ func TestScopeSetter(t *testing.T) {
 				&Scope{},
 			},
 			"testString",
-			&String{"abcd"},
+			&String{&ast.Identifier{Value: "testString"}},
 		},
 	}
 
@@ -162,17 +165,27 @@ func TestScopeString(t *testing.T) {
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{0},
-					"b": &Integer{1},
+					"a": &Integer{&ast.Identifier{Value: "a"}},
+					"b": &Integer{&ast.Identifier{Value: "b"}},
+				},
+				nil,
+			},
+			"[ Scope ] map[a:a b:b]\n",
+		},
+		{
+			Scope{
+				map[string]Symbol{
+					"a": &Integer{&ast.Identifier{Value: "a"}},
+					"b": &Integer{&ast.Identifier{Value: "b"}},
 				},
 				&Scope{
 					map[string]Symbol{
-						"c": &String{"abc"},
+						"c": &String{&ast.Identifier{Value: "c"}},
 					},
 					nil,
 				},
 			},
-			"[ Scope ] map[a:0 b:1]\n  [ Scope ] map[c:abc]\n",
+			"[ Scope ] map[a:a b:b]\n  [ Scope ] map[c:c]\n",
 		},
 	}
 

@@ -17,6 +17,7 @@
 package symbol
 
 import (
+	"github.com/DE-labtory/koa/ast"
 	"testing"
 )
 
@@ -26,9 +27,9 @@ func TestInteger(t *testing.T) {
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
-		{&Integer{10}, "10", IntegerSymbol},
-		{&Integer{20}, "20", IntegerSymbol},
-		{&Integer{30}, "30", IntegerSymbol},
+		{&Integer{&ast.Identifier{Value: "testName"}}, "testName", IntegerSymbol},
+		{&Integer{&ast.Identifier{Value: "a"}}, "a", IntegerSymbol},
+		{&Integer{&ast.Identifier{Value: "b"}}, "b", IntegerSymbol},
 	}
 
 	for i, test := range tests {
@@ -55,9 +56,9 @@ func TestString(t *testing.T) {
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
-		{&String{"abcd"}, "abcd", StringSymbol},
-		{&String{"Hi"}, "Hi", StringSymbol},
-		{&String{"@Aa1231"}, "@Aa1231", StringSymbol},
+		{&String{&ast.Identifier{Value: "testName"}}, "testName", StringSymbol},
+		{&String{&ast.Identifier{Value: "a"}}, "a", StringSymbol},
+		{&String{&ast.Identifier{Value: "b"}}, "b", StringSymbol},
 	}
 
 	for i, test := range tests {
@@ -84,8 +85,8 @@ func TestBoolean(t *testing.T) {
 		expectedStr string
 		expectedObj SymbolType
 	}{
-		{&Boolean{true}, "true", BooleanSymbol},
-		{&Boolean{false}, "false", BooleanSymbol},
+		{&Boolean{&ast.Identifier{Value: "testName"}}, "testName", BooleanSymbol},
+		{&Boolean{&ast.Identifier{Value: "a"}}, "a", BooleanSymbol},
 	}
 
 	for i, test := range tests {

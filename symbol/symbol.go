@@ -18,6 +18,7 @@ package symbol
 
 import (
 	"fmt"
+	"github.com/DE-labtory/koa/ast"
 )
 
 type SymbolType string
@@ -36,20 +37,21 @@ type Symbol interface {
 
 // Represent Integer symbol
 type Integer struct {
-	Value int64
+	Name *ast.Identifier
 }
 
 func (i *Integer) Type() SymbolType {
 	return IntegerSymbol
 }
 
+// String() returns symbol's name
 func (i *Integer) String() string {
-	return fmt.Sprintf("%d", i.Value)
+	return fmt.Sprintf("%s", i.Name.String())
 }
 
 // Represent Boolean Object
 type Boolean struct {
-	Value bool
+	Name *ast.Identifier
 }
 
 func (b *Boolean) Type() SymbolType {
@@ -57,12 +59,12 @@ func (b *Boolean) Type() SymbolType {
 }
 
 func (b *Boolean) String() string {
-	return fmt.Sprintf("%t", b.Value)
+	return fmt.Sprintf("%s", b.Name.String())
 }
 
 // Represent String Object
 type String struct {
-	Value string
+	Name *ast.Identifier
 }
 
 func (s *String) Type() SymbolType {
@@ -70,7 +72,7 @@ func (s *String) Type() SymbolType {
 }
 
 func (s *String) String() string {
-	return fmt.Sprintf("%s", s.Value)
+	return fmt.Sprintf("%s", s.Name.String())
 }
 
 // Represent Function symbol
