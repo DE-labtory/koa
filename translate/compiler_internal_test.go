@@ -24,6 +24,11 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
+type expressionCompileTestCase struct {
+	expression ast.Expression
+	expected   Bytecode
+}
+
 // TODO: implement test cases :-)
 func TestGenerateFuncJumper(t *testing.T) {
 
@@ -95,10 +100,7 @@ func TestCompilePrefixExpression(t *testing.T) {
 }
 
 func TestCompileIntegerLiteral(t *testing.T) {
-	tests := []struct {
-		expression *ast.IntegerLiteral
-		expected   Bytecode
-	}{
+	tests := []expressionCompileTestCase{
 		{
 			expression: &ast.IntegerLiteral{
 				Value: 10,
@@ -119,29 +121,7 @@ func TestCompileIntegerLiteral(t *testing.T) {
 		},
 	}
 
-	for i, test := range tests {
-		bytecode := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
-		}
-		err := compileIntegerLiteral(test.expression, bytecode)
-
-		if err != nil {
-			t.Fatalf("test[%d] - compileIntegerLiteral() had error. err=%v", i, err)
-		}
-
-		expectedRawByte := test.expected.RawByte
-		resultRawByte := bytecode.RawByte
-		if !bytes.Equal(expectedRawByte, resultRawByte) {
-			t.Fatalf("test[%d] - compileIntegerLiteral() result wrong. expected %x, got=%x", i, expectedRawByte, resultRawByte)
-		}
-
-		expectedAsmCode := test.expected.AsmCode
-		resultAsmCode := bytecode.AsmCode
-		if !reflect.DeepEqual(expectedAsmCode, resultAsmCode) {
-			t.Fatalf("test[%d] - compileIntegerLiteral() result wrong. expected %v, got=%v", i, expectedAsmCode, resultAsmCode)
-		}
-	}
+	runExpressionCompileTests(t, tests)
 }
 
 // TODO: implement test cases :-)
@@ -151,10 +131,7 @@ func TestCompileStringLiteral(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompileBooleanLiteral(t *testing.T) {
-	tests := []struct {
-		expression *ast.BooleanLiteral
-		expected   Bytecode
-	}{
+	tests := []expressionCompileTestCase{
 		{
 			expression: &ast.BooleanLiteral{
 				Value: false,
@@ -175,29 +152,7 @@ func TestCompileBooleanLiteral(t *testing.T) {
 		},
 	}
 
-	for i, test := range tests {
-		bytecode := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
-		}
-		err := compileBooleanLiteral(test.expression, bytecode)
-
-		if err != nil {
-			t.Fatalf("test[%d] - compileBooleanLiteral() had error. err=%v", i, err)
-		}
-
-		expectedRawByte := test.expected.RawByte
-		resultRawByte := bytecode.RawByte
-		if !bytes.Equal(expectedRawByte, resultRawByte) {
-			t.Fatalf("test[%d] - compileBooleanLiteral() result wrong. expected %x, got=%x", i, expectedRawByte, resultRawByte)
-		}
-
-		expectedAsmCode := test.expected.AsmCode
-		resultAsmCode := bytecode.AsmCode
-		if !reflect.DeepEqual(expectedAsmCode, resultAsmCode) {
-			t.Fatalf("test[%d] - compileBooleanLiteral() result wrong. expected %v, got=%v", i, expectedAsmCode, resultAsmCode)
-		}
-	}
+	runExpressionCompileTests(t, tests)
 }
 
 // TODO: implement test cases :-)
@@ -208,4 +163,48 @@ func TestCompileIdentifier(t *testing.T) {
 // TODO: implement test cases :-)
 func TestCompileParameterLiteral(t *testing.T) {
 
+}
+
+func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) {
+	for i, test := range tests {
+		bytecode := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+		}
+
+		var err error
+		var testFuncName string
+
+		// add your test expression here with its function name
+		switch expr := test.expression.(type) {
+		case *ast.BooleanLiteral:
+			testFuncName = "compileBooleanLiteral()"
+			err = compileBooleanLiteral(expr, bytecode)
+		case *ast.IntegerLiteral:
+			testFuncName = "compileIntegerLiteral()"
+			err = compileIntegerLiteral(expr, bytecode)
+		default:
+			t.Fatalf("%T type not support, abort.", expr)
+			t.FailNow()
+		}
+
+		if err != nil {
+			t.Fatalf("test[%d] - %s had error. err=%v",
+				i, testFuncName, err)
+		}
+
+		expectedRawByte := test.expected.RawByte
+		resultRawByte := bytecode.RawByte
+		if !bytes.Equal(expectedRawByte, resultRawByte) {
+			t.Fatalf("test[%d] - %s result wrong. expected %x, got=%x",
+				i, testFuncName, expectedRawByte, resultRawByte)
+		}
+
+		expectedAsmCode := test.expected.AsmCode
+		resultAsmCode := bytecode.AsmCode
+		if !reflect.DeepEqual(expectedAsmCode, resultAsmCode) {
+			t.Fatalf("test[%d] - %s result wrong. expected %v, got=%v",
+				i, testFuncName, expectedAsmCode, resultAsmCode)
+		}
+	}
 }
