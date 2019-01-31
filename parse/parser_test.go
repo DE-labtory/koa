@@ -42,12 +42,6 @@ type parserTestCase struct {
 	}
 }
 
-/*
-TODO:
- 	1. test bool as function return type
-	2. test bool as function parameter
-	3. test bool as variable type
-*/
 func TestParse(t *testing.T) {
 	input := `
 	contract {
@@ -91,8 +85,8 @@ func TestParse(t *testing.T) {
 				"hello"
 			string tabbed_string = "hello, \t world"
 
-			//bool a = true
-			//bool b= false
+			bool a = true
+			bool b= false
 		}
 		
 		// testIfElse is for testing if-else statements and should only contain
@@ -118,7 +112,7 @@ func TestParse(t *testing.T) {
 		
 		// testExpressionStatement is for testing expression statement and should
 		// only contain expression statement
-		func testExpressionStatement() {
+		func testExpressionStatement(foo bool) bool {
 			add(1, 2)
 			add(add(1, 2), 3)
 			add(add(1,
@@ -163,8 +157,8 @@ func TestParse(t *testing.T) {
 			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
 			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
 			{ast.StringType, "[IDENT, tabbed_string]", "\"\"hello, \\t world\"\""},
-			//{ast.BoolType, "[IDENT, a]", "true"},
-			//{ast.BoolType, "[IDENT, b]", "false"},
+			{ast.BoolType, "[IDENT, a]", "true"},
+			{ast.BoolType, "[IDENT, b]", "false"},
 		},
 		conditionTestCase: []struct {
 			condition   string
@@ -320,15 +314,17 @@ func testExpressionStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parse
 	t.Log("test expression-statement statement")
 
 	// test testExpressionStatement() function body, parameters, return type
-	if fn.ReturnType != ast.VoidType {
+	if fn.ReturnType != ast.BoolType {
 		t.Errorf("testExpressionS	tatement() has wrong return type expected=%v, got=%v",
-			ast.VoidType.String(), fn.ReturnType.String())
+			ast.BoolType.String(), fn.ReturnType.String())
 	}
 
-	if len(fn.Parameters) != 0 {
+	if len(fn.Parameters) != 1 {
 		t.Errorf("testExpressionStatement() has wrong parameters length got=%v",
 			len(fn.Parameters))
 	}
+
+	testFnParameters(t, fn.Parameters[0], ast.BoolType, "foo")
 
 	// test testExpressionStatement()'s return statements
 	for i, stmt := range fn.Body.Statements {
