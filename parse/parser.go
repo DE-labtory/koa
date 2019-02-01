@@ -156,6 +156,12 @@ func nextPrecedence(buf TokenBuffer) precedence {
 	return LOWEST
 }
 
+func consumeSemi(buf TokenBuffer) {
+	for curTokenIs(buf, Semicolon) {
+		buf.Read()
+	}
+}
+
 // ParseError contains error which happened during
 // parsing tokens
 type parseError struct {
@@ -386,32 +392,33 @@ func parseInfixExpression(buf TokenBuffer, left ast.Expression) (ast.Expression,
 // Prefix parsing is based on a precedence of given token which is defined
 // in precedenceMap.
 func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
-	var err error
-	tok := buf.Read()
-	op := operatorMap[tok.Type]
+	token := buf.Read()
+	op := operatorMap[token.Type]
+
 	right, err := parseExpression(buf, PREFIX)
 	if err != nil {
 		return nil, err
 	}
+
 	switch op {
 	case ast.Bang:
 		switch right.(type) {
 		case *ast.StringLiteral:
 			return nil, parseError{
-				tok.Type,
+				token.Type,
 				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
-				tok.Line,
-				tok.Column,
+				token.Line,
+				token.Column,
 			}
 		}
 	case ast.Minus:
 		switch right.(type) {
 		case *ast.BooleanLiteral:
 			return nil, parseError{
-				tok.Type,
+				token.Type,
 				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
-				tok.Line,
-				tok.Column,
+				token.Line,
+				token.Column,
 			}
 		}
 	}
@@ -506,22 +513,11 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 
-	if err := expectNext(buf, Lbrace); err != nil {
-		return nil, err
-	}
-
 	if lit.Body, err = parseBlockStatement(buf); err != nil {
 		return nil, err
 	}
 
-	// After exit from parseBlockStatement, consume right-brace
-	if err = expectNext(buf, Rbrace); err != nil {
-		return nil, err
-	}
-
-	if err = expectNext(buf, Semicolon); err != nil {
-		return nil, err
-	}
+	consumeSemi(buf)
 
 	return lit, nil
 }
@@ -597,13 +593,14 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	}
 
 	stmt := &ast.ReturnStatement{}
-	for !curTokenIs(buf, Semicolon) {
-		exp, err := parseExpression(buf, LOWEST)
-		if err != nil {
-			return nil, err
-		}
-		stmt.ReturnValue = exp
+
+	exp, err := parseExpression(buf, LOWEST)
+	if err != nil {
+		return nil, err
 	}
+	stmt.ReturnValue = exp
+
+	consumeSemi(buf)
 
 	return stmt, nil
 }
@@ -643,9 +640,8 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 		Value: token.String(),
 	}
 
-	if assign := buf.Read(); assign.Type != Assign {
-		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
-			TokenTypeMap[Assign], TokenTypeMap[assign.Type]), assign)
+	if err := expectNext(buf, Assign); err != nil {
+		return nil, err
 	}
 
 	exp, err := parseExpression(buf, LOWEST)
@@ -654,6 +650,8 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	}
 
 	stmt.Value = exp
+
+	consumeSemi(buf)
 
 	return stmt, nil
 }
@@ -667,6 +665,8 @@ func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, er
 	if err != nil {
 		return nil, err
 	}
+
+	consumeSemi(buf)
 
 	return exp, nil
 }
@@ -697,9 +697,7 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 		args = append(args, exp)
 	}
 
-	if curTokenIs(buf, Semicolon) {
-		buf.Read()
-	}
+	consumeSemi(buf)
 
 	if err := expectNext(buf, Rparen); err != nil {
 		return nil, err
@@ -710,17 +708,12 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 
 // parseIfStatement parse if-else statement. Else statement is optional
 func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
-	token := buf.Read()
-	if token.Type != If {
-		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
-			TokenTypeMap[If], TokenTypeMap[token.Type]), token)
-
+	if err := expectNext(buf, If); err != nil {
+		return nil, err
 	}
 
-	token = buf.Read()
-	if token.Type != Lparen {
-		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
-			TokenTypeMap[If], TokenTypeMap[token.Type]), token)
+	if err := expectNext(buf, Lparen); err != nil {
+		return nil, err
 	}
 
 	expression := &ast.IfStatement{}
@@ -730,16 +723,8 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 		return nil, err
 	}
 
-	token = buf.Read()
-	if token.Type != Rparen {
-		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
-			TokenTypeMap[Rparen], TokenTypeMap[token.Type]), token)
-	}
-
-	token = buf.Read()
-	if token.Type != Lbrace {
-		return nil, ParseError(fmt.Sprintf("expected [%s], but got [%s]",
-			TokenTypeMap[Lbrace], TokenTypeMap[token.Type]), token)
+	if err := expectNext(buf, Rparen); err != nil {
+		return nil, err
 	}
 
 	expression.Consequence, err = parseBlockStatement(buf)
@@ -747,36 +732,38 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 		return nil, err
 	}
 
-	// After exit from parseBlockStatement, consume right-brace
-	if err = expectNext(buf, Rbrace); err != nil {
-		return nil, err
-	}
-
 	if curTokenIs(buf, Else) {
 		buf.Read()
-		err := expectNext(buf, Lbrace)
-		if err != nil {
-			return nil, err
-		}
 
 		expression.Alternative, err = parseBlockStatement(buf)
 		if err != nil {
 			return nil, err
 		}
-		if err = expectNext(buf, Rbrace); err != nil {
-			return nil, err
-		}
 	}
+
+	consumeSemi(buf)
 
 	return expression, nil
 }
 
-// parseBlockStatement parse block statement. Block statement is
-// statements which located between left-brace and right-brace.
+// parseBlockStatement parse block statement.
+// PROTOCOL:
+//   reading token from TokenBuffer **only and must** be done in
+//   parsing statement/expression function. And in parseBlockStatement,
+//   parser reads from left-brace until meeting right-brace.
+//   and consume right-brace.
+//
+//  parseBlockStatement parse: { ... } <-- left-brace + statements + right-brace
+//
 func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
-	block := &ast.BlockStatement{}
+	if err := expectNext(buf, Lbrace); err != nil {
+		return nil, err
+	}
 
-	for !curTokenIs(buf, Rbrace) && !curTokenIs(buf, Eof) {
+	block := &ast.BlockStatement{}
+	curToken := buf.Peek(CURRENT)
+
+	for curToken.Type != Rbrace && curToken.Type != Eof {
 		stmt, err := parseStatement(buf)
 		if err != nil {
 			return nil, err
@@ -784,8 +771,13 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
 		}
+		curToken = buf.Peek(CURRENT)
+	}
+
+	if curTokenIs(buf, Rbrace) {
 		buf.Read()
 	}
+
 	return block, nil
 }
 
