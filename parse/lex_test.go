@@ -45,6 +45,7 @@ func TestLexer_NextToken(t *testing.T) {
 			string this = "abc"
 			++ -- && || += -= *= /= %= <= >= == != = { } , "string"
 			}
+			return 5
 	}
 	`
 
@@ -120,6 +121,9 @@ func TestLexer_NextToken(t *testing.T) {
 		{parse.Semicolon, "\n"},
 
 		{parse.Rbrace, "}"},
+		{parse.Semicolon, "\n"},
+		{parse.Return, "return"},
+		{parse.Int, "5"},
 		{parse.Semicolon, "\n"},
 		{parse.Rbrace, "}"},
 		{parse.Semicolon, "\n"},

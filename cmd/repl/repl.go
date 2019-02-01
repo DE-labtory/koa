@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package main
+package repl
 
 import (
-	"bufio"
 	"fmt"
 	"io"
+
+	"bufio"
 	"os"
 
 	"github.com/DE-labtory/koa/parse"
@@ -42,15 +43,15 @@ const koa = `
 
 `
 
-func printLogo() {
+func PrintLogo() {
 	color.Yellow(koa)
 	bold := color.New(color.Bold)
 	fmt.Printf("The project is inspired by the simplicity and the ivy-bitcoin. The koa project is to create \na high-level language that has more expressions than the bitcoin script and is simpler and easy to analyze than soldity(ethereum).\n\n")
 	bold.Print("Use exit() or Ctrl-c to exit \n")
 }
 
-func main() {
-	printLogo()
+func Run() {
+	PrintLogo()
 	run(os.Stdin, os.Stdout)
 }
 
@@ -70,14 +71,13 @@ func run(in io.Reader, out io.Writer) {
 			return
 		}
 
-		l := parse.NewLexer(line)
-		printTokens(l)
-	}
-}
-
-func printTokens(l *parse.Lexer) {
-	for token := l.NextToken(); token.Type != parse.Eof; {
-		fmt.Println(token)
-		token = l.NextToken()
+		l := parse.NewLexer(`contract { func hello() string { return "hello" }}`)
+		buf := parse.NewTokenBuffer(l)
+		contract, err := parse.Parse(buf)
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+		fmt.Println(contract)
 	}
 }
