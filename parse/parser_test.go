@@ -40,6 +40,22 @@ type parserTestCase struct {
 	expressionStmtTestCase []struct {
 		expression string
 	}
+	inlineReturnStmtTestCase struct {
+		returnValue string
+	}
+	inlineAssignStmtTestCase struct {
+		ds    ast.DataStructure
+		ident string
+		value string
+	}
+	inlineConditionTestCase struct {
+		condition   string
+		consequence []string
+		alternative []string
+	}
+	inlineExpressionStmtTestCase struct {
+		expression string
+	}
 }
 
 func TestParse(t *testing.T) {
@@ -65,7 +81,7 @@ func TestParse(t *testing.T) {
 		}
 		
 		/* testIntType  
-		 is for testing int assign statements */
+		is for testing int assign statements */
 		func testAssignStatement(foo int) string {
 			int a = 1
 			int a = 1 + 2
@@ -100,7 +116,7 @@ func TestParse(t *testing.T) {
 			}
 		
 			if (foo) {} else {}
-		
+			
 			if (foo) {
 				int a = 1
 				string a = "hello"
@@ -126,8 +142,27 @@ func TestParse(t *testing.T) {
 				),
 				3
 			)
-		
 		}
+		
+		// testInlineReturnStatement is for testing inline-function, in the case when
+		// return statement does not change the line, then do not insert semicolon
+		// related with issue #228
+		func testInlineReturnStatement() string { return "hello" }
+
+		// testInlineAssignStatement is for testing inline-function, in the case when
+		// assign statement does not change the line, then do not insert semicolon
+		// related with issue #228
+		func testInlineAssignStatement() { int a = 1 }
+
+		// testInlineConditionStatement is for testing inline-function, in the case when
+		// condition statement does not change the line, then do not insert semicolon
+		// related with issue #228
+		func testInlineConditionStatement() { if(true) {} else {} }
+
+		// testInlineExpressionStatement is for testing inline-function, in the case when
+		// expression statement does not change the line, then do not insert semicolon
+		// related with issue #228
+		func testInlineExpressionStatement() { add(1, 2) }
 	}	
 `
 	tcs := parserTestCase{
@@ -199,6 +234,26 @@ func TestParse(t *testing.T) {
 			{"function add( function add( 1, 2 ), 3 )"},
 			{"function add( function add( 1, 2 ), 3 )"},
 		},
+		inlineReturnStmtTestCase: struct {
+			returnValue string
+		}{"\"\"hello\"\""},
+		inlineAssignStmtTestCase: struct {
+			ds    ast.DataStructure
+			ident string
+			value string
+		}{ast.IntType, "[IDENT, a]", "1"},
+		inlineConditionTestCase: struct {
+			condition   string
+			consequence []string
+			alternative []string
+		}{
+			condition:   "true",
+			consequence: []string{},
+			alternative: []string{},
+		},
+		inlineExpressionStmtTestCase: struct {
+			expression string
+		}{"function add( 1, 2 )"},
 	}
 
 	l := parse.NewLexer(input)
@@ -225,6 +280,14 @@ func testFunctionLiteral(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCas
 		testIfElseStatementFunc(t, fn, tt)
 	case "testExpressionStatement":
 		testExpressionStatementFunc(t, fn, tt)
+	case "testInlineReturnStatement":
+		testInlineReturnStatementFunc(t, fn, tt)
+	case "testInlineAssignStatement":
+		testInlineAssignStatementFunc(t, fn, tt)
+	case "testInlineConditionStatement":
+		testInlineConditionStatement(t, fn, tt)
+	case "testInlineExpressionStatement":
+		testInlineExpressionStatement(t, fn, tt)
 	}
 }
 
@@ -336,6 +399,113 @@ func testExpressionStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parse
 		tc := tt.expressionStmtTestCase[i]
 		testExpression(t, expStmt.Expr, tc.expression)
 	}
+}
+
+func testInlineReturnStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test inline-function with return statement")
+
+	if fn.ReturnType != ast.StringType {
+		t.Errorf("testInlineReturnStatement() has wrong return type expected=%v, got=%v",
+			ast.StringType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 0 {
+		t.Errorf("testInlineReturnStatement() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	if len(fn.Body.Statements) != 1 {
+		t.Errorf("testInlineReturnStatement() has wrong body statements length got=%v",
+			len(fn.Parameters))
+	}
+
+	returnStmt, ok := fn.Body.Statements[0].(*ast.ReturnStatement)
+	if !ok {
+		t.Errorf("function body stmt is not *ast.ReturnStatement. got=%T", fn.Body.Statements[0])
+	}
+
+	testExpression(t, returnStmt.ReturnValue, tt.inlineReturnStmtTestCase.returnValue)
+}
+
+func testInlineAssignStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test inline-function with assign statement")
+
+	if fn.ReturnType != ast.VoidType {
+		t.Errorf("testInlineAssignStatement() has wrong return type expected=%v, got=%v",
+			ast.StringType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 0 {
+		t.Errorf("testInlineAssignStatement() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	if len(fn.Body.Statements) != 1 {
+		t.Errorf("testInlineAssignStatement() has wrong body statements length got=%v",
+			len(fn.Parameters))
+	}
+
+	stmt, ok := fn.Body.Statements[0].(*ast.AssignStatement)
+	if !ok {
+		t.Errorf("function body stmt is not *ast.AssignStatement. got=%T", fn.Body.Statements[0])
+	}
+
+	tc := tt.inlineAssignStmtTestCase
+	testAssignStatement(t, stmt, tc.ds, tc.ident, tc.value)
+}
+
+func testInlineConditionStatement(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test inline-function with condition statement")
+
+	if fn.ReturnType != ast.VoidType {
+		t.Errorf("testInlineConditionStatement() has wrong return type expected=%v, got=%v",
+			ast.StringType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 0 {
+		t.Errorf("testInlineConditionStatement() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	if len(fn.Body.Statements) != 1 {
+		t.Errorf("testInlineConditionStatement() has wrong body statements length got=%v",
+			len(fn.Parameters))
+	}
+
+	stmt, ok := fn.Body.Statements[0].(*ast.IfStatement)
+	if !ok {
+		t.Errorf("function body stmt is not *ast.IfStatement. got=%T", fn.Body.Statements[0])
+	}
+
+	tc := tt.inlineConditionTestCase
+	testIfStatement(t, stmt, tc.condition, tc.consequence, tc.alternative)
+}
+
+func testInlineExpressionStatement(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
+	t.Log("test inline-function with expression statement")
+
+	if fn.ReturnType != ast.VoidType {
+		t.Errorf("testInlineExpressionStatement() has wrong return type expected=%v, got=%v",
+			ast.StringType.String(), fn.ReturnType.String())
+	}
+
+	if len(fn.Parameters) != 0 {
+		t.Errorf("testInlineExpressionStatement() has wrong parameters length got=%v",
+			len(fn.Parameters))
+	}
+
+	if len(fn.Body.Statements) != 1 {
+		t.Errorf("testInlineExpressionStatement() has wrong body statements length got=%v",
+			len(fn.Parameters))
+	}
+
+	stmt, ok := fn.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", stmt)
+	}
+
+	tc := tt.inlineExpressionStmtTestCase
+	testExpression(t, stmt.Expr, tc.expression)
 }
 
 func testExpression(t *testing.T, exp ast.Expression, expected string) {
