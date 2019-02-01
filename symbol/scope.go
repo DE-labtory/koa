@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sort"
 )
 
 // NewScope() makes a new scope.
@@ -65,12 +66,21 @@ func (s *Scope) Set(name string, val Symbol) Symbol {
 func (s *Scope) String() string {
 	var out bytes.Buffer
 	scope := s
-	div := ""
+
 	for scope != nil {
-		out.WriteString(div)
-		out.WriteString("[ Scope ] ")
-		out.WriteString(fmt.Sprintln(scope.store))
-		div += "  "
+		// sort scope.store's keys alphabetically
+		keys := make([]string, 0)
+		for k := range scope.store {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		out.WriteString("[ Scope ]\n")
+		for _, k := range keys {
+			out.WriteString(fmt.Sprintf("key:%s, symbol:%s\n",
+				k, scope.store[k].String()))
+		}
+
 		scope = scope.outer
 	}
 	return out.String()
