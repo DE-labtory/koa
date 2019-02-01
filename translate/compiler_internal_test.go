@@ -29,6 +29,11 @@ type expressionCompileTestCase struct {
 	expected   Bytecode
 }
 
+type statementCompileTestCase struct {
+	statement ast.Statement
+	expected  Bytecode
+}
+
 // TODO: implement test cases :-)
 func TestGenerateFuncJumper(t *testing.T) {
 
@@ -54,9 +59,50 @@ func TestCompileAssignStatement(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
+// TODO: implement test cases after making other compile functions
 func TestCompileReturnStatement(t *testing.T) {
+	tests := []statementCompileTestCase{
+		{
+			statement: &ast.ReturnStatement{},
+			expected: Bytecode{
+				RawByte: []byte{0x26},
+				AsmCode: []string{"Returning, "},
+			},
+		},
+		{
+			statement: &ast.ReturnStatement{
+				ReturnValue: &ast.IntegerLiteral{Value: 10},
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x26},
+				AsmCode: []string{"Returning, 10"},
+			},
+		},
+		{
+			statement: &ast.ReturnStatement{
+				ReturnValue: &ast.BooleanLiteral{Value: true},
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x26},
+				AsmCode: []string{"Returning, 1"},
+			},
+		},
+	}
 
+	for i, test := range tests {
+		b := &Bytecode{}
+		err := compileReturnStatement(test.statement.(*ast.ReturnStatement), b)
+
+		if b.String() != test.expected.String() {
+			t.Fatalf("test[%d] - TestCompileReturnStatement failed.\n"+
+				"expected=%s\n"+
+				"got=%s\n", i, test.expected.String(), b.String())
+		}
+
+		if err != nil {
+			t.Fatalf("test[%d] - TestCompileReturnStatement has error.", i)
+		}
+	}
 }
 
 // TODO: implement test cases :-)

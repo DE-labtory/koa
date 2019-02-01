@@ -129,8 +129,15 @@ func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 func compileReturnStatement(s *ast.ReturnStatement, bytecode *Bytecode) error {
+	if s.ReturnValue != nil {
+		err := compileExpression(s.ReturnValue, bytecode)
+		if err != nil {
+			return err
+		}
+	}
+
+	bytecode.Emerge(opcode.Returning, nil)
 	return nil
 }
 

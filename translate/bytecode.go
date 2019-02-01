@@ -18,6 +18,7 @@ package translate
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/DE-labtory/koa/opcode"
 )
@@ -52,4 +53,8 @@ func (b *Bytecode) Emerge(operator opcode.Type, operands ...[]byte) int {
 
 	// Returns next bytecode position
 	return len(b.AsmCode)
+}
+
+func (b *Bytecode) String() string {
+	return strings.Join(b.AsmCode, ", ")
 }
