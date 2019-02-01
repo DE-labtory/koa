@@ -172,7 +172,7 @@ func TestScopeString(t *testing.T) {
 				},
 				nil,
 			},
-			"[ Scope ] map[a:a b:b]\n",
+			"[ Scope ]\nkey:a, symbol:a\nkey:b, symbol:b\n",
 		},
 		{
 			Scope{
@@ -187,7 +187,23 @@ func TestScopeString(t *testing.T) {
 					nil,
 				},
 			},
-			"[ Scope ] map[a:a b:b]\n  [ Scope ] map[c:c]\n",
+			"[ Scope ]\nkey:a, symbol:a\nkey:b, symbol:b\n[ Scope ]\nkey:c, symbol:c\n",
+		},
+		{
+			Scope{
+				map[string]Symbol{
+					"c": &Integer{&ast.Identifier{Value: "c"}},
+					"b": &Integer{&ast.Identifier{Value: "b"}},
+					"a": &Integer{&ast.Identifier{Value: "a"}},
+				},
+				&Scope{
+					map[string]Symbol{
+						"d": &String{&ast.Identifier{Value: "d"}},
+					},
+					nil,
+				},
+			},
+			"[ Scope ]\nkey:a, symbol:a\nkey:b, symbol:b\nkey:c, symbol:c\n[ Scope ]\nkey:d, symbol:d\n",
 		},
 	}
 
