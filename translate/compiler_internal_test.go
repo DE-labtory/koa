@@ -104,8 +104,8 @@ func TestCompileIntegerLiteral(t *testing.T) {
 				Value: 10,
 			},
 			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x0a},
-				AsmCode: []string{"Push", "0000000a"},
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+				AsmCode: []string{"Push", "000000000000000a"},
 			},
 		},
 		{
@@ -113,8 +113,8 @@ func TestCompileIntegerLiteral(t *testing.T) {
 				Value: 20,
 			},
 			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x14},
-				AsmCode: []string{"Push", "00000014"},
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14},
+				AsmCode: []string{"Push", "0000000000000014"},
 			},
 		},
 	}
@@ -160,8 +160,8 @@ func TestCompileBooleanLiteral(t *testing.T) {
 				Value: false,
 			},
 			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00},
-				AsmCode: []string{"Push", "00000000"},
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "0000000000000000"},
 			},
 		},
 		{
@@ -169,8 +169,8 @@ func TestCompileBooleanLiteral(t *testing.T) {
 				Value: true,
 			},
 			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x01},
-				AsmCode: []string{"Push", "00000001"},
+				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+				AsmCode: []string{"Push", "0000000000000001"},
 			},
 		},
 	}

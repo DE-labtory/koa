@@ -51,17 +51,17 @@ func EncodeOperand(operand interface{}) ([]byte, error) {
 }
 
 // Encode integer to hexadecimal bytes
-// ex) int 123 => 0x7b
+// ex) int 123 => 0x000000000000007b
 func encodeInt(operand int64) ([]byte, error) {
-	s := convertTo4Bytes(operand)
+	s := convertTo8Bytes(operand)
 
 	b, err := hex.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(b) != 4 {
-		return nil, errors.New("Integer size is not 32 bits")
+	if len(b) != 8 {
+		return nil, errors.New("Integer size is not 64 bits")
 	}
 
 	return b, nil
@@ -84,15 +84,15 @@ func encodeString(operand string) ([]byte, error) {
 }
 
 // Encode boolean to hexadecimal bytes
-// ex) bool true => 0x01
-// ex) bool false => 0x00
+// ex) bool true => 0x0000000000000001
+// ex) bool false => 0x0000000000000000
 func encodeBool(operand bool) ([]byte, error) {
 	var src string
 
 	if operand {
-		src = convertTo4Bytes(1)
+		src = convertTo8Bytes(1)
 	} else {
-		src = convertTo4Bytes(0)
+		src = convertTo8Bytes(0)
 	}
 
 	dst, err := hex.DecodeString(src)
@@ -104,12 +104,12 @@ func encodeBool(operand bool) ([]byte, error) {
 
 }
 
-// convert to 4 byte
-func convertTo4Bytes(operand int64) string {
+// convert to 8 byte
+func convertTo8Bytes(operand int64) string {
 	var zeroSet string
 
 	src := strconv.FormatUint(uint64(operand), 16)
-	diff := 8 - len(src)
+	diff := 16 - len(src)
 
 	for ; diff > 0; diff-- {
 		zeroSet += "0"

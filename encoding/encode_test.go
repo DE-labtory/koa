@@ -23,7 +23,6 @@ import (
 	"github.com/DE-labtory/koa/encoding"
 )
 
-// TODO: implement test cases :-)
 func TestEncodeOperand(t *testing.T) {
 	tests := []struct {
 		operand      interface{}
@@ -32,12 +31,12 @@ func TestEncodeOperand(t *testing.T) {
 	}{
 		{
 			operand:      true,
-			expectedByte: []byte{0x00, 0x00, 0x00, 0x01},
+			expectedByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 			expectedErr:  nil,
 		},
 		{
 			operand:      false,
-			expectedByte: []byte{0x00, 0x00, 0x00, 0x00},
+			expectedByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 			expectedErr:  nil,
 		},
 		{
@@ -62,17 +61,17 @@ func TestEncodeOperand(t *testing.T) {
 		},
 		{
 			operand:      int64(1),
-			expectedByte: []byte{0x00, 0x00, 0x00, 0x01},
+			expectedByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 			expectedErr:  nil,
 		},
 		{
 			operand:      int64(23),
-			expectedByte: []byte{0x00, 0x00, 0x00, 0x17},
+			expectedByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17},
 			expectedErr:  nil,
 		},
 		{
 			operand:      int64(456),
-			expectedByte: []byte{0x00, 0x00, 0x01, 0xc8},
+			expectedByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xc8},
 			expectedErr:  nil,
 		},
 		{
