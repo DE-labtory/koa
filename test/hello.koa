@@ -1,0 +1,5 @@
+contract {
+    func hello() string{
+        return "hello world!"
+    }
+}
