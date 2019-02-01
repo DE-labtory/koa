@@ -28,15 +28,15 @@ func TestEncodeInt(t *testing.T) {
 	}{
 		{
 			operand:  1,
-			expected: []byte{0x00, 0x00, 0x00, 0x01},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 		},
 		{
 			operand:  23,
-			expected: []byte{0x00, 0x00, 0x00, 0x17},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17},
 		},
 		{
 			operand:  456,
-			expected: []byte{0x00, 0x00, 0x01, 0xc8},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xc8},
 		},
 	}
 
@@ -98,11 +98,11 @@ func TestEncodeBool(t *testing.T) {
 	}{
 		{
 			operand:  true,
-			expected: []byte{0x00, 0x00, 0x00, 0x01},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 		},
 		{
 			operand:  false,
-			expected: []byte{0x00, 0x00, 0x00, 0x00},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		},
 	}
 
@@ -118,13 +118,13 @@ func TestEncodeBool(t *testing.T) {
 			t.Fatalf("test[%d] - encodeBool() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
 		}
 
-		if len(bytecode) != 4 {
-			t.Fatalf("test[%d] - encodeBool() result wrong. expected=4, got=%x", i, bytecode)
+		if len(bytecode) != 8 {
+			t.Fatalf("test[%d] - encodeBool() result wrong. expected=8, got=%x", i, bytecode)
 		}
 	}
 }
 
-func Test_convertTo4Bytes(t *testing.T) {
+func Test_convertTo8Bytes(t *testing.T) {
 
 	tests := []struct {
 		operand  int64
@@ -132,28 +132,28 @@ func Test_convertTo4Bytes(t *testing.T) {
 	}{
 		{
 			operand:  0,
-			expected: "00000000",
+			expected: "0000000000000000",
 		},
 		{
 			operand:  1,
-			expected: "00000001",
+			expected: "0000000000000001",
 		},
 		{
 			operand:  214748,
-			expected: "000346dc",
+			expected: "00000000000346dc",
 		},
 		{
 			operand:  429496,
-			expected: "00068db8",
+			expected: "0000000000068db8",
 		},
 	}
 
 	for i, test := range tests {
 		op := test.operand
-		convertedCode := convertTo4Bytes(op)
+		convertedCode := convertTo8Bytes(op)
 
-		if len(convertedCode) != 8 {
-			t.Fatalf("test[%d] - convertTo4Byte() result wrong. \n expected=8, \n got=%d", i, len(convertedCode))
+		if len(convertedCode) != 16 {
+			t.Fatalf("test[%d] - convertTo4Byte() result wrong. \n expected=16, \n got=%d", i, len(convertedCode))
 		}
 
 		if convertedCode != test.expected {
