@@ -148,11 +148,9 @@ func (as *AssignStatement) do() {}
 
 func (as *AssignStatement) String() string {
 	var out bytes.Buffer
-
 	out.WriteString(as.Type.String() + " ")
-	out.WriteString(as.Variable.String() + " = ")
+	out.WriteString(as.Variable.Value + " = ")
 	out.WriteString(as.Value.String())
-
 	return out.String()
 }
 
@@ -215,6 +213,16 @@ func (fl *FunctionLiteral) String() string {
 	return out.String()
 }
 
+func (f *FunctionLiteral) Signature() string {
+
+	params := []string{}
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+
+	return "func " + f.Name.String() + "(" + strings.Join(params, ", ") + ")"
+}
+
 // Represent block statement
 type BlockStatement struct {
 	Statements []Statement
@@ -223,11 +231,15 @@ type BlockStatement struct {
 func (bs *BlockStatement) do() {}
 
 func (bs *BlockStatement) String() string {
-	str := make([]string, 0)
-	for i := range bs.Statements {
-		str = append(str, bs.Statements[i].String())
+	if bs.Statements == nil {
+		return ""
 	}
-	return strings.Join(str, "/")
+
+	str := make([]string, 0)
+	for _, s := range bs.Statements {
+		str = append(str, s.String())
+	}
+	return strings.Join(str, "\n")
 }
 
 // Represent function statement
@@ -249,7 +261,8 @@ type StringLiteral struct {
 func (sl *StringLiteral) produce() {}
 
 func (sl *StringLiteral) String() string {
-	return fmt.Sprintf("\"%s\"", sl.Value)
+	return sl.Value
+	//return fmt.Sprintf("\"%s\"", sl.Value)
 }
 
 // Represent integer literal

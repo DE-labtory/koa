@@ -22,7 +22,7 @@ func TestAssignStatement_String(t *testing.T) {
 				Value:    &StringLiteral{Value: "hello, world"},
 			},
 			// type mismatch is not considered here
-			expected: "bool asdf = \"hello, world\"",
+			expected: "bool asdf = hello, world",
 		},
 		{
 			input: AssignStatement{
@@ -81,23 +81,23 @@ func TestStringLiteral_String(t *testing.T) {
 	}{
 		{
 			StringLiteral{"hello"},
-			"\"hello\"",
+			"hello",
 		},
 		{
 			StringLiteral{"hello, world"},
-			"\"hello, world\"",
+			"hello, world",
 		},
 		{
 			StringLiteral{"123"},
-			"\"123\"",
+			"123",
 		},
 		{
 			StringLiteral{"123, hello"},
-			"\"123, hello\"",
+			"123, hello",
 		},
 		{
 			StringLiteral{""},
-			"\"\"",
+			"",
 		},
 	}
 

@@ -765,7 +765,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 				},
 				0,
 			},
-			"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\nint [IDENT, c] = 5\n}",
+			"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\nint c = 5\n}",
 			nil,
 		},
 		{
@@ -871,7 +871,8 @@ if ( true ) {  } else {  }
 				0,
 			},
 			`func example() string {
-if ( true ) {  } else {  }/if ( true ) {  } else {  }
+if ( true ) {  } else {  }
+if ( true ) {  } else {  }
 }`,
 			nil,
 		},
@@ -1099,7 +1100,7 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr: errors.New("[line 0, column 0] [BANG] parsePrefixExpression() - Invalid prefix of \"hello\""),
+			expectedErr: errors.New("[line 0, column 0] [BANG] parsePrefixExpression() - Invalid prefix of hello"),
 		},
 	}
 
@@ -1641,7 +1642,7 @@ func TestParseCallExpression(t *testing.T) {
 				0,
 			},
 			function:    &ast.Identifier{Value: "testFunc"},
-			expected:    `function testFunc( "a", "b", 5 )`,
+			expected:    `function testFunc( a, b, 5 )`,
 			expectedErr: nil,
 		},
 		{
@@ -1680,7 +1681,7 @@ func TestParseCallExpression(t *testing.T) {
 				0,
 			},
 			function:    &ast.Identifier{Value: "complexFunc"},
-			expected:    `function complexFunc( ("a" + "b"), (5 * 3) )`,
+			expected:    `function complexFunc( (a + b), (5 * 3) )`,
 			expectedErr: nil,
 		},
 	}
@@ -1741,7 +1742,7 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
-			expected:    `function testFunction( "a", "b", 5 )`,
+			expected:    `function testFunction( a, b, 5 )`,
 			expectedErr: nil,
 		},
 		{
@@ -1759,7 +1760,7 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
-			expected:    `function testFunction( ("a" + "b"), (5 * 3) )`,
+			expected:    `function testFunction( (a + b), (5 * 3) )`,
 			expectedErr: nil,
 		},
 		{
@@ -1838,8 +1839,8 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"string",
-			"[IDENT, a]",
-			`"hello"`,
+			"a",
+			"hello",
 			nil,
 		},
 		{
@@ -1855,7 +1856,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"int",
-			"[IDENT, myInt]",
+			"myInt",
 			"1",
 			nil,
 		},
@@ -1872,7 +1873,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, ddd]",
+			"ddd",
 			"true",
 			nil,
 		},
@@ -1890,8 +1891,8 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"int",
-			"[IDENT, ddd2]",
-			`"iam_string"`,
+			"ddd2",
+			"iam_string",
 			nil,
 		},
 		{
@@ -1908,8 +1909,8 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, foo]",
-			`"iam_string"`,
+			"foo",
+			"iam_string",
 			nil,
 		},
 		{
@@ -1925,7 +1926,7 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, foo]",
+			"foo",
 			`"iam_string"`,
 			ParseExpectError{
 				Token{Type: String},
@@ -1944,8 +1945,8 @@ func TestParseAssignStatement(t *testing.T) {
 				sp: 0,
 			},
 			"bool",
-			"[IDENT, foo]",
-			`"iam_string"`,
+			"foo",
+			"iam_string",
 			ParseExpectError{
 				Token{Type: String},
 				Assign,
@@ -2179,7 +2180,7 @@ func TestParseIfStatement(t *testing.T) {
 				},
 				0,
 			},
-			"if ( true ) { int [IDENT, a] = 0 }",
+			"if ( true ) { int a = 0 }",
 			nil,
 		},
 		{
@@ -2211,7 +2212,7 @@ func TestParseIfStatement(t *testing.T) {
 				},
 				0,
 			},
-			`if ( (a == 5) ) { int [IDENT, a] = 1 } else { string [IDENT, b] = "example" }`,
+			`if ( (a == 5) ) { int a = 1 } else { string b = example }`,
 			nil,
 		},
 		{
@@ -2318,7 +2319,7 @@ func TestParseBlockStatement(t *testing.T) {
 				},
 				0,
 			},
-			"int [IDENT, a] = 0",
+			"int a = 0",
 			nil,
 		},
 		{
@@ -2339,7 +2340,8 @@ func TestParseBlockStatement(t *testing.T) {
 				},
 				0,
 			},
-			`int [IDENT, a] = 0/string [IDENT, b] = "abc"`,
+			`int a = 0
+string b = abc`,
 			nil,
 		},
 		{
@@ -2365,7 +2367,9 @@ func TestParseBlockStatement(t *testing.T) {
 				},
 				0,
 			},
-			`int [IDENT, a] = 0/string [IDENT, b] = "abc"/bool [IDENT, c] = true`,
+			`int a = 0
+string b = abc
+bool c = true`,
 			nil,
 		},
 	}
@@ -2405,7 +2409,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: "int [IDENT, a] = 1",
+			expectedStmt: "int a = 1",
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2422,7 +2426,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: "int [IDENT, a] = (1 + 2)",
+			expectedStmt: "int a = (1 + 2)",
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2441,7 +2445,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: "int [IDENT, a] = (1 + (2 * 3))",
+			expectedStmt: "int a = (1 + (2 * 3))",
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2456,7 +2460,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `int [IDENT, a] = "1"`,
+			expectedStmt: `int a = 1`,
 		},
 
 		// tests for StringType
@@ -2473,7 +2477,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `string [IDENT, abb] = "do not merge, rebase!"`,
+			expectedStmt: `string abb = do not merge, rebase!`,
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2488,7 +2492,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `string [IDENT, abb] = "hello,*+"`,
+			expectedStmt: `string abb = hello,*+`,
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2503,7 +2507,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `string [IDENT, abb] = 1`,
+			expectedStmt: `string abb = 1`,
 		},
 
 		// tests for BoolType
@@ -2520,7 +2524,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `bool [IDENT, asdf] = true`,
+			expectedStmt: `bool asdf = true`,
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2535,7 +2539,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `bool [IDENT, asdf] = false`,
+			expectedStmt: `bool asdf = false`,
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2550,7 +2554,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `bool [IDENT, asdf] = 1`,
+			expectedStmt: `bool asdf = 1`,
 		},
 
 		// tests for If statement
@@ -2637,7 +2641,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `if ( true ) { int [IDENT, a] = 2 }`,
+			expectedStmt: `if ( true ) { int a = 2 }`,
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2662,7 +2666,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else {  }`,
+			expectedStmt: `if ( true ) { int a = 2 } else {  }`,
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -2692,7 +2696,7 @@ func TestParseStatement(t *testing.T) {
 				0,
 			},
 			expectedErr:  nil,
-			expectedStmt: `if ( true ) { int [IDENT, a] = 2 } else { string [IDENT, b] = "hello" }`,
+			expectedStmt: `if ( true ) { int a = 2 } else { string b = hello }`,
 		},
 
 		// tests for Return statement
