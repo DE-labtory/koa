@@ -80,7 +80,7 @@ func (s *String) String() string {
 // Name represents function's name.
 // Scope represents function value's scope.
 type Function struct {
-	name  string
+	Name  string
 	Scope *Scope
 }
 
@@ -89,5 +89,5 @@ func (f *Function) Type() SymbolType {
 }
 
 func (f *Function) String() string {
-	return fmt.Sprintf("func %s", f.name)
+	return fmt.Sprintf("func %s", f.Name)
 }

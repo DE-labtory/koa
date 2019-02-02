@@ -20,6 +20,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/DE-labtory/koa/symbol"
+
 	"github.com/DE-labtory/koa/ast"
 )
 
@@ -40,7 +42,12 @@ func (m *mockTokenBuffer) Peek(n peekNumber) Token {
 	return m.buf[m.sp+int(n)]
 }
 
-var mockError = errors.New("error occurred for some reason")
+// setupScopeFn helps to build Scope for each test case
+type setupScopeFn func() *symbol.Scope
+
+func defaultSetupScopeFn() *symbol.Scope {
+	return symbol.NewScope()
+}
 
 // TestParserOnly tests three things
 //
@@ -712,6 +719,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 
 	tests := []struct {
 		buf          TokenBuffer
+		setupScope   setupScopeFn
 		expectedExpr string
 		expectedErr  error
 	}{
@@ -735,6 +743,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			"func example(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\n\n}",
 			nil,
 		},
@@ -765,6 +774,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			"func name(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string)) void {\nint c = 5\n}",
 			nil,
 		},
@@ -777,6 +787,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			"",
 			ParseExpectError{
 				Token{Lbrace, "{", 0, 0},
@@ -799,6 +810,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			"func example() string {\n\n}",
 			nil,
 		},
@@ -829,6 +841,7 @@ func TestParseFunctionLiteral(t *testing.T) {
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			`func example() string {
 if ( true ) {  } else {  }
 }`,
@@ -870,6 +883,7 @@ if ( true ) {  } else {  }
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			`func example() string {
 if ( true ) {  } else {  }
 if ( true ) {  } else {  }
@@ -892,6 +906,7 @@ if ( true ) {  } else {  }
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			"",
 			ParseError{
 				Token{Type: Illegal},
@@ -914,6 +929,7 @@ if ( true ) {  } else {  }
 				},
 				0,
 			},
+			defaultSetupScopeFn,
 			"",
 			ParseError{
 				Token{Type: Int},
@@ -923,7 +939,10 @@ if ( true ) {  } else {  }
 	}
 
 	for i, test := range tests {
+		scope = test.setupScope()
+
 		exp, err := parseFunctionLiteral(test.buf)
+
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionLiteral() wrong error\n"+
 				"expected: %s\n"+

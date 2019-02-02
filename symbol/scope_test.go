@@ -17,7 +17,6 @@
 package symbol
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
@@ -52,7 +51,6 @@ func TestScopeGetter(t *testing.T) {
 		scope       Scope
 		want        string
 		expectedSym Symbol
-		expectedErr error
 	}{
 		{
 			Scope{
@@ -64,7 +62,6 @@ func TestScopeGetter(t *testing.T) {
 			},
 			"a",
 			&Integer{&ast.Identifier{Value: "a"}},
-			nil,
 		},
 		{
 			Scope{
@@ -81,7 +78,6 @@ func TestScopeGetter(t *testing.T) {
 			},
 			"c",
 			&String{&ast.Identifier{Value: "c"}},
-			nil,
 		},
 		{
 			Scope{
@@ -93,21 +89,21 @@ func TestScopeGetter(t *testing.T) {
 			},
 			"c",
 			nil,
-			errors.New("c is not defined"),
 		},
 	}
 
 	for i, test := range tests {
-		sym, err := test.scope.Get(test.want)
+		sym := test.scope.Get(test.want)
 		if sym != nil && test.expectedSym.String() != sym.String() {
 			t.Fatalf("test[%d] testScopeGetter() returns invalid symbol.\n"+
 				"expected=%s\n"+
 				"got=%s", i, test.expectedSym.String(), sym.String())
 		}
-		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] testScopeGetter() returns invalid error.\n"+
-				"expected=%s\n"+
-				"got=%s", i, test.expectedErr.Error(), err.Error())
+
+		if sym != nil && test.expectedSym == nil {
+			t.Fatalf("test[%d] testScopeGetter() returns invalid symbol.\n"+
+				"expected=nil\n"+
+				"got=%s", i, sym.String())
 		}
 	}
 }
@@ -146,13 +142,13 @@ func TestScopeSetter(t *testing.T) {
 
 	for i, test := range tests {
 		symbol := test.Scope.Set(test.Name, test.Symbol)
-		if symbol != test.Symbol {
+		if symbol.String() != test.Symbol.String() {
 			t.Fatalf("test[%d] - TestScopeSetter() wrong result.\n"+
 				"expected=%s\n"+
 				"got=%s", i, test.Symbol.String(), symbol.String())
 		}
 
-		if _, err := test.Scope.Get(test.Name); err != nil {
+		if sym := test.Scope.Get(test.Name); sym.String() != test.Symbol.String() {
 			t.Fatalf("test[%d] - TestScopeSetter() must set in scope store", i)
 		}
 	}

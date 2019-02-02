@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/DE-labtory/koa/symbol"
+
 	"github.com/DE-labtory/koa/ast"
 )
 
@@ -183,6 +185,16 @@ func (e ParseExpectError) Error() string {
 		e.source.Line, e.source.Column, TokenTypeMap[e.expected], TokenTypeMap[e.source.Type])
 }
 
+// dupSymError occur when there is duplicated symbol
+type DupSymError struct {
+	source Token
+}
+
+func (e DupSymError) Error() string {
+	return fmt.Sprintf("[line %d, column %d] symbol [%s] already exist",
+		e.source.Line, e.source.Column, e.source.Val)
+}
+
 type (
 	prefixParseFn func(TokenBuffer) (ast.Expression, error)
 	infixParseFn  func(TokenBuffer, ast.Expression) (ast.Expression, error)
@@ -191,9 +203,53 @@ type (
 var prefixParseFnMap = map[TokenType]prefixParseFn{}
 var infixParseFnMap = map[TokenType]infixParseFn{}
 
+// scope keeps symbols that shows on tokens, every time scope meet symbol,
+// trying to check whether symbol with same name already exist, if true
+// then throw error, if not add that symbol to scope.
+var scope *symbol.Scope
+
+// updateScopeSymbol checks whether token value is exist in scope first,
+// if exist, then throw error, if not make symbol with token value then add
+// to scope
+func updateScopeSymbol(token Token, symType symbol.SymbolType) error {
+	if sym := scope.Get(token.Val); sym != nil {
+		return DupSymError{token}
+	}
+
+	switch symType {
+	case symbol.IntegerSymbol:
+		// TODO: add symbol to scope
+	case symbol.BooleanSymbol:
+		// TODO: add symbol to scope
+	case symbol.StringSymbol:
+		// TODO: add symbol to scope
+	case symbol.FunctionSymbol:
+		// TODO: add symbol to scope
+	default:
+		return parseError{
+			token.Type,
+			fmt.Sprintf("unexpected symbol type [%s]", symType),
+			token.Line,
+			token.Column,
+		}
+	}
+
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+// enterScope creates new scope than converts it to existing scope
+func enterScope() {}
+
+// TODO: implement me w/ test cases :-)
+// leaveScope converts current scope's outer to existing scope
+func leaveScope() {}
+
 // Parse creates an abstract syntax tree
 func Parse(buf TokenBuffer) (*ast.Contract, error) {
 	initParseFnMap()
+
+	scope = symbol.NewScope()
 
 	contract := &ast.Contract{}
 	contract.Functions = []*ast.FunctionLiteral{}
@@ -424,6 +480,11 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	if token.Type != Ident {
 		return nil, ParseExpectError{token, Ident}
 	}
+
+	// TODO: check whether variable name exist,
+	// TODO: but do not update symbol table in this case
+	// TODO: if not, return error
+
 	return &ast.Identifier{Value: token.Val}, nil
 }
 
@@ -484,6 +545,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	if token.Type != Ident {
 		return nil, ParseExpectError{token, Ident}
 	}
+
 	lit.Name = &ast.Identifier{Value: token.Val}
 
 	if err = expectNext(buf, Lparen); err != nil {
@@ -494,8 +556,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 
-	lit.ReturnType, err = parseFunctionReturnType(buf)
-	if err != nil {
+	if lit.ReturnType, err = parseFunctionReturnType(buf); err != nil {
 		return nil, err
 	}
 
@@ -633,6 +694,9 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 		}
 	}
 
+	// TODO: check whether variable name exist
+	// TODO: if not, add symbol to the scope
+
 	stmt.Variable = ast.Identifier{
 		Value: token.Val,
 	}
@@ -757,6 +821,8 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		return nil, err
 	}
 
+	// TODO: enter scope
+
 	block := &ast.BlockStatement{}
 	curToken := buf.Peek(CURRENT)
 
@@ -774,6 +840,8 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	if curTokenIs(buf, Rbrace) {
 		buf.Read()
 	}
+
+	// TODO: leave scope
 
 	return block, nil
 }

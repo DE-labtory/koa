@@ -18,7 +18,6 @@ package symbol
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sort"
 )
@@ -45,16 +44,16 @@ type Scope struct {
 // Getter return's variable's scope.
 // If a scope doesn't have a variable,
 // Program will search in outer scope.
-func (s *Scope) Get(name string) (Symbol, error) {
+func (s *Scope) Get(name string) Symbol {
 	var scope = s
 	for scope != nil {
 		obj, ok := scope.store[name]
 		if ok {
-			return obj, nil
+			return obj
 		}
 		scope = scope.outer
 	}
-	return nil, errors.New(fmt.Sprintf("%s is not defined", name))
+	return nil
 }
 
 // Setter set a variable to target scope's map
