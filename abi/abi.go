@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/DE-labtory/koa/ast"
-	"github.com/DE-labtory/koa/crpyto"
 )
 
 type ABI struct {
@@ -53,19 +52,6 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-// The implementation below is implemented for the abi spec of ethereum.
-// https://solidity.readthedocs.io/en/develop/abi-spec.html
-
-// Encode abi parameters
-func Encode(params ...interface{}) []byte {
-	return nil
-}
-
-// Get function selector(4bytes) from string of function signature
-func Selector(functionSignature string) []byte {
-	return crpyto.Keccak256([]byte(functionSignature))[:4]
 }
 
 // TODO: implement me w/ test cases :-)

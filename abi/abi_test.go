@@ -17,7 +17,6 @@
 package abi_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/DE-labtory/koa/abi"
@@ -77,33 +76,6 @@ func TestNew(t *testing.T) {
 
 	if len(ABI.Methods) != 2 {
 		t.Error("Invalid JSON parsing!")
-	}
-}
-
-func TestSelector(t *testing.T) {
-	tests := []struct {
-		input  string
-		output []byte
-	}{
-		{
-			input:  "foo(uint128,bytes32,bool[2])",
-			output: []byte{0x5C, 0x8D, 0x62, 0x96},
-		},
-		{
-			input:  "foo(string,bytes32,bool[2])",
-			output: []byte{0xCC, 0xBE, 0xD7, 0x8C},
-		},
-		{
-			input:  "transfer(string,string,int)",
-			output: []byte{0x82, 0x00, 0x55, 0x85},
-		},
-	}
-
-	for i, test := range tests {
-		selector := abi.Selector(test.input)
-		if bytes.Compare(selector, test.output) != 0 {
-			t.Fatalf("test[%d] - Selector() result wrong expected=%x, got=%x", i, test.output, selector)
-		}
 	}
 }
 
