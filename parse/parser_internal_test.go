@@ -18,7 +18,6 @@ package parse
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
@@ -80,11 +79,9 @@ contract {
 				0,
 			},
 			expected: "",
-			expectedErr: parseExpectError{
-				Eof,
+			expectedErr: ParseExpectError{
+				Token{Eof, "eof", 0, 0},
 				Rbrace,
-				0,
-				0,
 			},
 		},
 		{
@@ -163,11 +160,9 @@ func bar() void {
 				0,
 			},
 			expected: ``,
-			expectedErr: parseExpectError{
-				IntType,
+			expectedErr: ParseExpectError{
+				Token{IntType, "int", 0, 0},
 				Rbrace,
-				0,
-				0,
 			},
 		},
 	}
@@ -398,11 +393,9 @@ func TestExpectNext(t *testing.T) {
 		{
 			token:        Minus,
 			expectedBool: false,
-			expectedError: parseExpectError{
-				Ident,
+			expectedError: ParseExpectError{
+				Token{Ident, "a", 0, 0},
 				Minus,
-				0,
-				0,
 			},
 		},
 		{
@@ -413,11 +406,9 @@ func TestExpectNext(t *testing.T) {
 		{
 			token:        Rbrace,
 			expectedBool: false,
-			expectedError: parseExpectError{
-				Asterisk,
+			expectedError: ParseExpectError{
+				Token{Asterisk, "*", 0, 0},
 				Rbrace,
-				0,
-				0,
 			},
 		},
 	}
@@ -455,11 +446,9 @@ func TestParseIdentifier(t *testing.T) {
 				0,
 			},
 			expected: nil,
-			expectedErrs: parseError{
-				Int,
-				"expected [IDENT], but got [INT]",
-				12,
-				24,
+			expectedErrs: ParseExpectError{
+				Token{Int, "1", 24, 12},
+				Ident,
 			},
 		},
 		{
@@ -492,11 +481,9 @@ func TestParseIdentifier(t *testing.T) {
 				0,
 			},
 			expected: nil,
-			expectedErrs: parseError{
-				Plus,
-				"expected [IDENT], but got [PLUS]",
-				12,
-				422,
+			expectedErrs: ParseExpectError{
+				Token{Plus, "+", 422, 12},
+				Ident,
 			},
 		},
 		{
@@ -512,11 +499,9 @@ func TestParseIdentifier(t *testing.T) {
 				0,
 			},
 			expected: nil,
-			expectedErrs: parseError{
-				Asterisk,
-				"expected [IDENT], but got [ASTERISK]",
-				123,
-				12,
+			expectedErrs: ParseExpectError{
+				Token{Asterisk, "*", 12, 123},
+				Ident,
 			},
 		},
 		{
@@ -532,11 +517,9 @@ func TestParseIdentifier(t *testing.T) {
 				0,
 			},
 			expected: nil,
-			expectedErrs: parseError{
-				Lparen,
-				"expected [IDENT], but got [LPAREN]",
-				876,
-				5,
+			expectedErrs: ParseExpectError{
+				Token{Lparen, "(", 5, 876},
+				Ident,
 			},
 		},
 	}
@@ -588,11 +571,9 @@ func TestParseIntegerLiteral(t *testing.T) {
 		},
 		{
 			expected: nil,
-			expectedErr: parseError{
-				String,
-				"expected [INT], but got [STRING]",
-				0,
-				0,
+			expectedErr: ParseExpectError{
+				Token{Type: String},
+				Int,
 			},
 		},
 		{
@@ -643,11 +624,9 @@ func TestParseBooleanLiteral(t *testing.T) {
 		},
 		{
 			expected: nil,
-			expectedErr: parseError{
-				String,
-				fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[BoolType], TokenTypeMap[String]),
-				0,
-				0,
+			expectedErr: ParseExpectError{
+				Token{Type: String},
+				BoolType,
 			},
 		},
 	}
@@ -694,11 +673,9 @@ func TestParseStringLiteral(t *testing.T) {
 		},
 		{
 			expected: nil,
-			expectedErr: parseError{
-				Int,
-				fmt.Sprintf("expected [%s], but got [%s]", TokenTypeMap[String], TokenTypeMap[Int]),
-				0,
-				0,
+			expectedErr: ParseExpectError{
+				Token{Type: Int},
+				String,
 			},
 		},
 		{
@@ -801,11 +778,9 @@ func TestParseFunctionLiteral(t *testing.T) {
 				0,
 			},
 			"",
-			parseExpectError{
-				Lbrace,
+			ParseExpectError{
+				Token{Lbrace, "{", 0, 0},
 				Function,
-				0,
-				0,
 			},
 		},
 		{
@@ -917,11 +892,9 @@ if ( true ) {  } else {  }/if ( true ) {  } else {  }
 				0,
 			},
 			"",
-			parseError{
-				Illegal,
+			ParseError{
+				Token{Type: Illegal},
 				"invalid function return type",
-				0,
-				0,
 			},
 		},
 		{
@@ -941,11 +914,9 @@ if ( true ) {  } else {  }/if ( true ) {  } else {  }
 				0,
 			},
 			"",
-			parseError{
-				Int,
+			ParseError{
+				Token{Type: Int},
 				"invalid function return type",
-				0,
-				0,
 			},
 		},
 	}
@@ -1015,11 +986,9 @@ func TestParseFunctionParameter(t *testing.T) {
 				0,
 			},
 			expected: nil,
-			expectedErr: parseExpectError{
-				Rbrace,
+			expectedErr: ParseExpectError{
+				Token{Rbrace, "}", 0, 0},
 				Rparen,
-				0,
-				0,
 			},
 		},
 	}
@@ -1120,7 +1089,7 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr: errors.New("[line 0, column 0] parsePrefixExpression() - Invalid prefix of true"),
+			expectedErr: errors.New("[line 0, column 0] [MINUS] parsePrefixExpression() - Invalid prefix of true"),
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -1130,7 +1099,7 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr: errors.New("[line 0, column 0] parsePrefixExpression() - Invalid prefix of \"hello\""),
+			expectedErr: errors.New("[line 0, column 0] [BANG] parsePrefixExpression() - Invalid prefix of \"hello\""),
 		},
 	}
 
@@ -1241,11 +1210,9 @@ func TestMakeInfixExpression(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseError{
-				Plus,
+			expectedErr: ParseError{
+				Token{Type: Plus},
 				"prefix parse function not defined",
-				0,
-				0,
 			},
 		},
 	}
@@ -1348,11 +1315,9 @@ func TestParseInfixExpression(t *testing.T) {
 				Value: 1,
 			},
 			expected: "",
-			expectedErr: parseError{
-				Plus,
+			expectedErr: ParseError{
+				Token{Type: Plus},
 				"prefix parse function not defined",
-				0,
-				0,
 			},
 		},
 	}
@@ -1447,11 +1412,9 @@ func TestParseGroupedExpression(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseExpectError{
-				Rbrace,
+			expectedErr: ParseExpectError{
+				Token{Rbrace, "{", 0, 0},
 				Rparen,
-				0,
-				0,
 			},
 		},
 	}
@@ -1540,11 +1503,9 @@ func TestParseReturnStatement(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseExpectError{
-				IntType,
+			expectedErr: ParseExpectError{
+				Token{IntType, "int", 0, 0},
 				Return,
-				0,
-				0,
 			},
 		},
 	}
@@ -1698,11 +1659,9 @@ func TestParseCallExpression(t *testing.T) {
 			},
 			function: &ast.Identifier{Value: "errorFunc"},
 			expected: "",
-			expectedErr: parseError{
-				Asterisk,
+			expectedErr: ParseError{
+				Token{Type: Asterisk},
 				"prefix parse function not defined",
-				0,
-				0,
 			},
 		},
 		{
@@ -1813,11 +1772,9 @@ func TestParseCallArguments(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseError{
-				Asterisk,
+			expectedErr: ParseError{
+				Token{Type: Asterisk},
 				"prefix parse function not defined",
-				0,
-				0,
 			},
 		},
 		{
@@ -1834,11 +1791,9 @@ func TestParseCallArguments(t *testing.T) {
 				0,
 			},
 			expected: "",
-			expectedErr: parseError{
-				Asterisk,
+			expectedErr: ParseError{
+				Token{Type: Asterisk},
 				"prefix parse function not defined",
-				0,
-				0,
 			},
 		},
 	}
@@ -1972,11 +1927,9 @@ func TestParseAssignStatement(t *testing.T) {
 			"bool",
 			"[IDENT, foo]",
 			`"iam_string"`,
-			parseError{
-				String,
-				"expected [IDENT], but got [STRING]",
-				0,
-				0,
+			ParseExpectError{
+				Token{Type: String},
+				Ident,
 			},
 		},
 		{
@@ -1993,11 +1946,9 @@ func TestParseAssignStatement(t *testing.T) {
 			"bool",
 			"[IDENT, foo]",
 			`"iam_string"`,
-			parseExpectError{
-				String,
+			ParseExpectError{
+				Token{Type: String},
 				Assign,
-				0,
-				0,
 			},
 		},
 	}
@@ -2005,7 +1956,7 @@ func TestParseAssignStatement(t *testing.T) {
 	for i, tt := range tests {
 		exp, err := parseAssignStatement(tt.tokenBuffer)
 
-		if err != nil && err != tt.expectedErr {
+		if err != nil && err.Error() != tt.expectedErr.Error() {
 			t.Errorf(`tests[%d] - Returned err is not "%s", but got "%s"`,
 				i, tt.expectedErr.Error(), err.Error())
 		}
@@ -2275,11 +2226,9 @@ func TestParseIfStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
-				IntType,
-				"expected [IF], but got [INT_TYPE]",
-				0,
-				0,
+			ParseExpectError{
+				Token{Type: IntType},
+				If,
 			},
 		},
 		{
@@ -2301,11 +2250,9 @@ func TestParseIfStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
-				IntType,
-				"expected [LBRACE], but got [INT_TYPE]",
-				0,
-				0,
+			ParseExpectError{
+				Token{Type: IntType},
+				Lbrace,
 			},
 		},
 		{
@@ -2328,11 +2275,9 @@ func TestParseIfStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
-				Rbrace,
-				"expected [RPAREN], but got [RBRACE]",
-				0,
-				0,
+			ParseExpectError{
+				Token{Type: Rbrace},
+				Rparen,
 			},
 		},
 	}
@@ -2666,7 +2611,10 @@ func TestParseStatement(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr:  parseError{Int, "expected [IDENT], but got [INT]", 0, 0},
+			expectedErr: ParseExpectError{
+				Token{Type: Int},
+				Ident,
+			},
 			expectedStmt: ``,
 		},
 		{
@@ -2813,7 +2761,10 @@ func TestParseStatement(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr:  parseError{Int, "expected [IDENT], but got [INT]", 0, 0},
+			expectedErr: ParseExpectError{
+				Token{Type: Int},
+				Ident,
+			},
 			expectedStmt: ``,
 		},
 	}
@@ -2821,7 +2772,7 @@ func TestParseStatement(t *testing.T) {
 	for i, test := range tests {
 		stmt, err := parseStatement(test.buf)
 
-		if err != nil && err != test.expectedErr {
+		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Errorf(`test[%d] - parseStatement wrong error. expected="%v", got="%v"`,
 				i, test.expectedErr, err)
 			continue
@@ -2900,11 +2851,9 @@ func TestParseExpressionStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseExpectError{
-				IntType,
+			ParseExpectError{
+				Token{IntType, "int", 0, 0},
 				Rparen,
-				0,
-				0,
 			},
 		},
 		{
@@ -2918,11 +2867,9 @@ func TestParseExpressionStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseError{
-				Int,
-				"expected [IDENT], but got [INT]",
-				0,
-				0,
+			ParseExpectError{
+				Token{Type: Int},
+				Ident,
 			},
 		},
 		{
@@ -2935,11 +2882,9 @@ func TestParseExpressionStatement(t *testing.T) {
 				0,
 			},
 			"",
-			parseExpectError{
-				Rparen,
+			ParseExpectError{
+				Token{Rparen, "}", 0, 0},
 				Lparen,
-				0,
-				0,
 			},
 		},
 	}
