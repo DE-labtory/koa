@@ -83,7 +83,7 @@ func TestEncodeOperand(t *testing.T) {
 
 	for i, test := range tests {
 		op := test.operand
-		byteCode, err := encoding.EncodeOperand(op)
+		byteCode, err := encoding.EncodeOperand(op, encoding.EIGHT_PADDING)
 
 		if !bytes.Equal(byteCode, test.expectedByte) {
 			t.Fatalf("test[%d] - EncodeOperand() result wrong. expectedByte=%x, got=%x", i, test.expectedByte, byteCode)

@@ -42,7 +42,7 @@ func TestEncodeInt(t *testing.T) {
 
 	for i, test := range tests {
 		op := test.operand
-		bytecode, err := encodeInt(op)
+		bytecode, err := encodeInt(op, convertTo8Bytes)
 
 		if err != nil {
 			t.Fatalf("test[%d] - encodeInt() had error. err=%v", i, err)
@@ -108,7 +108,7 @@ func TestEncodeBool(t *testing.T) {
 
 	for i, test := range tests {
 		op := test.operand
-		bytecode, err := encodeBool(op)
+		bytecode, err := encodeBool(op, convertTo8Bytes)
 
 		if err != nil {
 			t.Fatalf("test[%d] - encodeBool() had error. err=%v", i, err)
@@ -120,6 +120,82 @@ func TestEncodeBool(t *testing.T) {
 
 		if len(bytecode) != 8 {
 			t.Fatalf("test[%d] - encodeBool() result wrong. expected=8, got=%x", i, bytecode)
+		}
+	}
+}
+
+func Test_convertToByte(t *testing.T) {
+
+	tests := []struct {
+		operand  int64
+		expected string
+	}{
+		{
+			operand:  0,
+			expected: "00",
+		},
+		{
+			operand:  1,
+			expected: "01",
+		},
+		{
+			operand:  214748,
+			expected: "0346dc",
+		},
+		{
+			operand:  429496,
+			expected: "068db8",
+		},
+	}
+
+	for i, test := range tests {
+		op := test.operand
+		convertedCode := convertToByte(op)
+
+		if len(convertedCode) != len(test.expected) {
+			t.Fatalf("test[%d] - convertToByte() result wrong. \n expected= %d, \n got=%d", i, len(test.expected), len(convertedCode))
+		}
+
+		if convertedCode != test.expected {
+			t.Fatalf("test[%d] - convertToBytes() result wrong. \n expected=%s, \n got=%s", i, test.expected, convertedCode)
+		}
+	}
+}
+
+func Test_convertTo4Bytes(t *testing.T) {
+
+	tests := []struct {
+		operand  int64
+		expected string
+	}{
+		{
+			operand:  0,
+			expected: "00000000",
+		},
+		{
+			operand:  1,
+			expected: "00000001",
+		},
+		{
+			operand:  214748,
+			expected: "000346dc",
+		},
+		{
+			operand:  429496,
+			expected: "00068db8",
+		},
+	}
+
+	for i, test := range tests {
+		op := test.operand
+		convertedCode := convertTo4Bytes(op)
+
+		if len(convertedCode) != 8 {
+			t.Fatalf("test[%d] - convertTo4Byte() result wrong. \n expected=16, \n got=%d", i, len(convertedCode))
+		}
+
+		if convertedCode != test.expected {
+			t.Fatalf("test[%d] - convertTo4Bytes() result wrong. \n expected=%s, \n got=%s", i, test.expected, convertedCode)
 		}
 	}
 }
@@ -153,11 +229,11 @@ func Test_convertTo8Bytes(t *testing.T) {
 		convertedCode := convertTo8Bytes(op)
 
 		if len(convertedCode) != 16 {
-			t.Fatalf("test[%d] - convertTo4Byte() result wrong. \n expected=16, \n got=%d", i, len(convertedCode))
+			t.Fatalf("test[%d] - convertTo8Byte() result wrong. \n expected=16, \n got=%d", i, len(convertedCode))
 		}
 
 		if convertedCode != test.expected {
-			t.Fatalf("test[%d] - convertTo4Bytes() result wrong. \n expected=%s, \n got=%s", i, test.expected, convertedCode)
+			t.Fatalf("test[%d] - convertTo8Bytes() result wrong. \n expected=%s, \n got=%s", i, test.expected, convertedCode)
 		}
 	}
 }
