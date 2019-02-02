@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/DE-labtory/koa/cmd/lex"
+	"github.com/DE-labtory/koa/cmd/parse"
 	"github.com/DE-labtory/koa/cmd/repl"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
@@ -76,6 +77,7 @@ func main() {
 	}
 	app.Commands = []cli.Command{}
 	app.Commands = append(app.Commands, lex.Cmd())
+	app.Commands = append(app.Commands, parse.Cmd())
 	app.Action = func(c *cli.Context) error {
 		repl.Run()
 		return nil
