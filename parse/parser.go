@@ -634,7 +634,7 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	}
 
 	stmt.Variable = ast.Identifier{
-		Value: token.String(),
+		Value: token.Val,
 	}
 
 	if err := expectNext(buf, Assign); err != nil {

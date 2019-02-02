@@ -183,17 +183,17 @@ func TestParse(t *testing.T) {
 			ident string
 			value string
 		}{
-			{ast.IntType, "[IDENT, a]", "1"},
-			{ast.IntType, "[IDENT, a]", "(1 + 2)"},
-			{ast.IntType, "[IDENT, a]", "(1 + 2)"},
-			{ast.IntType, "[IDENT, a]", "((foo + 1) * 2)"},
-			{ast.IntType, "[IDENT, a]", "(function add( (1 + 2), 3 ) + 4)"},
-			{ast.IntType, "[IDENT, a]", "(function add( (1 % 2), 3 ) / 4)"},
-			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
-			{ast.StringType, "[IDENT, a]", "\"\"hello\"\""},
-			{ast.StringType, "[IDENT, tabbed_string]", "\"\"hello, \\t world\"\""},
-			{ast.BoolType, "[IDENT, a]", "true"},
-			{ast.BoolType, "[IDENT, b]", "false"},
+			{ast.IntType, "a", "1"},
+			{ast.IntType, "a", "(1 + 2)"},
+			{ast.IntType, "a", "(1 + 2)"},
+			{ast.IntType, "a", "((foo + 1) * 2)"},
+			{ast.IntType, "a", "(function add( (1 + 2), 3 ) + 4)"},
+			{ast.IntType, "a", "(function add( (1 % 2), 3 ) / 4)"},
+			{ast.StringType, "a", "\"hello\""},
+			{ast.StringType, "a", "\"hello\""},
+			{ast.StringType, "tabbed_string", "\"hello, \\t world\""},
+			{ast.BoolType, "a", "true"},
+			{ast.BoolType, "b", "false"},
 		},
 		conditionTestCase: []struct {
 			condition   string
@@ -206,8 +206,8 @@ func TestParse(t *testing.T) {
 			{
 				condition: "(1 != (1 + 2))",
 				consequence: []string{
-					"int [IDENT, a] = 1",
-					"string [IDENT, a] = \"\"hello\"\"",
+					"int a = 1",
+					"string a = \"hello\"",
 				},
 			},
 			{
@@ -216,12 +216,12 @@ func TestParse(t *testing.T) {
 			{
 				condition: "foo",
 				consequence: []string{
-					"int [IDENT, a] = 1",
-					"string [IDENT, a] = \"\"hello\"\"",
+					"int a = 1",
+					"string a = \"hello\"",
 				},
 				alternative: []string{
-					"int [IDENT, a] = 1",
-					"string [IDENT, a] = \"\"hello\"\"",
+					"int a = 1",
+					"string a = \"hello\"",
 				},
 			},
 		},
@@ -236,12 +236,12 @@ func TestParse(t *testing.T) {
 		},
 		inlineReturnStmtTestCase: struct {
 			returnValue string
-		}{"\"\"hello\"\""},
+		}{"\"hello\""},
 		inlineAssignStmtTestCase: struct {
 			ds    ast.DataStructure
 			ident string
 			value string
-		}{ast.IntType, "[IDENT, a]", "1"},
+		}{ast.IntType, "a", "1"},
 		inlineConditionTestCase: struct {
 			condition   string
 			consequence []string
