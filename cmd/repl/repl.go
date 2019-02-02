@@ -23,6 +23,7 @@ import (
 	"bufio"
 	"os"
 
+	parse_cmd "github.com/DE-labtory/koa/cmd/parse"
 	"github.com/DE-labtory/koa/parse"
 	"github.com/fatih/color"
 )
@@ -71,13 +72,14 @@ func run(in io.Reader, out io.Writer) {
 			return
 		}
 
-		l := parse.NewLexer(`contract { func hello() string { return "hello" }}`)
+		l := parse.NewLexer(line)
 		buf := parse.NewTokenBuffer(l)
 		contract, err := parse.Parse(buf)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
 		}
-		fmt.Println(contract)
+
+		fmt.Println(parse_cmd.PrintContract(contract))
 	}
 }

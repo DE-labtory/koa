@@ -220,7 +220,7 @@ func (f *FunctionLiteral) Signature() string {
 		params = append(params, p.String())
 	}
 
-	return "func " + f.Name.String() + "(" + strings.Join(params, ", ") + ")"
+	return fmt.Sprintf("func %s(%s)", f.Name.String(), strings.Join(params, ", "))
 }
 
 // Represent block statement
@@ -262,7 +262,6 @@ func (sl *StringLiteral) produce() {}
 
 func (sl *StringLiteral) String() string {
 	return sl.Value
-	//return fmt.Sprintf("\"%s\"", sl.Value)
 }
 
 // Represent integer literal

@@ -29,8 +29,7 @@ var lexCmd = cli.Command{
 	Aliases: []string{"l"},
 	Usage:   "koa lex [filePath]",
 	Action: func(c *cli.Context) error {
-		path := c.Args().Get(0)
-		return lex(path)
+		return lex(c.Args().Get(0))
 	},
 }
 
