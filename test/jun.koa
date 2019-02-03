@@ -1,0 +1,18 @@
+contract {
+    func junbeomlee() string{
+        string name = junbeomlee
+        int age = 28
+        int money = 100
+        string hobby = "coding"
+
+        if (hobby == "coding") {
+            return 5
+        }
+
+        return money
+    }
+
+    func zerofruit() string{
+        return "hello world!"
+    }
+}
