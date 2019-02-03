@@ -223,8 +223,8 @@ func TestCompileExpressionStatement(t *testing.T) {
 			RawByte: make([]byte, 0),
 			AsmCode: make([]string, 0),
 		}
-
-		err := compileExpressionStatement(test.statement, b)
+		memTracer := NewMemEntryTable()
+		err := compileExpressionStatement(test.statement, b, memTracer)
 
 		if err != nil && err != test.err {
 			t.Fatalf("test[%d] - TestCompileExpressionStatement() error wrong. expected=%v, got=%v", i, test.err, err)
@@ -891,10 +891,86 @@ func TestCompileIntegerLiteral_negative(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompileStringLiteral(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			expression: &ast.StringLiteral{
+				Value: "string",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x00, 0x00, // Push 0x737472696e6700
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)
+					0x23}, // Memory store
+				AsmCode: []string{"Push", "737472696e670000",
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Mstore"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "12345678",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, // Push 0x3132333435363738
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)
+					0x23}, // Memory store
+				AsmCode: []string{"Push", "3132333435363738",
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Mstore"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ssssssss1111111",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, // Push 0x7373737373737373
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)
+					0x21, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x00, // Push 0x3131313131313100
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000000 (offset)},
+					0x23, // Memory store
+				},
+				AsmCode: []string{"Push", "7373737373737373",
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Push", "3131313131313100",
+					"Push", "0000000000000008",
+					"Push", "0000000000000008",
+					"Mstore"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ssssssss11111111",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, // Push 0x7373737373737373
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)
+					0x21, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, // Push 0x3131313131313131
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000000 (offset)},
+					0x23, // Memory store
+				},
+				AsmCode: []string{"Push", "7373737373737373",
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Push", "3131313131313131",
+					"Push", "0000000000000008",
+					"Push", "0000000000000008",
+					"Mstore"},
+			},
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileBooleanLiteral(t *testing.T) {
 	tests := []expressionCompileTestCase{
 		{
@@ -936,6 +1012,7 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 			RawByte: make([]byte, 0),
 			AsmCode: make([]string, 0),
 		}
+		memTracer := NewMemEntryTable()
 
 		var err error
 		var testFuncName string
@@ -948,12 +1025,15 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 		case *ast.IntegerLiteral:
 			testFuncName = "compileIntegerLiteral()"
 			err = compileIntegerLiteral(expr, bytecode)
+		case *ast.StringLiteral:
+			testFuncName = "compileStringLiteral()"
+			err = compileStringLiteral(expr, bytecode, memTracer)
 		case *ast.PrefixExpression:
 			testFuncName = "compilePrefixExpression()"
-			err = compilePrefixExpression(expr, bytecode)
+			err = compilePrefixExpression(expr, bytecode, memTracer)
 		case *ast.InfixExpression:
 			testFuncName = "compileInfixExpression()"
-			err = compileInfixExpression(expr, bytecode)
+			err = compileInfixExpression(expr, bytecode, memTracer)
 		default:
 			t.Fatalf("%T type not support, abort.", expr)
 			t.FailNow()

@@ -117,7 +117,7 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 		return compileBlockStatement(statement, bytecode, tracer)
 
 	case *ast.ExpressionStatement:
-		return compileExpressionStatement(statement, bytecode)
+		return compileExpressionStatement(statement, bytecode, tracer)
 
 	case *ast.FunctionLiteral:
 		return compileFunctionLiteral(statement, bytecode)
@@ -143,7 +143,7 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 // 	[value]
 //
 func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode, memDefiner MemDefiner) error {
-	if err := compileExpression(s.Value, bytecode); err != nil {
+	if err := compileExpression(s.Value, bytecode, memDefiner); err != nil {
 		return err
 	}
 
@@ -184,8 +184,8 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer Mem
 	return nil
 }
 
-func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) error {
-	return compileExpression(s.Expr, bytecode)
+func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode, tracer MemTracer) error {
+	return compileExpression(s.Expr, bytecode, tracer)
 }
 
 // TODO: implement me w/ test cases :-)
@@ -196,22 +196,22 @@ func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
 // TODO: implement me w/ test cases :-)
 // compileExpression() compiles a expression in statement.
 // Generates and adds ouput to bytecode.
-func compileExpression(e ast.Expression, bytecode *Bytecode) error {
+func compileExpression(e ast.Expression, bytecode *Bytecode, memDefiner MemDefiner) error {
 	switch expr := e.(type) {
 	case *ast.CallExpression:
 		return compileCallExpression(expr, bytecode)
 
 	case *ast.InfixExpression:
-		return compileInfixExpression(expr, bytecode)
+		return compileInfixExpression(expr, bytecode, memDefiner)
 
 	case *ast.PrefixExpression:
-		return compilePrefixExpression(expr, bytecode)
+		return compilePrefixExpression(expr, bytecode, memDefiner)
 
 	case *ast.IntegerLiteral:
 		return compileIntegerLiteral(expr, bytecode)
 
 	case *ast.StringLiteral:
-		return compileStringLiteral(expr, bytecode)
+		return compileStringLiteral(expr, bytecode, memDefiner)
 
 	case *ast.BooleanLiteral:
 		return compileBooleanLiteral(expr, bytecode)
@@ -232,12 +232,12 @@ func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
 	return nil
 }
 
-func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
-	if err := compileExpression(e.Left, bytecode); err != nil {
+func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode, memDefiner MemDefiner) error {
+	if err := compileExpression(e.Left, bytecode, memDefiner); err != nil {
 		return err
 	}
 
-	if err := compileExpression(e.Right, bytecode); err != nil {
+	if err := compileExpression(e.Right, bytecode, memDefiner); err != nil {
 		return err
 	}
 
@@ -276,8 +276,8 @@ func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
 	return nil
 }
 
-func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
-	if err := compileExpression(e.Right, bytecode); err != nil {
+func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode, memDefiner MemDefiner) error {
+	if err := compileExpression(e.Right, bytecode, memDefiner); err != nil {
 		return err
 	}
 
@@ -303,13 +303,36 @@ func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
+func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode, memDefiner MemDefiner) error {
+	operand, err := encoding.EncodeOperand(e.Value)
+	if err != nil {
+		return err
+	}
+
+	for len(operand) >= 8 {
+		memEntry := memDefiner.Define(e.Value)
+		size, err := encoding.EncodeOperand(memEntry.Size)
+		if err != nil {
+			return err
+		}
+
+		offset, err := encoding.EncodeOperand(memEntry.Offset)
+		if err != nil {
+			return err
+		}
+
+		bytecode.Emerge(opcode.Push, operand[0:8])
+		bytecode.Emerge(opcode.Push, size)
+		bytecode.Emerge(opcode.Push, offset)
+		operand = operand[8:]
+	}
+	bytecode.Emerge(opcode.Mstore)
 	return nil
 
 }
 
 func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
+
 	operand, err := encoding.EncodeOperand(e.Value)
 	if err != nil {
 		return err
