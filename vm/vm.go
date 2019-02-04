@@ -86,7 +86,9 @@ type sub struct{}
 type div struct{}
 type mod struct{}
 type lt struct{}
+type lte struct{}
 type gt struct{}
+type gte struct{}
 type eq struct{}
 type not struct{}
 type pop struct{}
@@ -183,6 +185,22 @@ func (lt) hex() []uint8 {
 	return []uint8{uint8(opcode.LT)}
 }
 
+func (lte) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.pop(), stack.pop()
+
+	if x <= y { // x <= y
+		stack.push(item(1))
+	} else {
+		stack.push(item(0))
+	}
+
+	return nil
+}
+
+func (lte) hex() []uint8 {
+	return []uint8{uint8(opcode.LTE)}
+}
+
 func (gt) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 	y, x := stack.pop(), stack.pop()
 
@@ -197,6 +215,22 @@ func (gt) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 
 func (gt) hex() []uint8 {
 	return []uint8{uint8(opcode.GT)}
+}
+
+func (gte) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.pop(), stack.pop()
+
+	if x >= y { // x >= y
+		stack.push(item(1))
+	} else {
+		stack.push(item(0))
+	}
+
+	return nil
+}
+
+func (gte) hex() []uint8 {
+	return []uint8{uint8(opcode.GTE)}
 }
 
 func (eq) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {

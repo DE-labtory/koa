@@ -60,7 +60,7 @@ func TestType_String(t *testing.T) {
 			"GT",
 		},
 		{
-			opcode.GT,
+			opcode.GTE,
 			"GTE",
 		},
 		{

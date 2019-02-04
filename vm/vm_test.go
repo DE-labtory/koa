@@ -253,6 +253,39 @@ func TestLT(t *testing.T) {
 	}
 }
 
+func TestLTE(t *testing.T) {
+	tests := []struct {
+		x      int32
+		y      int32
+		answer int
+	}{
+		{1, 2, 1}, // true = 1 , false = 0
+		{1, 1, 1},
+		{2, 1, 0},
+		{-20, -21, 0},
+		{-21, -20, 1},
+		{-21, -21, 1},
+	}
+
+	for i, test := range tests {
+		testByteCode := makeTestByteCode(
+			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.LTE),
+		)
+		testExpected := item(test.answer)
+
+		stack, err := Execute(testByteCode, nil, nil)
+		if err != nil {
+			t.Error(err)
+		}
+		result := stack.pop()
+		if testExpected != result {
+			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+		}
+	}
+}
+
 func TestGT(t *testing.T) {
 	tests := []struct {
 		x      int32
@@ -270,6 +303,39 @@ func TestGT(t *testing.T) {
 			uint8(opcode.Push), int32ToBytes(test.x),
 			uint8(opcode.Push), int32ToBytes(test.y),
 			uint8(opcode.GT),
+		)
+		testExpected := item(test.answer)
+
+		stack, err := Execute(testByteCode, nil, nil)
+		if err != nil {
+			t.Error(err)
+		}
+		result := stack.pop()
+		if testExpected != result {
+			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+		}
+	}
+}
+
+func TestGTE(t *testing.T) {
+	tests := []struct {
+		x      int32
+		y      int32
+		answer int
+	}{
+		{1, 2, 0}, // true = 1 , false = 0
+		{2, 1, 1},
+		{2, 2, 1},
+		{-20, -21, 1},
+		{-21, -21, 1},
+		{-21, 20, 0},
+	}
+
+	for i, test := range tests {
+		testByteCode := makeTestByteCode(
+			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.GTE),
 		)
 		testExpected := item(test.answer)
 
