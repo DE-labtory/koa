@@ -52,8 +52,16 @@ func TestType_String(t *testing.T) {
 			"LT",
 		},
 		{
+			opcode.LTE,
+			"LTE",
+		},
+		{
 			opcode.GT,
 			"GT",
+		},
+		{
+			opcode.GT,
+			"GTE",
 		},
 		{
 			opcode.EQ,
