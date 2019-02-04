@@ -84,7 +84,18 @@ const (
 	LT Type = 0x10
 
 	// Pop the first two items in the stack.
-	// Check if the left operand(first popped item) is less than the right operand(second popped item).
+	// Check if the left operand(first popped item) is equal to or less than the right operand(second popped item).
+	// If it is true, push true to the stack. If not push false to the stack.
+	//
+	// Ex)
+	// [a]
+	// [b]  ==> [a<=b]
+	// [x]      [x]
+	//
+	LTE Type = 0x11
+
+	// Pop the first two items in the stack.
+	// Check if the left operand(first popped item) is greater than the right operand(second popped item).
 	// If it is true, push true to the stack. If not push false to the stack.
 	//
 	// Ex)
@@ -92,7 +103,18 @@ const (
 	// [b]  ==> [a>b]
 	// [x]      [x]
 	//
-	GT Type = 0x11
+	GT Type = 0x12
+
+	// Pop the first two items in the stack.
+	// Check if the left operand(first popped item) is equal to or greater than the right operand(second popped item).
+	// If it is true, push true to the stack. If not push false to the stack.
+	//
+	// Ex)
+	// [a]
+	// [b]  ==> [a>=b]
+	// [x]      [x]
+	//
+	GTE Type = 0x13
 
 	// Pop the first two items in the stack.
 	// Check if the left operand(first popped item) is equal to the right operand(second popped item).
@@ -103,7 +125,7 @@ const (
 	// [b]  ==> [a == b]
 	// [x]      [x]
 	//
-	EQ Type = 0x12
+	EQ Type = 0x14
 
 	// Pop the first item in the stack.
 	// Reverse the sign and push it to the stack.
@@ -113,7 +135,7 @@ const (
 	// [b]  ==>  [b]
 	// [x]       [x]
 	//
-	NOT Type = 0x13
+	NOT Type = 0x15
 
 	// Pop the first item in the stack.
 	//
@@ -198,10 +220,14 @@ func (p Type) String() (string, error) {
 	case 0x10:
 		return "LT", nil
 	case 0x11:
-		return "GT", nil
+		return "LTE", nil
 	case 0x12:
-		return "EQ", nil
+		return "GT", nil
 	case 0x13:
+		return "GTE", nil
+	case 0x14:
+		return "EQ", nil
+	case 0x15:
 		return "NOT", nil
 	case 0x20:
 		return "Pop", nil
