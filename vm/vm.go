@@ -23,6 +23,14 @@ import (
 	"github.com/DE-labtory/koa/opcode"
 )
 
+const (
+	// PTRSIZE is size of arguments pointer
+	PTRSIZE = 4
+
+	// SIZEPTRSIZE is size of arguments size pointer
+	SIZEPTRSIZE = 4
+)
+
 var ErrInvalidData = errors.New("Invalid data")
 var ErrInvalidOpcode = errors.New("invalid opcode")
 
@@ -69,9 +77,24 @@ func (cf CallFunc) function() []byte {
 // arguments(n) : if the number of arguments is 4, range of n is 0~3
 // cf.Args[n:n+4] : Pointer which point to value's size
 // after we know size, next to size is value.
-// TODO: Implements me w/ test case :-)
+//
+// CallFunc's Args
+// -----------------------------------------------------------------
+//  ptr1 | ptr2 | ... | size1 | value1 | size2 | value2 | ...
+// -----------------------------------------------------------------
+//
+// arguments retrieve nth value from CallFunc Args
 func (cf CallFunc) arguments(n int) []byte {
-	return nil
+	if n < 0 {
+		panic("CallFunc.arguments receive minus value as parameters")
+	}
+
+	ptr := n * PTRSIZE
+
+	sizePtr := binary.BigEndian.Uint32(cf.Args[ptr : ptr+PTRSIZE])
+	sizeVal := binary.BigEndian.Uint32(cf.Args[sizePtr : sizePtr+SIZEPTRSIZE])
+
+	return cf.Args[sizePtr+SIZEPTRSIZE : sizePtr+SIZEPTRSIZE+sizeVal]
 }
 
 type opCode interface {
