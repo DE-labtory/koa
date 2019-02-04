@@ -16,6 +16,8 @@
 
 package translate
 
+import "github.com/pkg/errors"
+
 // MemoryTableEntry saves size and offset of the value which the variable has.
 type MemoryTableEntry struct {
 	Offset uint
@@ -28,14 +30,41 @@ type MemoryTable struct {
 	MemoryCounter uint
 }
 
-// TODO: implement me w/ test cases :-)
-// Define() saves an variable to EntryMap and increase the MemoryCounter.
-func (m *MemoryTable) Define(id string, value interface{}) {}
+func New() *MemoryTable {
+	return &MemoryTable{
+		EntryMap:      make(map[string]MemoryTableEntry),
+		MemoryCounter: 0,
+	}
+}
 
-// TODO: implement me w/ test cases :-)
-// Use() increase the MemoryCounter.
-// When saves any data to memory, you should use Use() function.
-// Then, it will return the position of that data.
-func (m *MemoryTable) Use(size uint) uint {
-	return 0
+// Define() saves an variable to EntryMap and increase the MemoryCounter.
+// ex)
+// a = 5 -> Define("a", 5)
+// b = "abc" -> Define("b", "abc")
+func (m *MemoryTable) Define(id string, value interface{}) (MemoryTableEntry, error) {
+	entry := MemoryTableEntry{
+		Offset: m.MemoryCounter,
+	}
+
+	switch v := value.(type) {
+	case int:
+		entry.Size = 8
+		m.MemoryCounter += 8
+
+	case bool:
+		entry.Size = 8
+		m.MemoryCounter += 8
+
+	case string:
+		size := uint(len(v))
+		entry.Size = size
+		m.MemoryCounter += size
+
+	default:
+		return entry, errors.New("Not defined type definition")
+	}
+
+	m.EntryMap[id] = entry
+
+	return entry, nil
 }
