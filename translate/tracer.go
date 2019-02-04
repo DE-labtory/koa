@@ -16,7 +16,9 @@
 
 package translate
 
-import "github.com/pkg/errors"
+import (
+	"github.com/DE-labtory/koa/encoding"
+)
 
 // MemoryTableEntry saves size and offset of the value which the variable has.
 type MemoryTableEntry struct {
@@ -30,7 +32,7 @@ type MemoryTable struct {
 	MemoryCounter uint
 }
 
-func New() *MemoryTable {
+func NewMemoryTable() *MemoryTable {
 	return &MemoryTable{
 		EntryMap:      make(map[string]MemoryTableEntry),
 		MemoryCounter: 0,
@@ -46,23 +48,14 @@ func (m *MemoryTable) Define(id string, value interface{}) (MemoryTableEntry, er
 		Offset: m.MemoryCounter,
 	}
 
-	switch v := value.(type) {
-	case int:
-		entry.Size = 8
-		m.MemoryCounter += 8
-
-	case bool:
-		entry.Size = 8
-		m.MemoryCounter += 8
-
-	case string:
-		size := uint(len(v))
-		entry.Size = size
-		m.MemoryCounter += size
-
-	default:
-		return entry, errors.New("Not defined type definition")
+	encodedValue, err := encoding.EncodeOperand(value)
+	if err != nil {
+		return entry, err
 	}
+
+	size := uint(len(encodedValue))
+	entry.Size = size
+	m.MemoryCounter += size
 
 	m.EntryMap[id] = entry
 
