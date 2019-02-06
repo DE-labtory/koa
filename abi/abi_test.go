@@ -30,20 +30,20 @@ func TestNew(t *testing.T) {
 		"arguments" : [
 			{
 				"name" : "first",
-				"type" : "int256"
+				"type" : "int64"
 			},
 			{
 				"name" : "second",
 				"type" : "string"
 			},
 			{
-				"name" : "third",
-				"type" : "byte"
+				"name" : "true",
+				"type" : "bool"
 			}
 		],
 		"output" : {
 			"name" : "returnValue",
-			"type" : "int256"
+			"type" : "int64"
 		}
 	},
 	{
@@ -51,20 +51,20 @@ func TestNew(t *testing.T) {
 		"arguments" : [
 			{
 				"name" : "first",
-				"type" : "int256"
+				"type" : "int64"
 			},
 			{
 				"name" : "second",
 				"type" : "string"
 			},
 			{
-				"name" : "third",
-				"type" : "byte"
+				"name" : "false",
+				"type" : "bool"
 			}
 		],
 		"output" : {
 			"name" : "returnValue",
-			"type" : "int256"
+			"type" : "int64"
 		}
 	}
 ]
