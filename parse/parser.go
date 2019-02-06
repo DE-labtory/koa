@@ -206,6 +206,16 @@ func (e PrefixError) Error() string {
 		e.source.Line, e.source.Column, e.right.String())
 }
 
+// NotExistSymError occur when there is no target symbol
+type NotExistSymError struct {
+	source Token
+}
+
+func (e NotExistSymError) Error() string {
+	return fmt.Sprintf("[lint %d, column %d] symbol [%s] is not exist",
+		e.source.Line, e.source.Column, e.source.Val)
+}
+
 type (
 	prefixParseFn func(TokenBuffer) (ast.Expression, error)
 	infixParseFn  func(TokenBuffer, ast.Expression) (ast.Expression, error)
@@ -497,9 +507,9 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 		return nil, ExpectError{token, Ident}
 	}
 
-	// TODO: check whether variable name exist,
-	// TODO: but do not update symbol table in this case
-	// TODO: if not, return error
+	if exist := scope.Get(token.Val); exist == nil {
+		return nil, NotExistSymError{token}
+	}
 
 	return &ast.Identifier{Value: token.Val}, nil
 }
