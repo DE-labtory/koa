@@ -2955,3 +2955,31 @@ func TestParseExpressionStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestEnterLeaveScope(t *testing.T) {
+	// scope is global variable which defined in parser.go
+	scope = symbol.NewScope()
+	scope.Set("foo", &symbol.String{Name: &ast.Identifier{Value: "foo"}})
+
+	enterScope()
+
+	scope.Set("bar", &symbol.String{Name: &ast.Identifier{Value: "bar"}})
+
+	if scope.Get("foo") == nil {
+		t.Errorf("scope should have foo symbol, because we're in the inner scope")
+	}
+
+	leaveScope()
+
+	scope.Set("baz", &symbol.String{Name: &ast.Identifier{Value: "baz"}})
+
+	if scope.Get("bar") != nil {
+		t.Errorf("scope should NOT have \"bar\" symbol, because we're in the outer scope")
+	}
+	if scope.Get("foo") == nil {
+		t.Errorf("scope should have \"foo\" symbol, because we're in the outer scope")
+	}
+	if scope.Get("baz") == nil {
+		t.Errorf("scope should have \"baz\" symbol, because we're in the outer scope")
+	}
+}

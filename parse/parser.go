@@ -235,13 +235,18 @@ func updateScopeSymbol(token Token, symType symbol.SymbolType) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 // enterScope creates new scope than converts it to existing scope
-func enterScope() {}
+func enterScope() {
+	innerScope := symbol.NewScope()
+	innerScope.SetOuter(scope)
+	scope = innerScope
+}
 
-// TODO: implement me w/ test cases :-)
 // leaveScope converts current scope's outer to existing scope
-func leaveScope() {}
+func leaveScope() {
+	outerScope := scope.GetOuter()
+	scope = outerScope
+}
 
 // Parse creates an abstract syntax tree
 func Parse(buf TokenBuffer) (*ast.Contract, error) {
