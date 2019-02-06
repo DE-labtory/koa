@@ -62,6 +62,14 @@ func (s *Scope) Set(name string, val Symbol) Symbol {
 	return val
 }
 
+func (s *Scope) SetOuter(outer *Scope) {
+	s.outer = outer
+}
+
+func (s *Scope) GetOuter() *Scope {
+	return s.outer
+}
+
 func (s *Scope) String() string {
 	var out bytes.Buffer
 	scope := s
