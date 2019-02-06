@@ -154,6 +154,22 @@ func (as *AssignStatement) String() string {
 	return out.String()
 }
 
+// ReassignStatement is used when we want re-assign value to variable
+type ReassignStatement struct {
+	Variable *Identifier
+	Value    Expression
+}
+
+func (rs *ReassignStatement) do() {}
+func (rs *ReassignStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(rs.Variable.String() + " = ")
+	out.WriteString(rs.Value.String())
+
+	return out.String()
+}
+
 // Represent return statement
 type ReturnStatement struct {
 	ReturnValue Expression

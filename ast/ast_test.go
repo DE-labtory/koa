@@ -192,6 +192,61 @@ int a = 1
 	}
 }
 
+func TestReassignStatement_String(t *testing.T) {
+	tests := []struct {
+		input    ReassignStatement
+		expected string
+	}{
+		{
+			input: ReassignStatement{
+				Variable: &Identifier{
+					Value: "foo",
+				},
+				Value: &BooleanLiteral{
+					Value: true,
+				},
+			},
+			expected: "foo = true",
+		},
+		{
+			input: ReassignStatement{
+				Variable: &Identifier{
+					Value: "foo",
+				},
+				Value: &PrefixExpression{
+					Operator: Minus,
+					Right: &IntegerLiteral{
+						Value: 1,
+					},
+				},
+			},
+			expected: "foo = (-1)",
+		},
+		{
+			input: ReassignStatement{
+				Variable: &Identifier{
+					Value: "foo",
+				},
+				Value: &InfixExpression{
+					Left: &StringLiteral{
+						Value: "hello",
+					},
+					Operator: Plus,
+					Right: &IntegerLiteral{
+						Value: 2,
+					},
+				},
+			},
+			expected: "foo = (\"hello\" + 2)",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
 func testString(t *testing.T, got, expected string) {
 	t.Helper()
 	if got != expected {
