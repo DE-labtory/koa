@@ -1031,6 +1031,7 @@ func TestParseFunctionParameter(t *testing.T) {
 	initParseFnMap()
 	tests := []struct {
 		buf         TokenBuffer
+		setupScope  setupScopeFn
 		expected    []string
 		expectedErr error
 	}{
@@ -1046,6 +1047,7 @@ func TestParseFunctionParameter(t *testing.T) {
 				},
 				0,
 			},
+			setupScope: defaultSetupScopeFn,
 			expected: []string{
 				"Parameter : (Identifier: a, Type: int)",
 				"Parameter : (Identifier: b, Type: string)",
@@ -1061,6 +1063,7 @@ func TestParseFunctionParameter(t *testing.T) {
 				},
 				0,
 			},
+			setupScope: defaultSetupScopeFn,
 			expected: []string{
 				"Parameter : (Identifier: arg, Type: bool)",
 			},
@@ -1075,7 +1078,8 @@ func TestParseFunctionParameter(t *testing.T) {
 				},
 				0,
 			},
-			expected: nil,
+			setupScope: defaultSetupScopeFn,
+			expected:   nil,
 			expectedErr: ExpectError{
 				Token{Rbrace, "}", 0, 0},
 				Rparen,
@@ -1084,6 +1088,7 @@ func TestParseFunctionParameter(t *testing.T) {
 	}
 
 	for i, test := range tests {
+		scope = test.setupScope()
 		identifiers, err := parseFunctionParameterList(test.buf)
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionParameter() wrong error.\n"+
@@ -1848,6 +1853,7 @@ func TestParseCallArguments(t *testing.T) {
 	initParseFnMap()
 	tests := []struct {
 		buf         TokenBuffer
+		setupScope  setupScopeFn
 		expected    string
 		expectedErr error
 	}{
@@ -1859,6 +1865,7 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
+			setupScope:  defaultSetupScopeFn,
 			expected:    "function testFunction(  )",
 			expectedErr: nil,
 		},
@@ -1871,6 +1878,7 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
+			setupScope:  defaultSetupScopeFn,
 			expected:    "function testFunction( 1 )",
 			expectedErr: nil,
 		},
@@ -1886,6 +1894,12 @@ func TestParseCallArguments(t *testing.T) {
 					{Type: Rparen, Val: ")"},
 				},
 				0,
+			},
+			setupScope: func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				return scope
 			},
 			expected:    `function testFunction( a, b, 5 )`,
 			expectedErr: nil,
@@ -1905,6 +1919,12 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
+			setupScope: func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				return scope
+			},
 			expected:    `function testFunction( (a + b), (5 * 3) )`,
 			expectedErr: nil,
 		},
@@ -1917,7 +1937,8 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
-			expected: "",
+			setupScope: defaultSetupScopeFn,
+			expected:   "",
 			expectedErr: Error{
 				Token{Type: Asterisk},
 				"prefix parse function not defined",
@@ -1936,6 +1957,11 @@ func TestParseCallArguments(t *testing.T) {
 				},
 				0,
 			},
+			setupScope: func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				return scope
+			},
 			expected: "",
 			expectedErr: Error{
 				Token{Type: Asterisk},
@@ -1945,6 +1971,7 @@ func TestParseCallArguments(t *testing.T) {
 	}
 
 	for i, test := range tests {
+		scope = test.setupScope()
 		exp, err := parseCallArguments(test.buf)
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",

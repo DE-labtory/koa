@@ -663,23 +663,20 @@ func parseFunctionParameter(buf TokenBuffer) (*ast.ParameterLiteral, error) {
 		}
 	}
 
-	// TODO: check whether variable name exist,
-	// TODO: but do not update symbol table in this case
-	// TODO: if not, return error
-
 	ident := &ast.ParameterLiteral{
 		Identifier: &ast.Identifier{Value: token.Val},
 	}
 
-	token = buf.Read()
-	ds, ok := datastructureMap[token.Type]
+	dsToken := buf.Read()
+	ds, ok := datastructureMap[dsToken.Type]
 	if !ok {
 		return nil, Error{
-			token,
+			dsToken,
 			"Function parameter type missed",
 		}
 	}
 	ident.Type = ds
+	updateScopeSymbol(token, dsToken)
 
 	return ident, nil
 }
@@ -819,10 +816,12 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	args = append(args, exp)
 
 	for curTokenIs(buf, Comma) {
 		buf.Read()
+
 		exp, err := parseExpression(buf, LOWEST)
 		if err != nil {
 			return nil, err
