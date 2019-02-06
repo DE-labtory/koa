@@ -482,7 +482,7 @@ func TestParseIdentifier(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("ADD", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("ADD", &symbol.Integer{Name: &ast.Identifier{Value: "ADD"}})
 				return scope
 			},
 			expected: &ast.Identifier{
@@ -1130,7 +1130,7 @@ func TestMakePrefixExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			expected: "(-a)",
@@ -1169,7 +1169,7 @@ func TestMakePrefixExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Value: "foo"}})
 				return scope
 			},
 			expected: "(!(-foo))",
@@ -1185,7 +1185,7 @@ func TestMakePrefixExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Value: "foo"}})
 				return scope
 			},
 			expected: "(-(!foo))",
@@ -1511,7 +1511,7 @@ func TestParseGroupedExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			expected:    "(a + (1 - 2))",
@@ -1537,7 +1537,7 @@ func TestParseGroupedExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			expected:    "((a + (1 - 2)) + 3)",
@@ -2206,7 +2206,7 @@ func TestParseAssignStatement(t *testing.T) {
 		{
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("ddd", &symbol.String{Name: &ast.Identifier{Value: "asdf"}})
+				scope.Set("ddd", &symbol.String{Name: &ast.Identifier{Value: "ddd"}})
 				return scope
 			},
 			&mockTokenBuffer{
@@ -2234,7 +2234,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.String() != "asdf" {
+				if sym.String() != "ddd" {
 					return false
 				}
 
@@ -2305,7 +2305,7 @@ func TestParseReassignStatement(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			expected:    "a = 1",
@@ -2331,7 +2331,7 @@ func TestParseReassignStatement(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			expected: "",
@@ -2382,8 +2382,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "2"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
 				return scope
 			},
 			"((-a) * b)",
@@ -2401,7 +2401,7 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
 				return scope
 			},
 			"(!(-b))",
@@ -2422,7 +2422,7 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			"(((-33) / 67) + a)",
@@ -2445,8 +2445,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
-				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Value: "2"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Value: "c"}})
 				return scope
 			},
 			"((33 % (-67)) + (a * c))",
@@ -2471,8 +2471,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
-				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Value: "2"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Value: "c"}})
 				return scope
 			},
 			"((33 % ((-67) + a)) * c)",
@@ -2494,7 +2494,7 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			"(((-33) / 67) < (a * 67))",
@@ -2519,8 +2519,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
-				scope.Set("z", &symbol.Integer{Name: &ast.Identifier{Value: "2"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("z", &symbol.Integer{Name: &ast.Identifier{Value: "z"}})
 				return scope
 			},
 			"(((-33) / 67) >= (a + (67 % z)))",
@@ -3559,7 +3559,7 @@ func TestParseStatement(t *testing.T) {
 		{
 			setupScopeFn: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("asdf", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("asdf", &symbol.Integer{Name: &ast.Identifier{Value: "asdf"}})
 				return scope
 			},
 			buf: &mockTokenBuffer{
@@ -3711,7 +3711,7 @@ func TestParseExpressionStatement(t *testing.T) {
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
 				scope.Set("read", &symbol.Function{Name: "read"})
-				scope.Set("x", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("x", &symbol.Integer{Name: &ast.Identifier{Value: "x"}})
 				return scope
 			},
 			"function read( x )",
@@ -3733,8 +3733,8 @@ func TestParseExpressionStatement(t *testing.T) {
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
 				scope.Set("testFunction", &symbol.Function{Name: "testFunction"})
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "2"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
 				return scope
 			},
 			"function testFunction( a, b )",
@@ -3757,8 +3757,8 @@ func TestParseExpressionStatement(t *testing.T) {
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
 				scope.Set("testFunction", &symbol.Function{Name: "testFunction"})
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
 				return scope
 			},
 			"",
@@ -3873,7 +3873,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 		{
 			setupScopeFn: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
 				return scope
 			},
 			ident:       Token{Type: Ident, Val: "a"},
