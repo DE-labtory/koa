@@ -16,9 +16,35 @@
 
 package abi
 
+import (
+	"fmt"
+)
+
+type ParamType string
+
+const (
+	Integer64 ParamType = "int64"
+	Boolean   ParamType = "bool"
+	String    ParamType = "string"
+)
+
 type Type struct {
+	Type ParamType
 }
 
-func NewType() Type {
-	return Type{}
+func NewType(paramType string) (Type, error) {
+	typ := Type{}
+
+	switch paramType {
+	case "int64":
+		typ.Type = Integer64
+	case "bool":
+		typ.Type = Boolean
+	case "string":
+		typ.Type = String
+	default:
+		return Type{}, fmt.Errorf("unsupported arg type: %s", paramType)
+	}
+
+	return typ, nil
 }
