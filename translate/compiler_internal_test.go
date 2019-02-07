@@ -109,8 +109,60 @@ func TestCompileBlockStatement(t *testing.T) {
 	}
 }
 
-// TODO: implement test cases :-)
 func TestCompileExpressionStatement(t *testing.T) {
+	tests := []struct {
+		statement *ast.ExpressionStatement
+		expected  Bytecode
+		err       error
+	}{
+		{
+			statement: &ast.ExpressionStatement{
+				Expr: &ast.IntegerLiteral{
+					Value: 12345678,
+				},
+			},
+			expected: Bytecode{
+				RawByte: []byte{byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+				AsmCode: []string{"Push", "0000000000bc614e"},
+			},
+			err: nil,
+		},
+		{
+			statement: &ast.ExpressionStatement{
+				Expr: &ast.BooleanLiteral{
+					Value: true,
+				},
+			},
+			expected: Bytecode{
+				RawByte: []byte{byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+				AsmCode: []string{"Push", "0000000000000001"},
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		b := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+		}
+
+		err := compileExpressionStatement(test.statement, b)
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - TestCompileExpressionStatement() error wrong. expected=%v, got=%v", i, test.err, err)
+		}
+
+		if !bytes.Equal(b.RawByte, test.expected.RawByte) {
+			t.Fatalf("test[%d] - TestCompileExpressionStatement() result wrong for RawByte.\nexpected=%x, got=%x", i, test.expected.RawByte, b.RawByte)
+		}
+
+		for j, expected := range test.expected.AsmCode {
+			if expected != b.AsmCode[j] {
+				t.Fatalf("test[%d] - TestCompileExpressionStatement() result wrong for RawByte.\nexpected=%v, got=%v", i, test.expected.AsmCode, b.AsmCode)
+			}
+		}
+	}
 
 }
 
