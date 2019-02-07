@@ -21,19 +21,27 @@ import (
 )
 
 var opCodes = map[opcode.Type]opCode{
-	opcode.Add:  add{},
-	opcode.Mul:  mul{},
-	opcode.Sub:  sub{},
-	opcode.Div:  div{},
-	opcode.Mod:  mod{},
+	// 0x0 range
+	opcode.Add: add{},
+	opcode.Mul: mul{},
+	opcode.Sub: sub{},
+	opcode.Div: div{},
+	opcode.Mod: mod{},
+
+	// 0x10 range
+	opcode.LT:  lt{},
+	opcode.LTE: lte{},
+	opcode.GT:  gt{},
+	opcode.GTE: gte{},
+	opcode.EQ:  eq{},
+	opcode.NOT: not{},
+
+	// 0x20 range
 	opcode.Pop:  pop{},
 	opcode.Push: push{},
-	opcode.LT:   lt{},
-	opcode.LTE:  lte{},
-	opcode.GT:   gt{},
-	opcode.GTE:  gte{},
-	opcode.EQ:   eq{},
-	opcode.NOT:  not{},
+
+	// 0x30 range
+	opcode.DUP: dup{},
 }
 
 // Converts rawByteCode to assembly code.

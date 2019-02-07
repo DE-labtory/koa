@@ -202,6 +202,14 @@ const (
 	//      ==>  [size]
 	// [y]       [y]
 	Returning Type = 0x26
+
+	// Duplicate data that exists at the top of the stack.
+	//
+	// Ex)
+	//           [a]
+	// [a]  ==>  [a]
+	// [b]       [b]
+	DUP Type = 0x30
 )
 
 // Change the bytecode of an opcode to string.
@@ -243,6 +251,8 @@ func (p Type) String() (string, error) {
 		return "LoadArgs", nil
 	case 0x26:
 		return "Returning", nil
+	case 0x30:
+		return "DUP", nil
 
 	default:
 		return "", errors.New("String() error - Not defined opcode")

@@ -53,6 +53,10 @@ func (s *stack) len() int {
 	return len(s.items)
 }
 
+func (s *stack) dup() {
+	s.push(s.items[s.len()-1])
+}
+
 // Print dumps the content of the stack
 func (s *stack) print() {
 	fmt.Println("### stack ###")
