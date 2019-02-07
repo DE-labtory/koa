@@ -57,6 +57,10 @@ func (s *stack) dup() {
 	s.push(s.items[s.len()-1])
 }
 
+func (s *stack) swap() {
+	s.items[s.len()-2], s.items[s.len()-1] = s.items[s.len()-1], s.items[s.len()-2]
+}
+
 // Print dumps the content of the stack
 func (s *stack) print() {
 	fmt.Println("### stack ###")

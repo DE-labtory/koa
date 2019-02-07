@@ -108,6 +108,7 @@ type returning struct{}
 
 // 0x30 range
 type dup struct{}
+type swap struct{}
 
 func (add) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 	y := stack.pop()
@@ -377,6 +378,15 @@ func (dup) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
 
 func (dup) hex() []uint8 {
 	return []uint8{uint8(opcode.DUP)}
+}
+
+func (swap) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	stack.swap()
+	return nil
+}
+
+func (swap) hex() []uint8 {
+	return []uint8{uint8(opcode.SWAP)}
 }
 
 func int32ToBytes(int32 int32) []byte {

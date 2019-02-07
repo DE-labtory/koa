@@ -43,7 +43,8 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Push: push{},
 
 	// 0x30 range
-	opcode.DUP: dup{},
+	opcode.DUP:  dup{},
+	opcode.SWAP: swap{},
 }
 
 // Converts rawByteCode to assembly code.
