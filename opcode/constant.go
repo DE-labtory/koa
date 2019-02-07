@@ -230,6 +230,12 @@ const (
 	// jumpDst should be where the jump will be.
 	JumpDst Type = 0x28
 
+	// Pop the first two items in the stack.
+	// First item pointed to where to jump.
+	// Second item should be bool data that decide to jump.
+	// If second item is false, jump to first item(pc) pointed to
+	Jumpi Type = 0x29
+
 	// Duplicate data that exists at the top of the stack.
 	//
 	// Ex)
@@ -295,6 +301,8 @@ func (p Type) String() (string, error) {
 		return "Jump", nil
 	case 0x28:
 		return "JumpDst", nil
+	case 0x29:
+		return "Jumpi", nil
 	case 0x30:
 		return "DUP", nil
 	case 0x31:

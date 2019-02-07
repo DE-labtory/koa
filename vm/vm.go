@@ -130,6 +130,7 @@ type loadargs struct{}
 type returning struct{}
 type jump struct{}
 type jumpDst struct{}
+type jumpi struct{}
 
 // 0x30 range
 type dup struct{}
@@ -398,6 +399,9 @@ func (returning) hex() []uint8 {
 
 func (jump) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
 	pos := stack.pop()
+	if !a.validateJumpDst(uint64(pos)) {
+		return errors.New("invalid jump target")
+	}
 	a.jump(uint64(pos))
 	return nil
 }
@@ -412,6 +416,21 @@ func (jumpDst) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error 
 
 func (jumpDst) hex() []uint8 {
 	return []uint8{uint8(opcode.JumpDst)}
+}
+
+func (jumpi) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
+	pos, cond := stack.pop(), stack.pop()
+	if cond == item(0) { // cond == false
+		if !a.validateJumpDst(uint64(pos)) {
+			return errors.New("invalid jump target")
+		}
+		a.jump(uint64(pos))
+	}
+	return nil
+}
+
+func (jumpi) hex() []uint8 {
+	return []uint8{uint8(opcode.Jumpi)}
 }
 
 func (dup) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
