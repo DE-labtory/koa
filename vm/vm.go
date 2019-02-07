@@ -103,17 +103,22 @@ type opCode interface {
 }
 
 // Perform opcodes logic.
+// 0x0 range
 type add struct{}
 type mul struct{}
 type sub struct{}
 type div struct{}
 type mod struct{}
+
+// 0x10 range
 type lt struct{}
 type lte struct{}
 type gt struct{}
 type gte struct{}
 type eq struct{}
 type not struct{}
+
+// 0x20 range
 type pop struct{}
 type push struct{}
 type mload struct{}
@@ -121,6 +126,9 @@ type mstore struct{}
 type loadfunc struct{}
 type loadargs struct{}
 type returning struct{}
+
+// 0x30 range
+type dup struct{}
 
 func (add) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 	y := stack.pop()
@@ -351,6 +359,15 @@ func (returning) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) erro
 
 func (returning) hex() []uint8 {
 	return []uint8{uint8(opcode.Returning)}
+}
+
+func (dup) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	stack.dup()
+	return nil
+}
+
+func (dup) hex() []uint8 {
+	return []uint8{uint8(opcode.DUP)}
 }
 
 func int32ToBytes(int32 int32) []byte {

@@ -100,6 +100,10 @@ func TestType_String(t *testing.T) {
 			"Returning",
 		},
 		{
+			opcode.DUP,
+			"DUP",
+		},
+		{
 			0x27,
 			"String() error - Not defined opcode",
 		},

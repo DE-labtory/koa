@@ -503,3 +503,27 @@ func TestCallFunc_function(t *testing.T) {
 func TestCallFunc_arguments(t *testing.T) {
 
 }
+
+func TestDUP(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.DUP),
+	)
+
+	testExpected := []item{1, 1}
+
+	stack, err := Execute(testByteCode, nil, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(stack.items) != 2 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+	}
+
+	for i, item := range stack.items {
+		if testExpected[i] != item {
+			t.Errorf("Stack item is incorrect - expected=%d, got=%d", testExpected[i], item)
+		}
+	}
+}
