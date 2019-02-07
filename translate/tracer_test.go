@@ -23,7 +23,7 @@ import (
 	"github.com/DE-labtory/koa/translate"
 )
 
-func TestMemoryTable_Define(t *testing.T) {
+func TestMemEntryTable_Define(t *testing.T) {
 	tests := []struct {
 		id           string
 		value        interface{}
@@ -58,7 +58,7 @@ func TestMemoryTable_Define(t *testing.T) {
 		},
 	}
 
-	mTable := translate.NewMemoryTable()
+	mTable := translate.NewMemEntryTable()
 
 	for i, test := range tests {
 		prevOffset := mTable.MemoryCounter
@@ -70,20 +70,131 @@ func TestMemoryTable_Define(t *testing.T) {
 		}
 
 		if entry.Size != test.expectedSize {
-			t.Fatalf("test[%d] - Define() result wrong. expected=%d, got=%d", i, test.expectedSize, entry.Size)
+			t.Fatalf("test[%d] - Define() result wrong for size. expected=%d, got=%d", i, test.expectedSize, entry.Size)
 		}
 
 		if entry.Offset != prevOffset {
-			t.Fatalf("test[%d] - Define() result wrong. expected=%d, got=%d", i, prevOffset, entry.Offset)
+			t.Fatalf("test[%d] - Define() result wrong for offset. expected=%d, got=%d", i, prevOffset, entry.Offset)
 		}
 
 		if err == nil && mTable.EntryMap[test.id] != entry {
-			t.Fatalf("test[%d] - Define() result wrong. expected=%v, got=%v", i, mTable.EntryMap[test.id], entry)
+			t.Fatalf("test[%d] - Define() result wrong for entry. expected=%v, got=%v", i, mTable.EntryMap[test.id], entry)
 		}
 
 		expectedMemoryCounter := prevOffset + test.expectedSize
 		if mTable.MemoryCounter != expectedMemoryCounter {
-			t.Fatalf("test]%d] - Define() result wrong. expected=%d, got=%d", i, expectedMemoryCounter, mTable.MemoryCounter)
+			t.Fatalf("test[%d] - Define() result wrong for memory counter. expected=%d, got=%d", i, expectedMemoryCounter, mTable.MemoryCounter)
 		}
 	}
+}
+
+func TestMemEntryTable_GetOffsetOfEntry(t *testing.T) {
+	mTable := makeTempMemEntryTable()
+
+	tests := []struct {
+		id       string
+		expected uint
+		err      error
+	}{
+		{
+			id:       "aInteger",
+			expected: 0,
+			err:      nil,
+		},
+		{
+			id:       "aBoolean",
+			expected: 8,
+			err:      nil,
+		},
+		{
+			id:       "aString",
+			expected: 16,
+			err:      nil,
+		},
+		{
+			id:       "aByte",
+			expected: 0,
+			err: translate.EntryError{
+				Id: "aByte",
+			},
+		},
+	}
+
+	for i, test := range tests {
+		offset, err := mTable.GetOffsetOfEntry(test.id)
+
+		if err != nil && err.Error() != test.err.Error() {
+			t.Fatalf("test[%d] - GetOffsetOfEntry() error wrong. expected=%v, err=%v", i, test.err, err)
+		}
+
+		if offset != test.expected {
+			t.Fatalf("test[%d] - GetOffsetOfEntry() result wrong. expected=%d, got=%d", i, test.expected, offset)
+		}
+	}
+}
+
+func TestMemEntryTable_GetSizeOfEntry(t *testing.T) {
+	mTable := makeTempMemEntryTable()
+
+	tests := []struct {
+		id       string
+		expected uint
+		err      error
+	}{
+		{
+			id:       "aInteger",
+			expected: 8,
+			err:      nil,
+		},
+		{
+			id:       "aBoolean",
+			expected: 8,
+			err:      nil,
+		},
+		{
+			id:       "aString",
+			expected: 12,
+			err:      nil,
+		},
+		{
+			id:       "aByte",
+			expected: 0,
+			err: translate.EntryError{
+				Id: "aByte",
+			},
+		},
+	}
+
+	for i, test := range tests {
+		size, err := mTable.GetSizeOfEntry(test.id)
+
+		if err != nil && err.Error() != test.err.Error() {
+			t.Fatalf("test[%d] - GetSizeOfEntry() error wrong. expected=%v, err=%v", i, test.err, err)
+		}
+
+		if size != test.expected {
+			t.Fatalf("test[%d] - GetSizeOfEntry() result wrong. expected=%d, got=%d", i, test.expected, size)
+		}
+	}
+}
+
+func makeTempMemEntryTable() *translate.MemEntryTable {
+	mTable := translate.NewMemEntryTable()
+
+	mTable.EntryMap["aInteger"] = translate.MemEntry{
+		Offset: 0,
+		Size:   8,
+	}
+
+	mTable.EntryMap["aBoolean"] = translate.MemEntry{
+		Offset: 8,
+		Size:   8,
+	}
+
+	mTable.EntryMap["aString"] = translate.MemEntry{
+		Offset: 16,
+		Size:   12,
+	}
+
+	return mTable
 }

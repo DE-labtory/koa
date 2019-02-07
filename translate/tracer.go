@@ -17,38 +17,66 @@
 package translate
 
 import (
+	"fmt"
+
 	"github.com/DE-labtory/koa/encoding"
 )
 
-// MemoryTableEntry saves size and offset of the value which the variable has.
-type MemoryTableEntry struct {
+type EntryError struct {
+	Id string
+}
+
+func (e EntryError) Error() string {
+	return fmt.Sprintf("[%s] definition doesn't exist", e.Id)
+}
+
+type MemTracer interface {
+	MemDefiner
+	MemEntryGetter
+}
+
+// Define() saves an variable to EntryMap and increase the MemoryCounter.
+// This should be used when compiles the assign statement.
+// ex)
+// a = 5 -> Define("a", 5)
+// b = "abc" -> Define("b", "abc")
+type MemDefiner interface {
+	Define(id string, value interface{}) (MemEntry, error)
+}
+
+// MemEntryGetter gets the data of the memory entry.
+// GetOffsetOfEntry() returns the offset of the memory entry corresponding the Id.
+// GetSizeOfEntry() returns the size of the memory entry corresponding the Id.
+type MemEntryGetter interface {
+	GetOffsetOfEntry(id string) (uint, error)
+	GetSizeOfEntry(id string) (uint, error)
+}
+
+// MemEntry saves size and offset of the value which the variable has.
+type MemEntry struct {
 	Offset uint
 	Size   uint
 }
 
-// MemoryTable is used to know the location of the memory
-type MemoryTable struct {
-	EntryMap      map[string]MemoryTableEntry
+// MemEntryTable is used to know the location of the memory
+type MemEntryTable struct {
+	EntryMap      map[string]MemEntry
 	MemoryCounter uint
 }
 
-func NewMemoryTable() *MemoryTable {
-	return &MemoryTable{
-		EntryMap:      make(map[string]MemoryTableEntry),
+func NewMemEntryTable() *MemEntryTable {
+	return &MemEntryTable{
+		EntryMap:      make(map[string]MemEntry),
 		MemoryCounter: 0,
 	}
 }
 
-// Define() saves an variable to EntryMap and increase the MemoryCounter.
-// ex)
-// a = 5 -> Define("a", 5)
-// b = "abc" -> Define("b", "abc")
-func (m *MemoryTable) Define(id string, value interface{}) (MemoryTableEntry, error) {
-	entry := MemoryTableEntry{
+func (m *MemEntryTable) Define(id string, value interface{}) (MemEntry, error) {
+	entry := MemEntry{
 		Offset: m.MemoryCounter,
 	}
 
-	encodedValue, err := encoding.EncodeOperand(value)
+	encodedValue, err := encoding.EncodeOperand(value, encoding.EIGHT_PADDING)
 	if err != nil {
 		return entry, err
 	}
@@ -60,4 +88,26 @@ func (m *MemoryTable) Define(id string, value interface{}) (MemoryTableEntry, er
 	m.EntryMap[id] = entry
 
 	return entry, nil
+}
+
+func (m MemEntryTable) GetOffsetOfEntry(id string) (uint, error) {
+	entry, ok := m.EntryMap[id]
+	if !ok {
+		return 0, EntryError{
+			Id: id,
+		}
+	}
+
+	return entry.Offset, nil
+}
+
+func (m MemEntryTable) GetSizeOfEntry(id string) (uint, error) {
+	entry, ok := m.EntryMap[id]
+	if !ok {
+		return 0, EntryError{
+			Id: id,
+		}
+	}
+
+	return entry.Size, nil
 }
