@@ -27,6 +27,7 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Sub: sub{},
 	opcode.Div: div{},
 	opcode.Mod: mod{},
+	opcode.And: and{},
 
 	// 0x10 range
 	opcode.LT:  lt{},

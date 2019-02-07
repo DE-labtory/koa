@@ -19,7 +19,7 @@ package lex
 import (
 	"testing"
 
-	"github.com/kami-zh/go-capturer"
+	capturer "github.com/kami-zh/go-capturer"
 )
 
 func Test_lex(t *testing.T) {

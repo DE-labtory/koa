@@ -222,6 +222,24 @@ func TestMod_negative(t *testing.T) {
 	}
 }
 
+func TestAnd(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int32ToBytes(0xAC), // 000...10101100
+		uint8(opcode.Push), int32ToBytes(0xF0), // 000...11110000
+		uint8(opcode.And),
+	)
+	testExpected := item(0xA0) // 000...10100000
+
+	stack, err := Execute(testByteCode, nil, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	result := stack.pop()
+	if testExpected != result {
+		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+	}
+}
+
 func TestLT(t *testing.T) {
 	tests := []struct {
 		x      int32

@@ -109,6 +109,7 @@ type mul struct{}
 type sub struct{}
 type div struct{}
 type mod struct{}
+type and struct{}
 
 // 0x10 range
 type lt struct{}
@@ -198,6 +199,21 @@ func (mod) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 
 func (mod) hex() []uint8 {
 	return []uint8{uint8(opcode.Mod)}
+}
+
+func (and) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.pop()
+	x := stack.pop()
+
+	ret := x & y
+
+	stack.push(ret)
+
+	return nil
+}
+
+func (and) hex() []uint8 {
+	return []uint8{uint8(opcode.And)}
 }
 
 func (lt) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
