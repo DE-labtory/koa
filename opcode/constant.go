@@ -230,6 +230,15 @@ const (
 	// [a]  ==>  [a]
 	// [b]       [b]
 	DUP Type = 0x30
+
+	// Swap the first two items in the stack
+	//
+	// Ex)
+	//
+	// [a]       [b]
+	// [b]  ==>  [a]
+	// [c]       [c]
+	SWAP Type = 0x31
 )
 
 // Change the bytecode of an opcode to string.
@@ -245,6 +254,10 @@ func (p Type) String() (string, error) {
 		return "Div", nil
 	case 0x05:
 		return "Mod", nil
+	case 0x06:
+		return "And", nil
+	case 0x07:
+		return "Or", nil
 	case 0x10:
 		return "LT", nil
 	case 0x11:
@@ -273,6 +286,8 @@ func (p Type) String() (string, error) {
 		return "Returning", nil
 	case 0x30:
 		return "DUP", nil
+	case 0x31:
+		return "SWAP", nil
 
 	default:
 		return "", errors.New("String() error - Not defined opcode")

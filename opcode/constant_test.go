@@ -112,6 +112,10 @@ func TestType_String(t *testing.T) {
 			"DUP",
 		},
 		{
+			opcode.SWAP,
+			"SWAP",
+		},
+		{
 			0x27,
 			"String() error - Not defined opcode",
 		},
