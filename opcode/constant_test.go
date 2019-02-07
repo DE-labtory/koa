@@ -48,6 +48,10 @@ func TestType_String(t *testing.T) {
 			"Mod",
 		},
 		{
+			opcode.And,
+			"And",
+		},
+		{
 			opcode.LT,
 			"LT",
 		},
