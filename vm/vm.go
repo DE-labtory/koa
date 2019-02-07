@@ -105,6 +105,8 @@ type mstore struct{}
 type loadfunc struct{}
 type loadargs struct{}
 type returning struct{}
+type jump struct{}
+type jumpDst struct{}
 
 // 0x30 range
 type dup struct{}
@@ -359,7 +361,7 @@ func (loadargs) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) err
 }
 
 func (loadargs) hex() []uint8 {
-	return []uint8{uint8(opcode.LoadFunc)}
+	return []uint8{uint8(opcode.LoadArgs)}
 }
 
 // TODO: implement me w/ test cases :-)
@@ -369,6 +371,24 @@ func (returning) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) erro
 
 func (returning) hex() []uint8 {
 	return []uint8{uint8(opcode.Returning)}
+}
+
+func (jump) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
+	pos := stack.pop()
+	a.jump(uint64(pos))
+	return nil
+}
+
+func (jump) hex() []uint8 {
+	return []uint8{uint8(opcode.Jump)}
+}
+
+func (jumpDst) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
+	return nil
+}
+
+func (jumpDst) hex() []uint8 {
+	return []uint8{uint8(opcode.JumpDst)}
 }
 
 func (dup) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {

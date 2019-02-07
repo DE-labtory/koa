@@ -223,6 +223,13 @@ const (
 	// [y]       [y]
 	Returning Type = 0x26
 
+	// pop the data which present specific pc to jump
+	// The opcode pointed to by pc must be JumpDst.
+	Jump Type = 0x27
+
+	// jumpDst should be where the jump will be.
+	JumpDst Type = 0x28
+
 	// Duplicate data that exists at the top of the stack.
 	//
 	// Ex)
@@ -284,6 +291,10 @@ func (p Type) String() (string, error) {
 		return "LoadArgs", nil
 	case 0x26:
 		return "Returning", nil
+	case 0x27:
+		return "Jump", nil
+	case 0x28:
+		return "JumpDst", nil
 	case 0x30:
 		return "DUP", nil
 	case 0x31:

@@ -108,6 +108,14 @@ func TestType_String(t *testing.T) {
 			"Returning",
 		},
 		{
+			opcode.Jump,
+			"Jump",
+		},
+		{
+			opcode.JumpDst,
+			"JumpDst",
+		},
+		{
 			opcode.DUP,
 			"DUP",
 		},

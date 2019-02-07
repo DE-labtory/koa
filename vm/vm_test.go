@@ -540,6 +540,34 @@ func TestCallFunc_arguments(t *testing.T) {
 
 }
 
+func TestJumpOp(t *testing.T) {
+	testByteCode := makeTestByteCode( //  op code index
+		uint8(opcode.Push), int32ToBytes(1), // 0 , 1
+		uint8(opcode.Push), int32ToBytes(7), // 2 , 3
+		uint8(opcode.Jump),                        // 4
+		uint8(opcode.Push), int32ToBytes(2), // 5 , 6
+		uint8(opcode.JumpDst),                     // 7 ( jump to here! )
+		uint8(opcode.Push), int32ToBytes(3), // 8 , 9
+	)
+
+	testExpected := []item{1, 3}
+
+	stack, err := Execute(testByteCode, nil, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(stack.items) != 2 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+	}
+
+	for i, item := range stack.items {
+		if testExpected[i] != item {
+			t.Errorf("Stack item is incorrect - expected=%d, got=%d", testExpected[i], item)
+		}
+	}
+}
+
 func TestDUP(t *testing.T) {
 	testByteCode := makeTestByteCode(
 		uint8(opcode.Push), int32ToBytes(1),
