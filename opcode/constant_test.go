@@ -116,6 +116,10 @@ func TestType_String(t *testing.T) {
 			"JumpDst",
 		},
 		{
+			opcode.Jumpi,
+			"Jumpi",
+		},
+		{
 			opcode.DUP,
 			"DUP",
 		},
@@ -124,7 +128,7 @@ func TestType_String(t *testing.T) {
 			"SWAP",
 		},
 		{
-			0x27,
+			0x97,
 			"String() error - Not defined opcode",
 		},
 	}

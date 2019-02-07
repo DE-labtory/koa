@@ -43,6 +43,7 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Push:    push{},
 	opcode.Jump:    jump{},
 	opcode.JumpDst: jumpDst{},
+	opcode.Jumpi:   jumpi{},
 
 	// 0x30 range
 	opcode.DUP:  dup{},
@@ -84,6 +85,7 @@ func analysis() {
 type asmReader interface {
 	next() hexer
 	jump(i uint64)
+	validateJumpDst(i uint64) bool
 }
 
 type Data struct {
@@ -126,10 +128,14 @@ func (a *asm) jump(pc uint64) {
 	if pc > uint64(len(a.code))-1 {
 		panic("Access to invalid program counter!")
 	}
-	if opcode.Type(a.code[pc].hex()[0]) != opcode.JumpDst {
-		panic("jump is not allowed to input pc")
-	}
 	a.pc = pc
+}
+
+func (a *asm) validateJumpDst(pc uint64) bool {
+	if opcode.Type(a.code[pc].hex()[0]) != opcode.JumpDst {
+		return false
+	}
+	return true
 }
 
 func (a *asm) print() {
