@@ -149,9 +149,8 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) error {
-	return nil
+	return compileExpression(s.Expr, bytecode)
 }
 
 // TODO: implement me w/ test cases :-)
