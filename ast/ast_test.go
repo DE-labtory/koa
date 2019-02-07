@@ -237,7 +237,7 @@ func TestReassignStatement_String(t *testing.T) {
 					},
 				},
 			},
-			expected: "foo = (\"hello\" + 2)",
+			expected: "foo = (hello + 2)",
 		},
 	}
 

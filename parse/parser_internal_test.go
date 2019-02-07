@@ -18,6 +18,7 @@ package parse
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/DE-labtory/koa/symbol"
@@ -2981,5 +2982,149 @@ func TestEnterLeaveScope(t *testing.T) {
 	}
 	if scope.Get("baz") == nil {
 		t.Errorf("scope should have \"baz\" symbol, because we're in the outer scope")
+	}
+}
+
+func TestUpdateScopeSymbol(t *testing.T) {
+	tests := []struct {
+		setupScopeFn
+		ident       Token
+		keyword     Token
+		expectedErr error
+		chkScope    func(scope *symbol.Scope) bool
+	}{
+		// test when scope already have identifier symbol
+		{
+			setupScopeFn: func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				return scope
+			},
+			ident:       Token{Type: Ident, Val: "a"},
+			keyword:     Token{Type: StringType, Val: "string"},
+			expectedErr: DupSymError{Token{Type: Ident, Val: "a"}},
+			chkScope: func(scope *symbol.Scope) bool {
+				return true
+			},
+		},
+		// test when keyword token is IntType, BoolType, StringType, Function, Or Not one of those
+		{
+			setupScopeFn: defaultSetupScopeFn,
+			ident:        Token{Type: Ident, Val: "a"},
+			keyword:      Token{Type: IntType, Val: "int"},
+			expectedErr:  nil,
+			chkScope: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
+		},
+		{
+			setupScopeFn: defaultSetupScopeFn,
+			ident:        Token{Type: Ident, Val: "b"},
+			keyword:      Token{Type: BoolType, Val: "bool"},
+			expectedErr:  nil,
+			chkScope: func(scope *symbol.Scope) bool {
+				sym := scope.Get("b")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "b" {
+					return false
+				}
+
+				return true
+			},
+		},
+		{
+			setupScopeFn: defaultSetupScopeFn,
+			ident:        Token{Type: Ident, Val: "c"},
+			keyword:      Token{Type: StringType, Val: "string"},
+			expectedErr:  nil,
+			chkScope: func(scope *symbol.Scope) bool {
+				sym := scope.Get("c")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "c" {
+					return false
+				}
+
+				return true
+			},
+		},
+		{
+			setupScopeFn: defaultSetupScopeFn,
+			ident:        Token{Type: Ident, Val: "d"},
+			keyword:      Token{Type: Function, Val: "func"},
+			expectedErr:  nil,
+			chkScope: func(scope *symbol.Scope) bool {
+				sym := scope.Get("d")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.FunctionSymbol {
+					return false
+				}
+
+				if sym.String() != "d" {
+					return false
+				}
+
+				return true
+			},
+		},
+		{
+			setupScopeFn: defaultSetupScopeFn,
+			ident:        Token{Type: Ident, Val: "e"},
+			keyword:      Token{Type: Illegal, Val: "illegal"},
+			expectedErr: Error{
+				Token{Type: Illegal, Val: "illegal"},
+				fmt.Sprintf("unexpected symbol type [%v]", TokenTypeMap[Illegal]),
+			},
+			chkScope: func(scope *symbol.Scope) bool {
+				return true
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		// setup
+		scope = tt.setupScopeFn()
+
+		// exercise
+		err := updateScopeSymbol(tt.ident, tt.keyword)
+
+		// verify
+		if err != nil && err.Error() != tt.expectedErr.Error() {
+			t.Errorf("test[%d] - updateScopeSymbol returns unexpected error, expected=\"%s\", got=\"%s\"",
+				i, err.Error(), tt.expectedErr.Error())
+		}
+		// verify
+		if ok := tt.chkScope(scope); !ok {
+			t.Errorf("test[%d] - updateScopeSymbol updates scope incorrectly", i)
+		}
 	}
 }

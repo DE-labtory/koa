@@ -119,7 +119,7 @@ func TestFunction(t *testing.T) {
 				"add",
 				&Scope{},
 			},
-			"func add",
+			"add",
 			FunctionSymbol,
 		},
 	}

@@ -89,5 +89,5 @@ func (f *Function) Type() SymbolType {
 }
 
 func (f *Function) String() string {
-	return fmt.Sprintf("func %s", f.Name)
+	return fmt.Sprintf("%s", f.Name)
 }

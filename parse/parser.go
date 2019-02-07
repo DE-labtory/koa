@@ -205,30 +205,30 @@ var infixParseFnMap = map[TokenType]infixParseFn{}
 
 // scope keeps symbols that shows on tokens, every time scope meet symbol,
 // trying to check whether symbol with same name already exist, if true
-// then throw error, if not add that symbol to scope.
+// then throw error, if not, add that symbol to scope.
 var scope *symbol.Scope
 
 // updateScopeSymbol checks whether token value is exist in scope first,
-// if exist, then throw error, if not make symbol with token value then add
+// if exist, then throw error, if not, make symbol with token value then add
 // to scope
-func updateScopeSymbol(token Token, symType symbol.SymbolType) error {
-	if sym := scope.Get(token.Val); sym != nil {
-		return DupSymError{token}
+func updateScopeSymbol(ident Token, keyword Token) error {
+	if s := scope.Get(ident.Val); s != nil {
+		return DupSymError{ident}
 	}
 
-	switch symType {
-	case symbol.IntegerSymbol:
-		// TODO: add symbol to scope
-	case symbol.BooleanSymbol:
-		// TODO: add symbol to scope
-	case symbol.StringSymbol:
-		// TODO: add symbol to scope
-	case symbol.FunctionSymbol:
-		scope.Set(token.Val, &symbol.Function{Name: token.Val})
+	switch keyword.Type {
+	case IntType:
+		scope.Set(ident.Val, &symbol.Integer{Name: &ast.Identifier{Value: ident.Val}})
+	case BoolType:
+		scope.Set(ident.Val, &symbol.Boolean{Name: &ast.Identifier{Value: ident.Val}})
+	case StringType:
+		scope.Set(ident.Val, &symbol.String{Name: &ast.Identifier{Value: ident.Val}})
+	case Function:
+		scope.Set(ident.Val, &symbol.Function{Name: ident.Val})
 	default:
 		return Error{
-			token,
-			fmt.Sprintf("unexpected symbol type [%s]", symType),
+			keyword,
+			fmt.Sprintf("unexpected symbol type [%s]", TokenTypeMap[keyword.Type]),
 		}
 	}
 
@@ -540,8 +540,9 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	lit := &ast.FunctionLiteral{}
 	var err error
 
-	if err = expectNext(buf, Function); err != nil {
-		return nil, err
+	keyword := buf.Read()
+	if keyword.Type != Function {
+		return nil, ExpectError{keyword, Function}
 	}
 
 	token := buf.Read()
@@ -549,7 +550,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, ExpectError{token, Ident}
 	}
 
-	if err := updateScopeSymbol(token, symbol.FunctionSymbol); err != nil {
+	if err := updateScopeSymbol(token, keyword); err != nil {
 		return nil, err
 	}
 
