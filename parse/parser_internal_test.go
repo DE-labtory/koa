@@ -46,8 +46,15 @@ func (m *mockTokenBuffer) Peek(n peekNumber) Token {
 // setupScopeFn helps to build Scope for each test case
 type setupScopeFn func() *symbol.Scope
 
+// chkScopeFn helps to verify whether symbols are correctly saved
+type chkScopeFn func(scope *symbol.Scope) bool
+
 func defaultSetupScopeFn() *symbol.Scope {
 	return symbol.NewScope()
+}
+
+func defaultChkScopeFn(_ *symbol.Scope) bool {
+	return true
 }
 
 // TestParserOnly tests three things
@@ -1868,13 +1875,16 @@ func TestParseCallArguments(t *testing.T) {
 func TestParseAssignStatement(t *testing.T) {
 	initParseFnMap()
 	tests := []struct {
+		setupScopeFn
 		tokenBuffer           TokenBuffer
 		expectedDataStructure string
 		expectedIdent         string
 		expectedVal           string
 		expectedErr           error
+		chkScopeFn
 	}{
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: StringType, Val: "string"},
@@ -1890,8 +1900,25 @@ func TestParseAssignStatement(t *testing.T) {
 			"a",
 			"hello",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: IntType, Val: "int"},
@@ -1907,8 +1934,25 @@ func TestParseAssignStatement(t *testing.T) {
 			"myInt",
 			"1",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("myInt")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "myInt" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: BoolType, Val: "bool"},
@@ -1924,9 +1968,26 @@ func TestParseAssignStatement(t *testing.T) {
 			"ddd",
 			"true",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("ddd")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "ddd" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
 			// type mismatch tc - int ddd2 = "iam_string"
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: IntType, Val: "int"},
@@ -1942,9 +2003,26 @@ func TestParseAssignStatement(t *testing.T) {
 			"ddd2",
 			"iam_string",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("ddd2")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "ddd2" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
 			// type mismatch tc - bool foo = "iam_string"
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: BoolType, Val: "bool"},
@@ -1960,8 +2038,25 @@ func TestParseAssignStatement(t *testing.T) {
 			"foo",
 			"iam_string",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("foo")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "foo" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: BoolType, Val: "bool"},
@@ -1980,8 +2075,17 @@ func TestParseAssignStatement(t *testing.T) {
 				Token{Type: String},
 				Ident,
 			},
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("foo")
+				if sym != nil {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				buf: []Token{
 					{Type: BoolType, Val: "bool"},
@@ -1999,12 +2103,64 @@ func TestParseAssignStatement(t *testing.T) {
 				Token{Type: String},
 				Assign,
 			},
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("foo")
+				if sym == nil {
+					return false
+				}
+
+				return true
+			},
+		},
+		// test when identifier already exist
+		{
+			func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("ddd", &symbol.String{Name: &ast.Identifier{Value: "asdf"}})
+				return scope
+			},
+			&mockTokenBuffer{
+				buf: []Token{
+					{Type: BoolType, Val: "bool"},
+					{Type: Ident, Val: "ddd"},
+					{Type: Assign, Val: "="},
+					{Type: True, Val: "true"},
+					{Type: Semicolon},
+					{Type: Eof},
+				},
+				sp: 0,
+			},
+			"bool",
+			"ddd",
+			"true",
+			DupSymError{Token{Type: Ident, Val: "ddd"}},
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("ddd")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "asdf" {
+					return false
+				}
+
+				return true
+			},
 		},
 	}
 
 	for i, tt := range tests {
+		// setup
+		scope = tt.setupScopeFn()
+
+		// exercise
 		exp, err := parseAssignStatement(tt.tokenBuffer)
 
+		// verify
 		if err != nil && err.Error() != tt.expectedErr.Error() {
 			t.Errorf(`tests[%d] - Returned err is not "%s", but got "%s"`,
 				i, tt.expectedErr.Error(), err.Error())
@@ -2023,6 +2179,10 @@ func TestParseAssignStatement(t *testing.T) {
 		if err == nil && exp.Value.String() != tt.expectedVal {
 			t.Errorf("tests[%d] - Value is not %s but got %s",
 				i, tt.expectedVal, exp.Value.String())
+		}
+
+		if !tt.chkScopeFn(scope) {
+			t.Errorf("test[%d] - updateScopeSymbol updates scope incorrectly", i)
 		}
 	}
 }
@@ -2205,11 +2365,14 @@ func TestParseExpression(t *testing.T) {
 func TestParseIfStatement(t *testing.T) {
 	initParseFnMap()
 	tests := []struct {
+		setupScopeFn
 		buf         TokenBuffer
 		expected    string
 		expectedErr error
+		chkScopeFn
 	}{
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2230,8 +2393,25 @@ func TestParseIfStatement(t *testing.T) {
 			},
 			"if ( true ) { int a = 0 }",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2262,8 +2442,38 @@ func TestParseIfStatement(t *testing.T) {
 			},
 			`if ( (a == 5) ) { int a = 1 } else { string b = example }`,
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				sym = scope.Get("b")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "b" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: IntType, Val: "int"},
@@ -2279,8 +2489,10 @@ func TestParseIfStatement(t *testing.T) {
 				Token{Type: IntType},
 				If,
 			},
+			defaultChkScopeFn,
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2303,8 +2515,10 @@ func TestParseIfStatement(t *testing.T) {
 				Token{Type: IntType},
 				Lbrace,
 			},
+			defaultChkScopeFn,
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2328,12 +2542,18 @@ func TestParseIfStatement(t *testing.T) {
 				Token{Type: Rbrace},
 				Rparen,
 			},
+			defaultChkScopeFn,
 		},
 	}
 
 	for i, test := range tests {
+		// setup
+		scope = test.setupScopeFn()
+
+		// exercise
 		stmt, err := parseIfStatement(test.buf)
 
+		// verify
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseIfStatement() wrong error. expected=%s got=%s",
 				i, test.expectedErr.Error(), err.Error())
@@ -2344,17 +2564,23 @@ func TestParseIfStatement(t *testing.T) {
 				i, test.expected, stmt.String())
 		}
 
+		if !test.chkScopeFn(scope) {
+			t.Fatalf("test[%d] - updateScopeSymbol updates scope incorrectly", i)
+		}
 	}
 }
 
 func TestParseBlockStatement(t *testing.T) {
 	initParseFnMap()
 	tests := []struct {
+		setupScopeFn
 		buf         TokenBuffer
 		expected    string
 		expectedErr error
+		chkScopeFn
 	}{
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: Lbrace, Val: "{"},
@@ -2369,8 +2595,25 @@ func TestParseBlockStatement(t *testing.T) {
 			},
 			"int a = 0",
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: Lbrace, Val: "{"},
@@ -2391,8 +2634,38 @@ func TestParseBlockStatement(t *testing.T) {
 			`int a = 0
 string b = abc`,
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				sym = scope.Get("b")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "b" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			defaultSetupScopeFn,
 			&mockTokenBuffer{
 				[]Token{
 					{Type: Lbrace, Val: "{"},
@@ -2419,11 +2692,59 @@ string b = abc`,
 string b = abc
 bool c = true`,
 			nil,
+			func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				sym = scope.Get("b")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "b" {
+					return false
+				}
+
+				sym = scope.Get("c")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "c" {
+					return false
+				}
+
+				return true
+			},
 		},
 	}
 
 	for i, test := range tests {
+		// setup
+		scope = test.setupScopeFn()
+
+		// exercise
 		exp, err := parseBlockStatement(test.buf)
+
+		// verify
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseBlockStatement() wrong error. expected=%s, got=%s",
 				i, test.expectedErr.Error(), err.Error())
@@ -2433,18 +2754,25 @@ bool c = true`,
 			t.Fatalf("test[%d] - TestParseBlockStatement() wrong result. expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
+
+		if !test.chkScopeFn(scope) {
+			t.Fatalf("test[%d] - updateScopeSymbol updates scope incorrectly", i)
+		}
 	}
 }
 
 func TestParseStatement(t *testing.T) {
 	initParseFnMap()
 	tests := []struct {
+		setupScopeFn
 		buf          TokenBuffer
 		expectedErr  error
 		expectedStmt string
+		chkScopeFn
 	}{
 		// tests for IntType
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: IntType, Val: "int"},
@@ -2458,8 +2786,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: "int a = 1",
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: IntType, Val: "int"},
@@ -2475,8 +2820,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: "int a = (1 + 2)",
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: IntType, Val: "int"},
@@ -2494,8 +2856,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: "int a = (1 + (2 * 3))",
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: IntType, Val: "int"},
@@ -2509,10 +2888,27 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `int a = 1`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 
 		// tests for StringType
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: StringType, Val: "string"},
@@ -2526,8 +2922,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `string abb = do not merge, rebase!`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("abb")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "abb" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: StringType, Val: "string"},
@@ -2541,8 +2954,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `string abb = hello,*+`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("abb")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "abb" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: StringType, Val: "string"},
@@ -2556,10 +2986,27 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `string abb = 1`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("abb")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "abb" {
+					return false
+				}
+
+				return true
+			},
 		},
 
 		// tests for BoolType
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: BoolType, Val: "bool"},
@@ -2573,8 +3020,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `bool asdf = true`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("asdf")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "asdf" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: BoolType, Val: "bool"},
@@ -2588,8 +3052,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `bool asdf = false`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("asdf")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "asdf" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: BoolType, Val: "bool"},
@@ -2603,10 +3084,27 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `bool asdf = 1`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("asdf")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.BooleanSymbol {
+					return false
+				}
+
+				if sym.String() != "asdf" {
+					return false
+				}
+
+				return true
+			},
 		},
 
 		// tests for If statement
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2622,8 +3120,10 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) {  }`,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2643,8 +3143,10 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( ((1 + 2) == 3) ) {  }`,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2668,8 +3170,10 @@ func TestParseStatement(t *testing.T) {
 				Ident,
 			},
 			expectedStmt: ``,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2690,8 +3194,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) { int a = 2 }`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2715,8 +3236,25 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) { int a = 2 } else {  }`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				return true
+			},
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: If, Val: "if"},
@@ -2745,10 +3283,40 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `if ( true ) { int a = 2 } else { string b = hello }`,
+			chkScopeFn: func(scope *symbol.Scope) bool {
+				sym := scope.Get("a")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.IntegerSymbol {
+					return false
+				}
+
+				if sym.String() != "a" {
+					return false
+				}
+
+				sym = scope.Get("b")
+				if sym == nil {
+					return false
+				}
+
+				if sym.Type() != symbol.StringSymbol {
+					return false
+				}
+
+				if sym.String() != "b" {
+					return false
+				}
+
+				return true
+			},
 		},
 
 		// tests for Return statement
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: Return, Val: "return"},
@@ -2760,8 +3328,10 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `return asdf`,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: Return, Val: "return"},
@@ -2779,8 +3349,10 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `return (1 + (2 * 3))`,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: Return, Val: "return"},
@@ -2803,10 +3375,12 @@ func TestParseStatement(t *testing.T) {
 			},
 			expectedErr:  nil,
 			expectedStmt: `return (function add( 1, 2 ) + (2 * 3))`,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 
 		// tests for Default
 		{
+			setupScopeFn: defaultSetupScopeFn,
 			buf: &mockTokenBuffer{
 				[]Token{
 					{Type: Int, Val: "1"},
@@ -2818,12 +3392,18 @@ func TestParseStatement(t *testing.T) {
 				Ident,
 			},
 			expectedStmt: ``,
+			chkScopeFn:   defaultChkScopeFn,
 		},
 	}
 
 	for i, test := range tests {
+		// setup
+		scope = test.setupScopeFn()
+
+		// exercise
 		stmt, err := parseStatement(test.buf)
 
+		// verify
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Errorf(`test[%d] - parseStatement wrong error. expected="%v", got="%v"`,
 				i, test.expectedErr, err)
@@ -2833,6 +3413,10 @@ func TestParseStatement(t *testing.T) {
 		if err == nil && stmt.String() != test.expectedStmt {
 			t.Errorf(`test[%d] - parseStatement wrong result. expected="%s", got="%s"`,
 				i, test.expectedStmt, stmt.String())
+		}
+
+		if !test.chkScopeFn(scope) {
+			t.Errorf("test[%d] - updateScopeSymbol updates scope incorrectly", i)
 		}
 	}
 }

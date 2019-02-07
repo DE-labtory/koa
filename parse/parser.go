@@ -698,12 +698,10 @@ func parseGroupedExpression(buf TokenBuffer) (ast.Expression, error) {
 func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	stmt := &ast.AssignStatement{}
 
+	dsToken := buf.Read()
+	stmt.Type = datastructureMap[dsToken.Type]
+
 	token := buf.Read()
-
-	ds := datastructureMap[token.Type]
-	stmt.Type = ds
-
-	token = buf.Read()
 	if token.Type != Ident {
 		return nil, ExpectError{
 			token,
@@ -711,8 +709,9 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 		}
 	}
 
-	// TODO: check whether variable name exist
-	// TODO: if not, add symbol to the scope
+	if err := updateScopeSymbol(token, dsToken); err != nil {
+		return nil, err
+	}
 
 	stmt.Variable = ast.Identifier{
 		Value: token.Val,
