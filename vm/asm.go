@@ -28,6 +28,7 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Div: div{},
 	opcode.Mod: mod{},
 	opcode.And: and{},
+	opcode.Or:  or{},
 
 	// 0x10 range
 	opcode.LT:  lt{},

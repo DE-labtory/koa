@@ -52,6 +52,10 @@ func TestType_String(t *testing.T) {
 			"And",
 		},
 		{
+			opcode.Or,
+			"Or",
+		},
+		{
 			opcode.LT,
 			"LT",
 		},
