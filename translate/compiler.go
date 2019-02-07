@@ -139,8 +139,13 @@ func compileIfStatement(s *ast.IfStatement, bytecode *Bytecode) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode) error {
+	for _, statement := range s.Statements {
+		if err := compileStatement(statement, bytecode); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
