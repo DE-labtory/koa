@@ -73,7 +73,7 @@ const (
 	Mod Type = 0x05
 
 	// Pop the first two items in the stack.
-	// Calculate bit and popped two items and push to the stack.
+	// Calculate bit-and popped two items and push to the stack.
 	//
 	// Ex)
 	// [a]
@@ -81,6 +81,16 @@ const (
 	// [x]      [x]
 	//
 	And Type = 0x06
+
+	// Pop the first two items in the stack.
+	// Calculate bit-or popped two items and push to the stack.
+	//
+	// Ex)
+	// [a]
+	// [b]  ==> [a|b]
+	// [x]      [x]
+	//
+	Or Type = 0x07
 
 	// Pop the first two items in the stack.
 	// Check if the left operand(first popped item) is less than the right operand(second popped item).
