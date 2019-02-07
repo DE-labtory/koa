@@ -39,8 +39,10 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.NOT: not{},
 
 	// 0x20 range
-	opcode.Pop:  pop{},
-	opcode.Push: push{},
+	opcode.Pop:     pop{},
+	opcode.Push:    push{},
+	opcode.Jump:    jump{},
+	opcode.JumpDst: jumpDst{},
 
 	// 0x30 range
 	opcode.DUP:  dup{},
@@ -123,6 +125,9 @@ func (a *asm) next() hexer {
 func (a *asm) jump(pc uint64) {
 	if pc > uint64(len(a.code))-1 {
 		panic("Access to invalid program counter!")
+	}
+	if opcode.Type(a.code[pc].hex()[0]) != opcode.JumpDst {
+		panic("jump is not allowed to input pc")
 	}
 	a.pc = pc
 }
