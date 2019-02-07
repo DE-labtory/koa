@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
+	"github.com/DE-labtory/koa/opcode"
 )
 
 type expressionCompileTestCase struct {
@@ -64,9 +65,48 @@ func TestCompileIfStatement(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
 func TestCompileBlockStatement(t *testing.T) {
+	statements := makeTempStatements()
 
+	tests := []struct {
+		statements *ast.BlockStatement
+		expected   Bytecode
+		err        error
+	}{
+		{
+			statements: &ast.BlockStatement{
+				Statements: statements,
+			},
+			expected: Bytecode{
+				RawByte: []byte{byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2, byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+				AsmCode: []string{"Push", "00000000000004d2", "Push", "0000000000000001"},
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		b := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+		}
+
+		err := compileBlockStatement(test.statements, b)
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - TestCompileBlockStatement() error wrong. expected=%v, got=%v", i, test.err, err)
+		}
+
+		if !bytes.Equal(b.RawByte, test.expected.RawByte) {
+			t.Fatalf("test[%d] - TestCompileBlockStatement() result wrong for RawByte.\nexpected=%x, got=%x", i, test.expected.RawByte, b.RawByte)
+		}
+
+		for j, expected := range test.expected.AsmCode {
+			if expected != b.AsmCode[j] {
+				t.Fatalf("test[%d] - TestCompileBlockStatement() result wrong for RawByte.\nexpected=%v, got=%v", i, test.expected.AsmCode, b.AsmCode)
+			}
+		}
+	}
 }
 
 // TODO: implement test cases :-)
@@ -207,4 +247,20 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 				i, testFuncName, expectedAsmCode, resultAsmCode)
 		}
 	}
+}
+
+func makeTempStatements() []ast.Statement {
+	statements := make([]ast.Statement, 0)
+	statements = append(statements, &ast.ExpressionStatement{
+		Expr: &ast.IntegerLiteral{
+			Value: 1234,
+		},
+	})
+	statements = append(statements, &ast.ExpressionStatement{
+		Expr: &ast.BooleanLiteral{
+			Value: true,
+		},
+	})
+
+	return statements
 }
