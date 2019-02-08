@@ -1085,6 +1085,22 @@ func TestParseFunctionParameter(t *testing.T) {
 				Rparen,
 			},
 		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Ident, Val: "arg"},
+					{Type: IntType, Val: "int"},
+					{Type: Comma, Val: ","},
+					{Type: Ident, Val: "arg"},
+					{Type: IntType, Val: "int"},
+					{Type: Rparen, Val: ")"},
+				},
+				0,
+			},
+			setupScope:  defaultSetupScopeFn,
+			expected:    nil,
+			expectedErr: DupSymError{Token{Type: Ident, Val: "arg"}},
+		},
 	}
 
 	for i, test := range tests {
