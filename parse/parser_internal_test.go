@@ -2276,6 +2276,88 @@ func TestParseAssignStatement(t *testing.T) {
 	}
 }
 
+func TestParseReassignStatement(t *testing.T) {
+	initParseFnMap()
+	tests := []struct {
+		buf         TokenBuffer
+		setupScope  setupScopeFn
+		expected    string
+		expectedErr error
+	}{
+		{
+			buf: &mockTokenBuffer{
+				buf: []Token{
+					{
+						Type: Ident,
+						Val:  "a",
+					},
+					{
+						Type: Assign,
+						Val:  "=",
+					},
+					{
+						Type: Int,
+						Val:  "1",
+					},
+				},
+				sp: 0,
+			},
+			setupScope: func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				return scope
+			},
+			expected:    "a = 1",
+			expectedErr: nil,
+		},
+		{
+			buf: &mockTokenBuffer{
+				buf: []Token{
+					{
+						Type: Ident,
+						Val:  "b",
+					},
+					{
+						Type: Assign,
+						Val:  "=",
+					},
+					{
+						Type: Int,
+						Val:  "1",
+					},
+				},
+				sp: 0,
+			},
+			setupScope: func() *symbol.Scope {
+				scope := symbol.NewScope()
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "1"}})
+				return scope
+			},
+			expected: "",
+			expectedErr: NotExistSymError{Token{
+				Type: Ident,
+				Val:  "b",
+			}},
+		},
+	}
+
+	for i, test := range tests {
+		scope = test.setupScope()
+		stmt, err := parseReassignStatement(test.buf)
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - parseReassignStatement() returns wrong error.\n"+
+				"expected=%s\n"+
+				"got=%s", i, test.expectedErr.Error(), err.Error())
+		}
+
+		if stmt != nil && stmt.String() != test.expected {
+			t.Fatalf("test[%d] - parseReassignStatement() returns wrong result.\n"+
+				"expected=%s\n"+
+				"got=%s", i, test.expected, stmt.String())
+		}
+	}
+}
+
 // TestParseExpression tests strings which combine prefix and
 // infix expression
 func TestParseExpression(t *testing.T) {
@@ -2876,6 +2958,28 @@ bool c = true`,
 
 				return true
 			},
+		},
+		{
+			&mockTokenBuffer{
+				[]Token{
+					{Type: Lbrace, Val: "{"},
+					{Type: IntType, Val: "int"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "0"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Ident, Val: "a"},
+					{Type: Assign, Val: "="},
+					{Type: Int, Val: "1"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Rbrace, Val: "}"},
+				},
+				0,
+			},
+			"int a = 0",
+			nil,
 		},
 	}
 

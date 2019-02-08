@@ -369,6 +369,8 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 		return parseIfStatement(buf)
 	case Return:
 		return parseReturnStatement(buf)
+	case Lbrace:
+		return parseBlockStatement(buf)
 	default:
 		return parseExpressionStatement(buf)
 	}
@@ -756,6 +758,35 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	return stmt, nil
 }
 
+// parseReassignStatement parse reassign statement
+// i.e) int a = 1
+// a = 2
+func parseReassignStatement(buf TokenBuffer) (ast.Statement, error) {
+	stmt := &ast.ReassignStatement{}
+	token := buf.Read()
+	if token.Type != Ident {
+		return nil, ExpectError{source: token, expected: Ident}
+	}
+
+	if exist := scope.Get(token.Val); exist == nil {
+		return nil, NotExistSymError{token}
+	}
+
+	stmt.Variable = &ast.Identifier{Value: token.Val}
+
+	if err := expectNext(buf, Assign); err != nil {
+		return nil, err
+	}
+
+	exp, err := parseExpression(buf, LOWEST)
+	if err != nil {
+		return nil, err
+	}
+	stmt.Value = exp
+
+	return stmt, nil
+}
+
 // parseCallExpression parse function call
 func parseCallExpression(buf TokenBuffer, fn ast.Expression) (ast.Expression, error) {
 	exp := &ast.CallExpression{Function: fn}
@@ -860,8 +891,6 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		return nil, err
 	}
 
-	// TODO: enter scope
-
 	block := &ast.BlockStatement{}
 	curToken := buf.Peek(CURRENT)
 
@@ -879,8 +908,6 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	if curTokenIs(buf, Rbrace) {
 		buf.Read()
 	}
-
-	// TODO: leave scope
 
 	return block, nil
 }
