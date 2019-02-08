@@ -676,7 +676,10 @@ func parseFunctionParameter(buf TokenBuffer) (*ast.ParameterLiteral, error) {
 		}
 	}
 	ident.Type = ds
-	updateScopeSymbol(token, dsToken)
+
+	if err := updateScopeSymbol(token, dsToken); err != nil {
+		return nil, err
+	}
 
 	return ident, nil
 }
