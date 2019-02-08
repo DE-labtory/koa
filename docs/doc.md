@@ -469,7 +469,7 @@ Then we return twice, then our pc is now on the `recursive#1` point, and return 
 func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, error) {
 expression := exp
    for !curTokenIs(buf, Semicolon) && pre < curPrecedence(buf) {
-      token := buf.Peek(CURRENT) <-- [ + ] 
+      token := buf.Peek(CURRENT) <-- [ + ]
       fn := infixParseFnMap[token.Type] <-- parseInfixExpression#1
 
       expression, err = fn(buf, expression)
@@ -532,7 +532,7 @@ func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (a
 expression := exp <-- IntegerLiteral
    for !curTokenIs(buf, Semicolon) && pre < curPrecedence(buf) {
       /* we get into the loop! */
-      token := buf.Peek(CURRENT) <-- [ * ] 
+      token := buf.Peek(CURRENT) <-- [ * ]
       fn := infixParseFnMap[token.Type] <-- parseInfixExpression#2
 
       expression, err = fn(buf, expression)
@@ -589,7 +589,7 @@ After make `(2 * 3)` expression, we return to `parseInfixExpession#2`, and we le
 func makeInfixExpression(buf TokenBuffer, exp ast.Expression, pre precedence) (ast.Expression, error) {
    expression := exp
    for !curTokenIs(buf, Semicolon) && pre < curPrecedence(buf) {
-      token := buf.Peek(CURRENT) <-- was [ + ] 
+      token := buf.Peek(CURRENT) <-- was [ + ]
       fn := infixParseFnMap[token.Type] <-- parseInfixExpression#1
 
       expression, err = fn(buf, expression)
@@ -653,13 +653,128 @@ switch selector {
 }
 ```
 
-For example, suppose that we need to call `function foo(int a) bool`. Fisrt, `program counter` moves to the `function jumper`. And, comparing `function selecetor` with `calldata`, finds out the `pc` position of `function foo(int a) bool`. Then, moves to where the `pc` is 120. Finally, `vm` can executes `function foo`. 
+For example, suppose that we need to call `function foo(int a) bool`. Fisrt, `program counter` moves to the `function jumper`. And, comparing `function selecetor` with `calldata`, finds out the `pc` position of `function foo(int a) bool`. Then, moves to where the `pc` is 120. Finally, `vm` can executes `function foo`.
 
 ### <a name="virtual-machine">Virtual Machine</a>
 
+VM change the `Bytecode` created by the `Compiler` to the KOA-compliant assemble code and executes it. It then interprets Bytecode with the execution information of the function in `CallFunc` contract and proceeds with operation using `Stack` and `Memory`.
+
 #### Basic Architecture
 
-<p align="center"><img src="../image/vm-architecture.png" width="570px" height="350px"></p>
+<p align="center"><img src="../image/vm-architecture.png" width="570px" height="500px"></p>
+
+#### Stack
+
+Stack can accumulate a total of 1024 items, and each item can store 64bits of data. In the stack, the data is accumulated, and when the operator is encountered, the operation is done. The following example changes the human-readable code to `Bytecode`, `Assemble code`.
+
+##### code
+
+>1 + 2
+
+##### bytecode
+
+>0x20 0x01 0x20 0x01 0x01
+
+##### assemble
+
+>PUSH 1 PUSH 2 ADD
+
+The above code works like the image below on the stack.
+
+<p align="center"><img src="../image/vm-stack.jpeg" width="500px" height="300px"></p>
+
+As you can see in the above process, the stack is not a space for storing data but a space for operations. `Memory` and `CallFunc` are the space for storing data.
+
+#### Memory
+
+`Memory` is responsible for managing variables and return values. When a programmer assigns a value to a variable, the value is stored in memory, and the return value is also stored in memory. And when you want to use the saved variable, it will be taken out of memory.
+
+<p align="center"><img src="../image/vm-memory.png" width="400px" height="70px"></p>
+
+The above image shows the structure of the memory. Unlike Stack, memory is not limited by size. That's why you can store dynamic type values such as strings and arrays.
+
+#### CallFunc
+
+`CallFunc` is used when a programmer creates a contract and then calls a function inside a contract. To call a specific function, you need to know the name of the function and the parameter information of the function.
+
+The name of the function is retrieved by the [`Function Selector`](#function-selector), and the parameter information is defined and stored by the [`ABI encoding`](#abi-encoding).
+
+#### ABI
+
+ABI is Application Binary Interface which can interact user with KOA.  
+The type supported by 0.1.0 version is `string`, `int`, `bool`
+
+##### Format
+
+```json
+[
+	{
+		"name" : "foo",
+		"arguments" : [
+			{
+				"name" : "first",
+				"type" : "int256"
+			},
+			{
+				"name" : "second",
+				"type" : "string"
+			},
+			{
+				"name" : "third",
+				"type" : "byte[]"
+			}
+		],
+		"output" : {
+			"name" : "returnValue",
+			"type" : "int256"
+		}
+	},
+	{
+		"name" : "var",
+		"arguments" : [
+			{
+				"name" : "first",
+				"type" : "int256"
+			},
+			{
+				"name" : "second",
+				"type" : "string"
+			},
+			{
+				"name" : "third",
+				"type" : "byte[]"
+			}
+		],
+		"output" : {
+			"name" : "returnValue",
+			"type" : "int256"
+		}
+	}
+]
+```  
+##### Encoding <a id="abi-encoding"/>
+
+ABI Encoding is used when user call function.
+
+function parameters according to abi specification are encoded as byte. And bytes has a pointer, size, value.
+
+Pointer : 4bytes
+Size : 4bytes
+Value : The static type is 8bytes, dynamic type is sized according to the size.
+
+Example)
+function foo(int, string, int)
+parameters : (50, "HelloKOA", 256)
+
+Pointer 1 -> 0x00 : 0000000C  
+Pointer 2 -> 0x04 : 00000011  
+Pointer 3 -> 0x08 : 0000001D  
+Size 1 &nbsp;&nbsp;&nbsp;&nbsp;-> 0x0C : 00000001  
+Value 1 &nbsp; -> 0x10 : 32  
+Size 2 &nbsp;&nbsp;&nbsp;&nbsp;-> 0x11 : 00000008  
+Value 2 &nbsp; -> 0x15 : 48656c6c6f4b4f41  
+Size 3 &nbsp;&nbsp;&nbsp; -> 0x1D: 00000002  
+Value 3 &nbsp; -> 0x21 : 0100  
 
 #### Execution Model
 
