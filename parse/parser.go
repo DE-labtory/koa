@@ -369,8 +369,8 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 		return parseIfStatement(buf)
 	case Return:
 		return parseReturnStatement(buf)
-	case Lbrace:
-		return parseBlockStatement(buf)
+	case Ident:
+		return parseReassignStatement(buf)
 	default:
 		return parseExpressionStatement(buf)
 	}
@@ -784,6 +784,8 @@ func parseReassignStatement(buf TokenBuffer) (ast.Statement, error) {
 	}
 	stmt.Value = exp
 
+	consumeSemi(buf)
+
 	return stmt, nil
 }
 
@@ -891,6 +893,8 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 		return nil, err
 	}
 
+	enterScope()
+
 	block := &ast.BlockStatement{}
 	curToken := buf.Peek(CURRENT)
 
@@ -908,6 +912,8 @@ func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	if curTokenIs(buf, Rbrace) {
 		buf.Read()
 	}
+
+	leaveScope()
 
 	return block, nil
 }
