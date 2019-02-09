@@ -158,6 +158,16 @@ const (
 	NOT Type = 0x15
 
 	// Pop the first item in the stack.
+	// minus the value and push it to the stack.
+	//
+	// Ex)
+	// [a]       [-a]
+	// [b]  ==>  [b]
+	// [x]       [x]
+	//
+	Minus Type = 0x16
+
+	// Pop the first item in the stack.
 	//
 	// Ex)
 	// [a]
@@ -283,6 +293,8 @@ func (p Type) String() (string, error) {
 		return "EQ", nil
 	case 0x15:
 		return "NOT", nil
+	case 0x16:
+		return "Minus", nil
 	case 0x20:
 		return "Pop", nil
 	case 0x21:

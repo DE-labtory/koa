@@ -186,13 +186,13 @@ func TestCompileInfixExpression(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
 func TestCompilePrefixExpression(t *testing.T) {
 	tests := []expressionCompileTestCase{
+		// simple prefix expression case
 		{
 			expression: &ast.PrefixExpression{
 				Operator: ast.Bang,
-				Right: &ast.BooleanLiteral{Value: true},
+				Right:    &ast.BooleanLiteral{Value: true},
 			},
 			expected: Bytecode{
 				RawByte: []byte{
@@ -206,15 +206,70 @@ func TestCompilePrefixExpression(t *testing.T) {
 		{
 			expression: &ast.PrefixExpression{
 				Operator: ast.Minus,
-				Right: &ast.BooleanLiteral{Value: true},
+				Right:    &ast.IntegerLiteral{Value: 2},
+			},
+			expected: Bytecode{
+				RawByte: []byte{
+					0x21,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+					0x16,
+				},
+				AsmCode: []string{"Push", "0000000000000002", "Minus"},
+			},
+		},
+		{
+			expression: &ast.PrefixExpression{
+				Operator: ast.Minus,
+				Right:    &ast.BooleanLiteral{Value: true},
 			},
 			expected: Bytecode{
 				RawByte: []byte{
 					0x21,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+					0x16,
+				},
+				AsmCode: []string{"Push", "0000000000000001", "Minus"},
+			},
+		},
+		// rather complex cases
+		{
+			expression: &ast.PrefixExpression{
+				Operator: ast.Minus,
+				Right: &ast.PrefixExpression{
+					Operator: ast.Minus,
+					Right: &ast.IntegerLiteral{
+						Value: 1,
+					},
+				},
+			},
+			expected: Bytecode{
+				RawByte: []byte{
+					0x21,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+					0x16,
+					0x16,
+				},
+				AsmCode: []string{"Push", "0000000000000001", "Minus", "Minus"},
+			},
+		},
+		{
+			expression: &ast.PrefixExpression{
+				Operator: ast.Bang,
+				Right: &ast.PrefixExpression{
+					Operator: ast.Bang,
+					Right: &ast.BooleanLiteral{
+						Value: false,
+					},
+				},
+			},
+			expected: Bytecode{
+				RawByte: []byte{
+					0x21,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x15,
 					0x15,
 				},
-				AsmCode: []string{"Push", "0000000000000001", "NOT"},
+				AsmCode: []string{"Push", "0000000000000000", "NOT", "NOT"},
 			},
 		},
 	}

@@ -203,7 +203,6 @@ func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
 	if err := compileExpression(e.Right, bytecode); err != nil {
 		return err
@@ -213,7 +212,7 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error 
 	case ast.Bang:
 		bytecode.Emerge(opcode.NOT)
 	case ast.Minus:
-		bytecode.Emerge(opcode.Sub)
+		bytecode.Emerge(opcode.Minus)
 	default:
 		return fmt.Errorf("unknown operator %s", e.Operator.String())
 	}
