@@ -80,6 +80,10 @@ func TestType_String(t *testing.T) {
 			"NOT",
 		},
 		{
+			opcode.Minus,
+			"Minus",
+		},
+		{
 			opcode.Pop,
 			"Pop",
 		},
