@@ -96,7 +96,38 @@ func TestCompileInfixExpression(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompilePrefixExpression(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			expression: &ast.PrefixExpression{
+				Operator: ast.Bang,
+				Right: &ast.BooleanLiteral{Value: true},
+			},
+			expected: Bytecode{
+				RawByte: []byte{
+					0x21,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+					0x15,
+				},
+				AsmCode: []string{"Push", "0000000000000001", "NOT"},
+			},
+		},
+		{
+			expression: &ast.PrefixExpression{
+				Operator: ast.Minus,
+				Right: &ast.BooleanLiteral{Value: true},
+			},
+			expected: Bytecode{
+				RawByte: []byte{
+					0x21,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+					0x15,
+				},
+				AsmCode: []string{"Push", "0000000000000001", "NOT"},
+			},
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
 func TestCompileIntegerLiteral(t *testing.T) {
@@ -183,6 +214,9 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 		case *ast.IntegerLiteral:
 			testFuncName = "compileIntegerLiteral()"
 			err = compileIntegerLiteral(expr, bytecode)
+		case *ast.PrefixExpression:
+			testFuncName = "compilePrefixExpression()"
+			err = compilePrefixExpression(expr, bytecode)
 		default:
 			t.Fatalf("%T type not support, abort.", expr)
 			t.FailNow()
