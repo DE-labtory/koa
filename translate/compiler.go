@@ -18,6 +18,7 @@ package translate
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
@@ -204,6 +205,18 @@ func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
 
 // TODO: implement me w/ test cases :-)
 func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
+	if err := compileExpression(e.Right, bytecode); err != nil {
+		return err
+	}
+
+	switch e.Operator {
+	case ast.Bang:
+		bytecode.Emerge(opcode.NOT)
+	case ast.Minus:
+		bytecode.Emerge(opcode.Sub)
+	default:
+		return fmt.Errorf("unknown operator %s", e.Operator.String())
+	}
 	return nil
 }
 
