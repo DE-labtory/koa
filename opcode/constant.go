@@ -189,7 +189,8 @@ const (
 	// Load a value from memory and push it to the stack
 	//
 	// Ex)
-	// [offset]       [memory[offset:offset+32]]
+	// [offset]
+	// [size]         [memory[offset:offset+size]]
 	// [x]       ==>  [b]
 	// [y]            [x]
 	//
@@ -200,10 +201,11 @@ const (
 	//
 	// Ex)
 	// [offset]
+	// [size]
 	// [value]   ==>
 	// [y]            [y]
 	//
-	// memory[offset:offset+32] = value
+	// memory[offset:offset+size] = value
 	Mstore Type = 0x23
 
 	// Get the function selector information in the CallFunc.

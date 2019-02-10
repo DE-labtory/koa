@@ -50,9 +50,84 @@ func TestCompileStatement(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
 func TestCompileAssignStatement(t *testing.T) {
+	tests := []struct {
+		statement *ast.AssignStatement
+		expected  *Bytecode
+	}{
+		{
+			// int a = true
+			statement: &ast.AssignStatement{
+				Value: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Variable: ast.Identifier{
+					Value: "a",
+				},
+				Type: ast.BoolType,
+			},
+			expected: &Bytecode{
+				RawByte: []byte{
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					byte(opcode.Mstore),
+				},
+				AsmCode: []string{
+					"Push", "0000000000000001",
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Mstore",
+				},
+			},
+		},
+		{
+			// int sum = 5
+			statement: &ast.AssignStatement{
+				Value: &ast.IntegerLiteral{
+					Value: 5,
+				},
+				Variable: ast.Identifier{
+					Value: "sum",
+				},
+				Type: ast.IntType,
+			},
+			expected: &Bytecode{
+				RawByte: []byte{
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					byte(opcode.Mstore),
+				},
+				AsmCode: []string{
+					"Push", "0000000000000005",
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Mstore",
+				},
+			},
+		},
+	}
 
+	for i, test := range tests {
+		b := &Bytecode{
+			RawByte: make([]byte, 0),
+			AsmCode: make([]string, 0),
+		}
+
+		memTracer := NewMemEntryTable()
+
+		err := compileAssignStatement(test.statement, b, memTracer)
+		if err != nil {
+			t.Fatalf("test[%d] - compileAssignStatement had error. err=%v",
+				i, err)
+		}
+
+		if !compareByteCode(*b, *test.expected) {
+			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
+				i, test.expected, b)
+		}
+	}
 }
 
 // TODO: implement test cases :-)
@@ -91,7 +166,9 @@ func TestCompileBlockStatement(t *testing.T) {
 			AsmCode: make([]string, 0),
 		}
 
-		err := compileBlockStatement(test.statements, b)
+		memTracer := NewMemEntryTable()
+
+		err := compileBlockStatement(test.statements, b, memTracer)
 
 		if err != nil && err != test.err {
 			t.Fatalf("test[%d] - TestCompileBlockStatement() error wrong. expected=%v, got=%v", i, test.err, err)
@@ -887,18 +964,9 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 				i, testFuncName, err)
 		}
 
-		expectedRawByte := test.expected.RawByte
-		resultRawByte := bytecode.RawByte
-		if !bytes.Equal(expectedRawByte, resultRawByte) {
+		if !compareByteCode(*bytecode, test.expected) {
 			t.Fatalf("test[%d] - %s result wrong. expected %x, got=%x",
-				i, testFuncName, expectedRawByte, resultRawByte)
-		}
-
-		expectedAsmCode := test.expected.AsmCode
-		resultAsmCode := bytecode.AsmCode
-		if !reflect.DeepEqual(expectedAsmCode, resultAsmCode) {
-			t.Fatalf("test[%d] - %s result wrong. expected %v, got=%v",
-				i, testFuncName, expectedAsmCode, resultAsmCode)
+				i, testFuncName, test.expected, bytecode)
 		}
 	}
 }
@@ -917,4 +985,17 @@ func makeTempStatements() []ast.Statement {
 	})
 
 	return statements
+}
+
+func compareByteCode(b1 Bytecode, b2 Bytecode) bool {
+
+	if !bytes.Equal(b1.RawByte, b2.RawByte) {
+		return false
+	}
+
+	if !reflect.DeepEqual(b1.AsmCode, b2.AsmCode) {
+		return false
+	}
+
+	return true
 }

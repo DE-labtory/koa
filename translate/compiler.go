@@ -35,8 +35,10 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		AsmCode: make([]string, 0),
 	}
 
+	memTracer := NewMemEntryTable()
+
 	for _, f := range c.Functions {
-		if err := compileFunction(*f, bytecode); err != nil {
+		if err := compileFunction(*f, bytecode, memTracer); err != nil {
 			return *bytecode, err
 		}
 	}
@@ -84,12 +86,12 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 // TODO: implement me w/ test cases :-)
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
-func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode) error {
+func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode, tracer MemTracer) error {
 	// TODO: generate function identifier with Keccak256()
 
 	statements := f.Body.Statements
 	for _, s := range statements {
-		if err := compileStatement(s, bytecode); err != nil {
+		if err := compileStatement(s, bytecode, tracer); err != nil {
 			return err
 		}
 	}
@@ -100,10 +102,10 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode) error {
 // TODO: implement me w/ test cases :-)
 // compileStatement() compiles a statement in function.
 // Generates and adds output to bytecode.
-func compileStatement(s ast.Statement, bytecode *Bytecode) error {
+func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) error {
 	switch statement := s.(type) {
 	case *ast.AssignStatement:
-		return compileAssignStatement(statement, bytecode)
+		return compileAssignStatement(statement, bytecode, tracer)
 
 	case *ast.ReturnStatement:
 		return compileReturnStatement(statement, bytecode)
@@ -112,7 +114,7 @@ func compileStatement(s ast.Statement, bytecode *Bytecode) error {
 		return compileIfStatement(statement, bytecode)
 
 	case *ast.BlockStatement:
-		return compileBlockStatement(statement, bytecode)
+		return compileBlockStatement(statement, bytecode, tracer)
 
 	case *ast.ExpressionStatement:
 		return compileExpressionStatement(statement, bytecode)
@@ -125,8 +127,40 @@ func compileStatement(s ast.Statement, bytecode *Bytecode) error {
 	}
 }
 
-// TODO: implement me w/ test cases :-)
-func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode) error {
+// compileAssignStatement() compiles a assign statement.
+//
+// Ex)
+//
+// translate
+// 	'int a = 5'
+// to
+// 	'Push 5 Push <size of a> Push <offset of a> Mstore'
+//
+// stack will be
+//
+// 	[offset]
+// 	[size]
+// 	[value]
+//
+func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode, memDefiner MemDefiner) error {
+	if err := compileExpression(s.Value, bytecode); err != nil {
+		return err
+	}
+
+	memEntry := memDefiner.Define(s.Variable.Value)
+	size, err := encoding.EncodeOperand(memEntry.Size)
+	if err != nil {
+		return err
+	}
+
+	offset, err := encoding.EncodeOperand(memEntry.Offset)
+	if err != nil {
+		return err
+	}
+
+	bytecode.Emerge(opcode.Push, size)
+	bytecode.Emerge(opcode.Push, offset)
+	bytecode.Emerge(opcode.Mstore)
 	return nil
 }
 
@@ -140,9 +174,9 @@ func compileIfStatement(s *ast.IfStatement, bytecode *Bytecode) error {
 	return nil
 }
 
-func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode) error {
+func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer MemTracer) error {
 	for _, statement := range s.Statements {
-		if err := compileStatement(statement, bytecode); err != nil {
+		if err := compileStatement(statement, bytecode, tracer); err != nil {
 			return err
 		}
 	}
@@ -199,13 +233,11 @@ func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
 }
 
 func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
-	err := compileExpression(e.Left, bytecode)
-	if err != nil {
+	if err := compileExpression(e.Left, bytecode); err != nil {
 		return err
 	}
 
-	err = compileExpression(e.Right, bytecode)
-	if err != nil {
+	if err := compileExpression(e.Right, bytecode); err != nil {
 		return err
 	}
 
@@ -239,8 +271,8 @@ func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
 		bytecode.Emerge(opcode.And)
 	case ast.LOR:
 		bytecode.Emerge(opcode.Or)
-
 	}
+
 	return nil
 }
 
@@ -257,6 +289,7 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error 
 	default:
 		return fmt.Errorf("unknown operator %s", e.Operator.String())
 	}
+
 	return nil
 }
 
