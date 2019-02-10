@@ -195,6 +195,17 @@ func (e DupSymError) Error() string {
 		e.source.Line, e.source.Column, e.source.Val)
 }
 
+// prefixError occur when there is invalid prefix type
+type PrefixError struct {
+	source Token
+	right  ast.Expression
+}
+
+func (e PrefixError) Error() string {
+	return fmt.Sprintf("[line %d, columnd %d] Invalid prefix of %s",
+		e.source.Line, e.source.Column, e.right.String())
+}
+
 type (
 	prefixParseFn func(TokenBuffer) (ast.Expression, error)
 	infixParseFn  func(TokenBuffer, ast.Expression) (ast.Expression, error)
@@ -454,18 +465,18 @@ func parsePrefixExpression(buf TokenBuffer) (ast.Expression, error) {
 	switch op {
 	case ast.Bang:
 		switch right.(type) {
-		case *ast.StringLiteral:
-			return nil, Error{
+		case *ast.StringLiteral, *ast.IntegerLiteral:
+			return nil, PrefixError{
 				token,
-				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
+				right,
 			}
 		}
 	case ast.Minus:
 		switch right.(type) {
-		case *ast.BooleanLiteral:
-			return nil, Error{
+		case *ast.BooleanLiteral, *ast.StringLiteral:
+			return nil, PrefixError{
 				token,
-				fmt.Sprintf("parsePrefixExpression() - Invalid prefix of %s", right.String()),
+				right,
 			}
 		}
 	}
