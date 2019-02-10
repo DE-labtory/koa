@@ -19,42 +19,29 @@ package translate_test
 import (
 	"testing"
 
-	"github.com/DE-labtory/koa/encoding"
 	"github.com/DE-labtory/koa/translate"
 )
 
 func TestMemEntryTable_Define(t *testing.T) {
 	tests := []struct {
 		id           string
-		value        interface{}
-		expectedSize uint
-		err          error
+		value        []byte
+		expectedSize int
 	}{
 		{
 			id:           "aInteger",
-			value:        int64(1),
-			expectedSize: 8,
-			err:          nil,
+			value:        []byte{00, 00, 00, 01},
+			expectedSize: 4,
 		},
 		{
 			id:           "aBoolean",
-			value:        true,
-			expectedSize: 8,
-			err:          nil,
+			value:        []byte{01},
+			expectedSize: 1,
 		},
 		{
 			id:           "aString",
-			value:        "abc",
-			expectedSize: 8,
-			err:          nil,
-		},
-		{
-			id:           "aNotDefined",
-			value:        []byte{01, 02, 03},
-			expectedSize: 0,
-			err: encoding.EncodeError{
-				Operand: []byte{01, 02, 03},
-			},
+			value:        []byte{128, 00, 16},
+			expectedSize: 3,
 		},
 	}
 
@@ -63,11 +50,7 @@ func TestMemEntryTable_Define(t *testing.T) {
 	for i, test := range tests {
 		prevOffset := mTable.MemoryCounter
 
-		entry, err := mTable.Define(test.id, test.value)
-
-		if err != nil && err.Error() != test.err.Error() {
-			t.Fatalf("test[%d] - Define() error wrong. expected=%v, err=%v", i, test.err, err)
-		}
+		entry := mTable.Define(test.id, test.value)
 
 		if entry.Size != test.expectedSize {
 			t.Fatalf("test[%d] - Define() result wrong for size. expected=%d, got=%d", i, test.expectedSize, entry.Size)
@@ -75,10 +58,6 @@ func TestMemEntryTable_Define(t *testing.T) {
 
 		if entry.Offset != prevOffset {
 			t.Fatalf("test[%d] - Define() result wrong for offset. expected=%d, got=%d", i, prevOffset, entry.Offset)
-		}
-
-		if err == nil && mTable.EntryMap[test.id] != entry {
-			t.Fatalf("test[%d] - Define() result wrong for entry. expected=%v, got=%v", i, mTable.EntryMap[test.id], entry)
 		}
 
 		expectedMemoryCounter := prevOffset + test.expectedSize
@@ -93,7 +72,7 @@ func TestMemEntryTable_GetOffsetOfEntry(t *testing.T) {
 
 	tests := []struct {
 		id       string
-		expected uint
+		expected int
 		err      error
 	}{
 		{
@@ -138,7 +117,7 @@ func TestMemEntryTable_GetSizeOfEntry(t *testing.T) {
 
 	tests := []struct {
 		id       string
-		expected uint
+		expected int
 		err      error
 	}{
 		{

@@ -18,8 +18,6 @@ package translate
 
 import (
 	"fmt"
-
-	"github.com/DE-labtory/koa/encoding"
 )
 
 type EntryError struct {
@@ -41,27 +39,27 @@ type MemTracer interface {
 // a = 5 -> Define("a", 5)
 // b = "abc" -> Define("b", "abc")
 type MemDefiner interface {
-	Define(id string, value interface{}) (MemEntry, error)
+	Define(id string, value []byte) MemEntry
 }
 
 // MemEntryGetter gets the data of the memory entry.
 // GetOffsetOfEntry() returns the offset of the memory entry corresponding the Id.
 // GetSizeOfEntry() returns the size of the memory entry corresponding the Id.
 type MemEntryGetter interface {
-	GetOffsetOfEntry(id string) (uint, error)
-	GetSizeOfEntry(id string) (uint, error)
+	GetOffsetOfEntry(id string) (int, error)
+	GetSizeOfEntry(id string) (int, error)
 }
 
 // MemEntry saves size and offset of the value which the variable has.
 type MemEntry struct {
-	Offset uint
-	Size   uint
+	Offset int
+	Size   int
 }
 
 // MemEntryTable is used to know the location of the memory
 type MemEntryTable struct {
 	EntryMap      map[string]MemEntry
-	MemoryCounter uint
+	MemoryCounter int
 }
 
 func NewMemEntryTable() *MemEntryTable {
@@ -71,26 +69,20 @@ func NewMemEntryTable() *MemEntryTable {
 	}
 }
 
-func (m *MemEntryTable) Define(id string, value interface{}) (MemEntry, error) {
+func (m *MemEntryTable) Define(id string, value []byte) MemEntry {
 	entry := MemEntry{
 		Offset: m.MemoryCounter,
 	}
 
-	encodedValue, err := encoding.EncodeOperand(value)
-	if err != nil {
-		return entry, err
-	}
-
-	size := uint(len(encodedValue))
+	size := len(value)
 	entry.Size = size
 	m.MemoryCounter += size
-
 	m.EntryMap[id] = entry
 
-	return entry, nil
+	return entry
 }
 
-func (m MemEntryTable) GetOffsetOfEntry(id string) (uint, error) {
+func (m MemEntryTable) GetOffsetOfEntry(id string) (int, error) {
 	entry, ok := m.EntryMap[id]
 	if !ok {
 		return 0, EntryError{
@@ -101,7 +93,7 @@ func (m MemEntryTable) GetOffsetOfEntry(id string) (uint, error) {
 	return entry.Offset, nil
 }
 
-func (m MemEntryTable) GetSizeOfEntry(id string) (uint, error) {
+func (m MemEntryTable) GetSizeOfEntry(id string) (int, error) {
 	entry, ok := m.EntryMap[id]
 	if !ok {
 		return 0, EntryError{
