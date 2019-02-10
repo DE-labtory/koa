@@ -1145,7 +1145,10 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr: errors.New("[line 0, column 0] [MINUS] parsePrefixExpression() - Invalid prefix of true"),
+			expectedErr: PrefixError{
+				Token{Type: Minus, Val: "-"},
+				&ast.BooleanLiteral{Value: true},
+			},
 		},
 		{
 			buf: &mockTokenBuffer{
@@ -1155,7 +1158,23 @@ func TestMakePrefixExpression(t *testing.T) {
 				},
 				0,
 			},
-			expectedErr: errors.New("[line 0, column 0] [BANG] parsePrefixExpression() - Invalid prefix of hello"),
+			expectedErr: PrefixError{
+				Token{Type: Bang, Val: "!"},
+				&ast.StringLiteral{Value: "hello"},
+			},
+		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Bang, Val: "!"},
+					{Type: Int, Val: "3"},
+				},
+				0,
+			},
+			expectedErr: PrefixError{
+				Token{Type: Bang, Val: "!"},
+				&ast.IntegerLiteral{Value: 3},
+			},
 		},
 	}
 
