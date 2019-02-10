@@ -19,9 +19,8 @@ package encoding
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
-
 	"errors"
+	"fmt"
 )
 
 // In koa, we use hexadecimal encoding

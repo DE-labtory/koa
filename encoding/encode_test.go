@@ -18,9 +18,8 @@ package encoding_test
 
 import (
 	"bytes"
-	"testing"
-
 	"errors"
+	"testing"
 
 	"github.com/DE-labtory/koa/encoding"
 )
