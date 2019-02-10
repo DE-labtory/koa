@@ -45,7 +45,7 @@ func TestMemEntryTable_Define(t *testing.T) {
 		{
 			id:           "aString",
 			value:        "abc",
-			expectedSize: 3,
+			expectedSize: 8,
 			err:          nil,
 		},
 		{

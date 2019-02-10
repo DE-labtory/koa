@@ -18,6 +18,7 @@ package encoding
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 )
 
@@ -56,24 +57,28 @@ func TestEncodeInt(t *testing.T) {
 
 func TestEncodeString(t *testing.T) {
 	tests := []struct {
-		operand  string
-		expected []byte
+		operand     string
+		expected    []byte
+		expectedErr error
 	}{
 		{
-			operand:  "abc",
-			expected: []byte{0x61, 0x62, 0x63},
+			operand:     "abc",
+			expected:    []byte{0x61, 0x62, 0x63, 0x00, 0x00, 0x00, 0x00, 0x00},
+			expectedErr: nil,
 		},
 		{
-			operand:  "1234567890",
-			expected: []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30},
+			operand:     "12345678",
+			expected:    []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38},
+			expectedErr: nil,
 		},
 		{
-			operand:  "~!@#$%^&*()_+",
-			expected: []byte{0x7e, 0x21, 0x40, 0x23, 0x24, 0x25, 0x5e, 0x26, 0x2a, 0x28, 0x29, 0x5f, 0x2b},
+			operand:     "~!@#$%^&*()_+",
+			expected:    nil,
+			expectedErr: errors.New("Length of string must shorter than 8"),
 		},
 		{
 			operand:  "12!@qw",
-			expected: []byte{0x31, 0x32, 0x21, 0x40, 0x71, 0x77},
+			expected: []byte{0x31, 0x32, 0x21, 0x40, 0x71, 0x77, 0x00, 0x00},
 		},
 	}
 
@@ -81,13 +86,13 @@ func TestEncodeString(t *testing.T) {
 		op := test.operand
 		bytecode, err := encodeString(op)
 
-		if err != nil {
-			t.Fatalf("test[%d] - encodeString() had error. err=%v", i, err)
-
+		if bytecode != nil && !bytes.Equal(bytecode, test.expected) {
+			t.Fatalf("test[%d] - encodeString() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
 		}
 
-		if !bytes.Equal(bytecode, test.expected) {
-			t.Fatalf("test[%d] - encodeString() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - encodeString() result error. expected=%x, got=%x",
+				i, test.expectedErr.Error(), err.Error())
 		}
 	}
 }

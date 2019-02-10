@@ -99,6 +99,10 @@ func encodeInt(operand int64, convertFunc convertToBytes) ([]byte, error) {
 // Encode string to hexadecimal bytes
 // ex) string "abc" => 0x616263
 func encodeString(operand string) ([]byte, error) {
+	if len(operand) > 8 {
+		return nil, errors.New("Length of string must shorter than 8")
+	}
+
 	src := hex.EncodeToString([]byte(operand))
 	if len(src)&1 == 1 {
 		src = "0" + src
@@ -107,6 +111,10 @@ func encodeString(operand string) ([]byte, error) {
 	dst, err := hex.DecodeString(src)
 	if err != nil {
 		return nil, err
+	}
+
+	for len(dst) < 8 {
+		dst = append(dst, 0)
 	}
 
 	return dst, nil

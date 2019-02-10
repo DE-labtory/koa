@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/DE-labtory/koa/encoding"
 )
 
@@ -41,22 +43,22 @@ func TestEncodeOperand(t *testing.T) {
 		},
 		{
 			operand:      "abc",
-			expectedByte: []byte{0x61, 0x62, 0x63},
+			expectedByte: []byte{0x61, 0x62, 0x63, 0x00, 0x00, 0x00, 0x00, 0x00},
 			expectedErr:  nil,
 		},
 		{
 			operand:      "1234567890",
-			expectedByte: []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30},
-			expectedErr:  nil,
+			expectedByte: nil,
+			expectedErr:  errors.New("Length of string must shorter than 8"),
 		},
 		{
-			operand:      "~!@#$%^&*()_+",
-			expectedByte: []byte{0x7e, 0x21, 0x40, 0x23, 0x24, 0x25, 0x5e, 0x26, 0x2a, 0x28, 0x29, 0x5f, 0x2b},
+			operand:      "~!@#$%^&",
+			expectedByte: []byte{0x7e, 0x21, 0x40, 0x23, 0x24, 0x25, 0x5e, 0x26},
 			expectedErr:  nil,
 		},
 		{
 			operand:      "12!@qw",
-			expectedByte: []byte{0x31, 0x32, 0x21, 0x40, 0x71, 0x77},
+			expectedByte: []byte{0x31, 0x32, 0x21, 0x40, 0x71, 0x77, 0x00, 0x00},
 			expectedErr:  nil,
 		},
 		{
@@ -85,12 +87,14 @@ func TestEncodeOperand(t *testing.T) {
 		op := test.operand
 		byteCode, err := encoding.EncodeOperand(op, encoding.EIGHT_PADDING)
 
-		if !bytes.Equal(byteCode, test.expectedByte) {
-			t.Fatalf("test[%d] - EncodeOperand() result wrong. expectedByte=%x, got=%x", i, test.expectedByte, byteCode)
+		if byteCode != nil && !bytes.Equal(byteCode, test.expectedByte) {
+			t.Fatalf("test[%d] - EncodeOperand() result wrong. expectedByte=%x, got=%x",
+				i, test.expectedByte, byteCode)
 		}
 
-		if err != test.expectedErr {
-			t.Fatalf("test[%d] - EncodeOperand() result wrong. expectedByte=%x, got=%x", i, test.expectedByte, byteCode)
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - EncodeOperand() error wrong. expectedErr=%x, got=%x",
+				i, test.expectedErr.Error(), err.Error())
 		}
 	}
 }
