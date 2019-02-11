@@ -25,7 +25,11 @@ import (
 // NewScope() makes a new scope.
 func NewScope() *Scope {
 	s := make(map[string]Symbol)
-	return &Scope{s, nil}
+	return &Scope{
+		store: s,
+		inner: make([]*Scope, 0),
+		outer: nil,
+	}
 }
 
 // NewEnclosedScope makes a new scope which has outer scope.
@@ -38,6 +42,8 @@ func NewEnclosedScope(outer *Scope) *Scope {
 // Scope represent a variable's scope.
 type Scope struct {
 	store map[string]Symbol
+
+	inner []*Scope
 	outer *Scope
 }
 
@@ -68,6 +74,14 @@ func (s *Scope) SetOuter(outer *Scope) {
 
 func (s *Scope) GetOuter() *Scope {
 	return s.outer
+}
+
+func (s *Scope) AppendInner(in *Scope) {
+	s.inner = append(s.inner, in)
+}
+
+func (s *Scope) GetInner() []*Scope {
+	return s.inner
 }
 
 func (s *Scope) String() string {

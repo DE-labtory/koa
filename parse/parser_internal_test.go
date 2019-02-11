@@ -3575,6 +3575,16 @@ func TestEnterLeaveScope(t *testing.T) {
 
 	leaveScope()
 
+	// test whether inner exist
+	inner := scope.GetInner()
+	if len(inner) != 1 {
+		t.Errorf("scope should have 1 inner scope, but have %d", len(inner))
+	}
+
+	if inner[0].Get("bar") == nil {
+		t.Errorf("scope should have bar symbol, because we're in the inner scope")
+	}
+
 	scope.Set("baz", &symbol.String{Name: &ast.Identifier{Value: "baz"}})
 
 	if scope.Get("bar") != nil {
