@@ -787,6 +787,31 @@ func TestCompileIntegerLiteral(t *testing.T) {
 	runExpressionCompileTests(t, tests)
 }
 
+func TestCompileIntegerLiteral_negative(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			expression: &ast.IntegerLiteral{
+				Value: -10,
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF6},
+				AsmCode: []string{"Push", "fffffffffffffff6"},
+			},
+		},
+		{
+			expression: &ast.IntegerLiteral{
+				Value: -20,
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEC},
+				AsmCode: []string{"Push", "ffffffffffffffec"},
+			},
+		},
+	}
+
+	runExpressionCompileTests(t, tests)
+}
+
 // TODO: implement test cases :-)
 func TestCompileStringLiteral(t *testing.T) {
 
