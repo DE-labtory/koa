@@ -622,11 +622,207 @@ type Bytecode struct {
 
 This is our `Bytecode` structure. It has 3 fields. `RawByte` is the program to execute. And `RawByte` consists of hexadecimal code. `AsmCode` is a collection of assemble codes which is more readable to human than bytes. `Abi` is an interface needed to user for calling the functions.
 
-<p align="center"><img src="../image/bytecode-structure.jpg" width="600px" height="40px"></p>
+<p align="center"><img src="../image/bytecode-structure.png" width="600px" height="40px"></p>
 
-The raw bytecode is structed like above. `VM Memory Setting code` sets memory size of the `VM`. `Function Jumper` could find the position of each function. And, the functions of contract would be followed by the `Function Jumper`. Each function bytecode has the `function selector`, parameters, and logic.
+The raw bytecode is structed like above. `Load Calldata` is a code which loads the call data. `Function Jumper` could find the position of each function. And, the functions of contract would be followed by the `Function Jumper`. Each function bytecode has the `function selector`, parameters, and logic.
 
 [Function Jumper](#function-jumper) and [Function Selector](#function-selector) will be explained later.
+
+#### Opcode
+
+Opcode is an instruction which is assemble code. Koa opcode is the following.
+
+```go
+	// Ex)
+	// [a]
+	// [b]  ==> [a+b]
+	// [x]      [x]
+	//
+	Add Type = 0x01
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a*b]
+	// [x]      [x]
+	//
+	Mul Type = 0x02
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a-b]
+	// [x]      [x]
+	//
+	Sub Type = 0x03
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a/b]
+	// [x]      [x]
+	//
+	Div Type = 0x04
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a%b]
+	// [x]      [x]
+	//
+	Mod Type = 0x05
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a&b]
+	// [x]      [x]
+	//
+	And Type = 0x06
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a|b]
+	// [x]      [x]
+	//
+	Or Type = 0x07
+```
+`Add`, `Mul`, `Sub`, `Div`, `Mod`, `And`, `Or` opcodes have two operands. They pop two items in the stack and calcaulate the result with items for each operator. Then, push the result to the stack.
+
+```go
+	// Ex)
+	// [a]
+	// [b]  ==> [a<b]
+	// [x]      [x]
+	//
+	LT Type = 0x10
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a<=b]
+	// [x]      [x]
+	//
+	LTE Type = 0x11
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a>b]
+	// [x]      [x]
+	//
+	GT Type = 0x12
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a>=b]
+	// [x]      [x]
+	//
+	GTE Type = 0x13
+
+	// Ex)
+	// [a]
+	// [b]  ==> [a == b]
+	// [x]      [x]
+	//
+	EQ Type = 0x14
+```
+`LT`, `LTE`, `GT`, `GTE`, `EQ` opcodes have two operands. They pop two items in the stack and check comparison with items. If that comparison is true, push `True` to the stack. If not, push `False` to the stack.
+
+```go
+	// Ex)
+	// [a]       [~a]
+	// [x]       [x]
+	//
+	NOT Type = 0x15
+```
+`NOT` opcode has an operand. It pops an item in the stack. And reverses the sign and push it to the stack. 
+
+```go
+	// Ex)
+	// [a]
+	// [b]  ==>  [b]
+	// [x]       [x]
+	//
+	Pop Type = 0x20
+	
+	// Ex)
+	//           [a]
+	// [b]  ==>  [b]
+	// [x]       [x]
+	//
+	Push Type = 0x21
+```
+`Pop`, `Push` opcodes are related to the stack. `Pop` pops an item in the stack. `Push` pushes an 64 bits (8 bytes) item to the stack.
+
+```go
+	// Ex)
+	//
+	// [offset]
+	// [size]       [memory[offset:offset+size]]
+	// [x]       ==>  [b]
+	// [y]            [x]
+	//
+	Mload Type = 0x22
+
+	// Ex)
+	// 
+	// [offset]
+	// [size]
+	// [value]   ==>
+	// [y]            [y]
+	//
+	// memory[offset:offset+size] = value
+	Mstore Type = 0x23
+```
+`Mload`, `Mstore` opcodes are related to the memory. `Mload` loads a value in the memory. It pops two items in the stack. The first  means the offset and the second means the size. And pushes the value in the memory to the stack. `Mstore` stores a value to the memory. It pops three items in the stack. The first means the offset and the second means the size. And the third means the value. Then, the value is stored in the memory.
+	
+```go
+	// Ex)
+	//           [CallFunc.Func]
+	// [x]  ==>  [x]
+	// [y]       [y]
+	// [x] is 8byte which encoded as function selector
+	LoadFunc Type = 0x24
+	
+	// Ex)
+	//
+	// [index]  ==>  [Callfunc.Args[index]]
+	// [y]           [y]
+	LoadArgs Type = 0x25
+```
+`LoadFunc`, `LoadArgs` opcodes are related to the `CallFunc`. `CallFunc` is a function call. `LoadFunc` gets the function selector information. `Func` data is 8 bytes of `Keccak(funcion(params))` with padding. `LoadArgs` pops an item meaning an index of the argument. Then, gets the arguments information.
+
+```go
+	// Ex)
+	//           [offset]
+	//      ==>  [size]
+	// [y]       [y]
+	Returning Type = 0x26
+```
+`Returning` opcode pushes the data which is stored in the memory to the stack. If the data is an integer or boolean, it is the value. If a string, the data is the offset and size of the value in the memory. 
+	
+```go
+	Jump    Type = 0x27
+	JumpDst Type = 0x28
+	Jumpi   Type = 0x29
+```
+`Jump`, `JumpDst`, `Jumpi` opcodes are related to the instruction jumping. `Jump` pops an item which presents specific `pc` to jump and changes `pc` to point the destination to jump. `JumpDst` is the metadata to annotate possible jump destinations. `Jumpi` is the conditional jump instruction. It pops two items. The first points to where to jump and the second is the condition. If the result of second is `True`, jump to the first item. If `False`, jump to the original `pc`. 
+
+```go
+	// Ex)
+	//           [a]
+	// [a]  ==>  [a]
+	// [b]       [b]
+	DUP Type = 0x30
+```
+`DUP` opcode duplicates the data that exists at the top of the stack.
+	
+```go
+	// Swap the first two items in the stack
+	//
+	// Ex)
+	//
+	// [a]       [b]
+	// [b]  ==>  [a]
+	// [c]       [c]
+	SWAP Type = 0x31
+```
+`SWAP` opcode swaps the two items in the stack.
+
 
 #### AST & Compile
 
@@ -634,7 +830,113 @@ The raw bytecode is structed like above. `VM Memory Setting code` sets memory si
 
 The root of AST is a `contract`. `Contract` has some `functions`. And, a `function` has some `statements`.
 
-`CompileContract()` function compiles the contract. It compiles every function and adds `VM memory setting code` and `jump selector`. `compileFunction()` function compiles a function in the contract. It is called recursively and compiles each function. `compileStatement()` function compiles a statement in the function. It is called recursively and compiles each statement.
+`CompileContract()` function compiles the contract. It compiles every function and adds `Load Calldata` and `jump selector`. `compileFunction()` function compiles a function in the contract. It is called recursively and compiles each function. `compileStatement()` function compiles a statement in the function. It is called recursively and compiles each statement.
+
+##### Compile Integer
+
+All data that is pushed in the stack is encoded in 8 bytes. Integer should be encoded with left padding.
+
+```asm
+// example : 123
+
+Push 000000000000007b
+```
+
+##### Compile Boolean
+
+The boolean value is also encoded in 8 bytes similar to the integer. `True` is compiled to `0000000000000001`. `False` is compiled to `0000000000000000`. Boolean should be also encoded with left padding.
+
+```asm
+// example : True
+
+Push 0000000000000001
+```
+```asm
+// example : False
+
+Push 0000000000000000
+```
+
+##### Compile String
+
+The String is compiled differently than integer or boolean. Because, string value is dynamic. So, we treat it with `memory`. Now, we suppose that the string should be equal to or less than 8 bytes, but the string can be greater than 8 bytes in the future. String should be encoded with right padding. (`Mstore` has 3 operands which are offset, size, value)
+
+```asm
+// example : "abc"
+
+Push 0000000012345678
+Push 0000000000000008
+Push 6162630000000000
+Mstore
+```
+
+##### Compile Expression
+
+The expression means that the output of each expression can be expressed a value. Each expression are compiled for each type by `compileExpression()`.
+
+```asm
+// example : 3 + 5 (Infix Expression)
+
+Push 0000000000000003
+Push 0000000000000005
+Add
+```
+```asm
+// example : !True (Prefix Expression)
+
+Push 0000000000000001
+Not
+```
+
+##### Compile Statement
+
+The statement is a collection of expressions. And Statements constructs a function. Each statement are compiled for each type by `compileStatement()`. 
+
+```asm
+// example : a = "abc" (Assgin Statement)
+
+Push 6162630000000000
+// Define an identifier with the memory tracer
+Push 0000000000000008
+Push 0000000012345686
+Mstore 
+```
+```asm
+// example : {
+// int a = 2 		(statement 1)
+// int b = 3 		(statement 2)
+// int c = a + b 	(statement 3)
+// } (Block Statement)
+
+// statement 1
+Push 0000000000000002
+// Define an identifier with the memory tracer
+Push 0000000000000008
+Push 0000000012345694
+Mstore
+
+// statement 2
+Push 0000000000000003
+// Define an identifier with the memory tracer
+Push 0000000000000008
+Push 0000000012345702
+Mstore
+
+// statement 3
+// Get the offset and size with the memory tracer
+Push 0000000000000008
+Push 0000000012345694
+Mload
+// Get the offset and size with the memory tracer
+Push 0000000000000008
+Push 0000000012345702
+Mload
+Add
+// Define an identifier with the memory tracer
+Push 0000000000000008
+Push 0000000012345710
+Mstore
+```
 
 #### <a name="function-selector">Function Selector</a>
 
@@ -751,7 +1053,7 @@ The type supported by 0.1.0 version is `string`, `int`, `bool`
 		}
 	}
 ]
-```  
+```
 ##### Encoding <a id="abi-encoding"/>
 
 ABI Encoding is used when user call function.
