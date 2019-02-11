@@ -198,49 +198,8 @@ func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
 	return nil
 }
 
+// TODO: implement me w/ test cases :-)
 func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
-	err := compileExpression(e.Left, bytecode)
-	if err != nil {
-		return err
-	}
-
-	err = compileExpression(e.Right, bytecode)
-	if err != nil {
-		return err
-	}
-
-	switch e.Operator {
-	case ast.Plus:
-		bytecode.Emerge(opcode.Add)
-	case ast.Minus:
-		bytecode.Emerge(opcode.Sub)
-	case ast.Asterisk:
-		bytecode.Emerge(opcode.Mul)
-	case ast.Slash:
-		bytecode.Emerge(opcode.Div)
-	case ast.Mod:
-		bytecode.Emerge(opcode.Mod)
-
-		//comparison
-	case ast.LT:
-		bytecode.Emerge(opcode.LT)
-	case ast.GT:
-		bytecode.Emerge(opcode.GT)
-	case ast.LTE:
-		bytecode.Emerge(opcode.LTE)
-	case ast.GTE:
-		bytecode.Emerge(opcode.GTE)
-	case ast.EQ:
-		bytecode.Emerge(opcode.EQ)
-	case ast.NOT_EQ:
-		bytecode.Emerge(opcode.EQ)
-		bytecode.Emerge(opcode.NOT)
-	case ast.LAND:
-		bytecode.Emerge(opcode.And)
-	case ast.LOR:
-		bytecode.Emerge(opcode.Or)
-
-	}
 	return nil
 }
 
