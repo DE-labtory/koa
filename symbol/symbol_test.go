@@ -28,9 +28,9 @@ func TestInteger(t *testing.T) {
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
-		{&Integer{&ast.Identifier{Value: "testName"}}, "testName", IntegerSymbol},
-		{&Integer{&ast.Identifier{Value: "a"}}, "a", IntegerSymbol},
-		{&Integer{&ast.Identifier{Value: "b"}}, "b", IntegerSymbol},
+		{&Integer{&ast.Identifier{Name: "testName"}}, "testName", IntegerSymbol},
+		{&Integer{&ast.Identifier{Name: "a"}}, "a", IntegerSymbol},
+		{&Integer{&ast.Identifier{Name: "b"}}, "b", IntegerSymbol},
 	}
 
 	for i, test := range tests {
@@ -57,9 +57,9 @@ func TestString(t *testing.T) {
 		expectedStr    string
 		expectedSymbol SymbolType
 	}{
-		{&String{&ast.Identifier{Value: "testName"}}, "testName", StringSymbol},
-		{&String{&ast.Identifier{Value: "a"}}, "a", StringSymbol},
-		{&String{&ast.Identifier{Value: "b"}}, "b", StringSymbol},
+		{&String{&ast.Identifier{Name: "testName"}}, "testName", StringSymbol},
+		{&String{&ast.Identifier{Name: "a"}}, "a", StringSymbol},
+		{&String{&ast.Identifier{Name: "b"}}, "b", StringSymbol},
 	}
 
 	for i, test := range tests {
@@ -86,8 +86,8 @@ func TestBoolean(t *testing.T) {
 		expectedStr string
 		expectedObj SymbolType
 	}{
-		{&Boolean{&ast.Identifier{Value: "testName"}}, "testName", BooleanSymbol},
-		{&Boolean{&ast.Identifier{Value: "a"}}, "a", BooleanSymbol},
+		{&Boolean{&ast.Identifier{Name: "testName"}}, "testName", BooleanSymbol},
+		{&Boolean{&ast.Identifier{Name: "a"}}, "a", BooleanSymbol},
 	}
 
 	for i, test := range tests {

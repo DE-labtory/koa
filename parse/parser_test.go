@@ -271,7 +271,7 @@ func TestParse(t *testing.T) {
 
 func testFunctionLiteral(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
 	t.Helper()
-	switch fn.Name.Value {
+	switch fn.Name.Name {
 	case "testReturnStatement":
 		testReturnStatementFunc(t, fn, tt)
 	case "testAssignStatement":
@@ -519,7 +519,7 @@ func testFnParameters(t *testing.T, p *ast.ParameterLiteral, ds ast.DataStructur
 		t.Errorf("wrong parameter type expected=%s, got=%s",
 			p.Type.String(), ds.String())
 	}
-	if p.Identifier.Value != id {
+	if p.Identifier.Name != id {
 		t.Errorf("wrong parameter identifier expected=%T, got=%T",
 			p.Type, ds)
 	}
@@ -530,9 +530,9 @@ func testAssignStatement(t *testing.T, stmt *ast.AssignStatement, ds ast.DataStr
 		t.Errorf("wrong assign statement type expected=%T, got=%T",
 			ds, stmt.Type)
 	}
-	if stmt.Variable.Value != ident {
+	if stmt.Variable.Name != ident {
 		t.Errorf("wrong assign statement variable expected=%s, got=%s",
-			ident, stmt.Variable.Value)
+			ident, stmt.Variable.Name)
 	}
 	if stmt.Value.String() != value {
 		t.Errorf("wrong assign statement value expected=%s, got=%s",

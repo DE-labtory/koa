@@ -55,35 +55,35 @@ func TestScopeGetter(t *testing.T) {
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{&ast.Identifier{Value: "a"}},
-					"b": &Integer{&ast.Identifier{Value: "b"}},
+					"a": &Integer{&ast.Identifier{Name: "a"}},
+					"b": &Integer{&ast.Identifier{Name: "b"}},
 				},
 				nil,
 			},
 			"a",
-			&Integer{&ast.Identifier{Value: "a"}},
+			&Integer{&ast.Identifier{Name: "a"}},
 		},
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{&ast.Identifier{Value: "a"}},
-					"b": &Integer{&ast.Identifier{Value: "b"}},
+					"a": &Integer{&ast.Identifier{Name: "a"}},
+					"b": &Integer{&ast.Identifier{Name: "b"}},
 				},
 				&Scope{
 					map[string]Symbol{
-						"c": &String{&ast.Identifier{Value: "c"}},
+						"c": &String{&ast.Identifier{Name: "c"}},
 					},
 					nil,
 				},
 			},
 			"c",
-			&String{&ast.Identifier{Value: "c"}},
+			&String{&ast.Identifier{Name: "c"}},
 		},
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{&ast.Identifier{Value: "a"}},
-					"b": &Integer{&ast.Identifier{Value: "b"}},
+					"a": &Integer{&ast.Identifier{Name: "a"}},
+					"b": &Integer{&ast.Identifier{Name: "b"}},
 				},
 				nil,
 			},
@@ -120,7 +120,7 @@ func TestScopeSetter(t *testing.T) {
 				&Scope{},
 			},
 			"testInt",
-			&Integer{&ast.Identifier{Value: "testInt"}},
+			&Integer{&ast.Identifier{Name: "testInt"}},
 		},
 		{
 			&Scope{
@@ -128,7 +128,7 @@ func TestScopeSetter(t *testing.T) {
 				&Scope{},
 			},
 			"testBool",
-			&Boolean{&ast.Identifier{Value: "testBool"}},
+			&Boolean{&ast.Identifier{Name: "testBool"}},
 		},
 		{
 			&Scope{
@@ -136,7 +136,7 @@ func TestScopeSetter(t *testing.T) {
 				&Scope{},
 			},
 			"testString",
-			&String{&ast.Identifier{Value: "testString"}},
+			&String{&ast.Identifier{Name: "testString"}},
 		},
 	}
 
@@ -163,8 +163,8 @@ func TestScopeString(t *testing.T) {
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{&ast.Identifier{Value: "a"}},
-					"b": &Integer{&ast.Identifier{Value: "b"}},
+					"a": &Integer{&ast.Identifier{Name: "a"}},
+					"b": &Integer{&ast.Identifier{Name: "b"}},
 				},
 				nil,
 			},
@@ -173,12 +173,12 @@ func TestScopeString(t *testing.T) {
 		{
 			Scope{
 				map[string]Symbol{
-					"a": &Integer{&ast.Identifier{Value: "a"}},
-					"b": &Integer{&ast.Identifier{Value: "b"}},
+					"a": &Integer{&ast.Identifier{Name: "a"}},
+					"b": &Integer{&ast.Identifier{Name: "b"}},
 				},
 				&Scope{
 					map[string]Symbol{
-						"c": &String{&ast.Identifier{Value: "c"}},
+						"c": &String{&ast.Identifier{Name: "c"}},
 					},
 					nil,
 				},
@@ -188,13 +188,13 @@ func TestScopeString(t *testing.T) {
 		{
 			Scope{
 				map[string]Symbol{
-					"c": &Integer{&ast.Identifier{Value: "c"}},
-					"b": &Integer{&ast.Identifier{Value: "b"}},
-					"a": &Integer{&ast.Identifier{Value: "a"}},
+					"c": &Integer{&ast.Identifier{Name: "c"}},
+					"b": &Integer{&ast.Identifier{Name: "b"}},
+					"a": &Integer{&ast.Identifier{Name: "a"}},
 				},
 				&Scope{
 					map[string]Symbol{
-						"d": &String{&ast.Identifier{Value: "d"}},
+						"d": &String{&ast.Identifier{Name: "d"}},
 					},
 					nil,
 				},

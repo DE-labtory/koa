@@ -73,7 +73,7 @@ func (cf CallFunc) function() []byte {
 // Example)
 // Pointer : 4bytes
 // Size : 4bytes
-// Value : dynamic
+// Name : dynamic
 // arguments(n) : if the number of arguments is 4, range of n is 0~3
 // cf.Args[n:n+4] : Pointer which point to value's size
 // after we know size, next to size is value.

@@ -218,11 +218,11 @@ func updateScopeSymbol(ident Token, keyword Token) error {
 
 	switch keyword.Type {
 	case IntType:
-		scope.Set(ident.Val, &symbol.Integer{Name: &ast.Identifier{Value: ident.Val}})
+		scope.Set(ident.Val, &symbol.Integer{Name: &ast.Identifier{Name: ident.Val}})
 	case BoolType:
-		scope.Set(ident.Val, &symbol.Boolean{Name: &ast.Identifier{Value: ident.Val}})
+		scope.Set(ident.Val, &symbol.Boolean{Name: &ast.Identifier{Name: ident.Val}})
 	case StringType:
-		scope.Set(ident.Val, &symbol.String{Name: &ast.Identifier{Value: ident.Val}})
+		scope.Set(ident.Val, &symbol.String{Name: &ast.Identifier{Name: ident.Val}})
 	case Function:
 		scope.Set(ident.Val, &symbol.Function{Name: ident.Val})
 	default:
@@ -488,7 +488,7 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 	// TODO: but do not update symbol table in this case
 	// TODO: if not, return error
 
-	return &ast.Identifier{Value: token.Val}, nil
+	return &ast.Identifier{Name: token.Val}, nil
 }
 
 // parseIntegerLiteral parse integer literal.
@@ -554,7 +554,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 		return nil, err
 	}
 
-	lit.Name = &ast.Identifier{Value: token.Val}
+	lit.Name = &ast.Identifier{Name: token.Val}
 
 	if err = expectNext(buf, Lparen); err != nil {
 		return nil, err
@@ -643,7 +643,7 @@ func parseFunctionParameter(buf TokenBuffer) (*ast.ParameterLiteral, error) {
 	// TODO: if not, return error
 
 	ident := &ast.ParameterLiteral{
-		Identifier: &ast.Identifier{Value: token.Val},
+		Identifier: &ast.Identifier{Name: token.Val},
 	}
 
 	token = buf.Read()
@@ -714,7 +714,7 @@ func parseAssignStatement(buf TokenBuffer) (*ast.AssignStatement, error) {
 	}
 
 	stmt.Variable = ast.Identifier{
-		Value: token.Val,
+		Name: token.Val,
 	}
 
 	if err := expectNext(buf, Assign); err != nil {
@@ -872,7 +872,7 @@ func parseExpressionStatement(buf TokenBuffer) (*ast.ExpressionStatement, error)
 		}
 	}
 
-	ident := &ast.Identifier{Value: token.Val}
+	ident := &ast.Identifier{Name: token.Val}
 	exp, err := parseCallExpression(buf, ident)
 	if err != nil {
 		return nil, err

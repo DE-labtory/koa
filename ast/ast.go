@@ -63,11 +63,12 @@ func (c *Contract) String() string {
 
 // Represent identifier
 type Identifier struct {
-	Value string
+	// Name is the identifier's **name** not the value of Identifier
+	Name string
 }
 
 func (i *Identifier) String() string {
-	return i.Value
+	return i.Name
 }
 
 func (i *Identifier) produce() {}
@@ -149,7 +150,7 @@ func (as *AssignStatement) do() {}
 func (as *AssignStatement) String() string {
 	var out bytes.Buffer
 	out.WriteString(as.Type.String() + " ")
-	out.WriteString(as.Variable.Value + " = ")
+	out.WriteString(as.Variable.Name + " = ")
 	out.WriteString(as.Value.String())
 	return out.String()
 }
