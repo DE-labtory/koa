@@ -239,6 +239,8 @@ func updateScopeSymbol(ident Token, keyword Token) error {
 func enterScope() {
 	innerScope := symbol.NewScope()
 	innerScope.SetOuter(scope)
+
+	scope.AppendInner(innerScope)
 	scope = innerScope
 }
 
