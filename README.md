@@ -28,7 +28,7 @@ A more detailed explanation is given below.
 #### Primitive Type
 - Integer
 
-  It is expressed in `int`. Integer size is 32 bytes.
+  It is expressed in `int`. Integer size is 64 bytes.
 
 - String
 
@@ -46,6 +46,10 @@ A more detailed explanation is given below.
 - Comparison
 
   We support `==, !=, >, <, >=, <=` for comparsion.
+
+- Logical
+
+  We support `&&, ||` for logical operation.
 
 - Prefix
 
