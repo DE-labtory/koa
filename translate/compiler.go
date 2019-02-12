@@ -261,7 +261,7 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error 
 }
 
 func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
-	operand, err := encoding.EncodeOperand(e.Value, encoding.EIGHT_PADDING)
+	operand, err := encoding.EncodeOperand(e.Value)
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
 }
 
 func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
-	operand, err := encoding.EncodeOperand(e.Value, encoding.EIGHT_PADDING)
+	operand, err := encoding.EncodeOperand(e.Value)
 	if err != nil {
 		return err
 	}

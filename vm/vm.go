@@ -25,10 +25,10 @@ import (
 
 const (
 	// PTRSIZE is size of arguments pointer
-	PTRSIZE = 4
+	PTRSIZE = 8
 
 	// SIZEPTRSIZE is size of arguments size pointer
-	SIZEPTRSIZE = 4
+	SIZEPTRSIZE = 8
 )
 
 var ErrInvalidData = errors.New("Invalid data")
@@ -71,11 +71,11 @@ func (cf CallFunc) function() []byte {
 }
 
 // Example)
-// Pointer : 4bytes
-// Size : 4bytes
+// Pointer : 8bytes
+// Size : 8bytes
 // Value : dynamic
 // arguments(n) : if the number of arguments is 4, range of n is 0~3
-// cf.Args[n:n+4] : Pointer which point to value's size
+// cf.Args[n:n+8] : Pointer which point to value's size
 // after we know size, next to size is value.
 //
 // CallFunc's Args
@@ -91,8 +91,8 @@ func (cf CallFunc) arguments(n int) []byte {
 
 	ptr := n * PTRSIZE
 
-	sizePtr := binary.BigEndian.Uint32(cf.Args[ptr : ptr+PTRSIZE])
-	sizeVal := binary.BigEndian.Uint32(cf.Args[sizePtr : sizePtr+SIZEPTRSIZE])
+	sizePtr := binary.BigEndian.Uint64(cf.Args[ptr : ptr+PTRSIZE])
+	sizeVal := binary.BigEndian.Uint64(cf.Args[sizePtr : sizePtr+SIZEPTRSIZE])
 
 	return cf.Args[sizePtr+SIZEPTRSIZE : sizePtr+SIZEPTRSIZE+sizeVal]
 }

@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/DE-labtory/koa/encoding"
 )
@@ -85,7 +85,7 @@ func TestEncodeOperand(t *testing.T) {
 
 	for i, test := range tests {
 		op := test.operand
-		byteCode, err := encoding.EncodeOperand(op, encoding.EIGHT_PADDING)
+		byteCode, err := encoding.EncodeOperand(op)
 
 		if byteCode != nil && !bytes.Equal(byteCode, test.expectedByte) {
 			t.Fatalf("test[%d] - EncodeOperand() result wrong. expectedByte=%x, got=%x",
