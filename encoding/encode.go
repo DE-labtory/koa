@@ -17,24 +17,14 @@
 package encoding
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 
-	"github.com/pkg/errors"
-)
-
-type convertToBytes func(int64) string
-type EncodingBytes int
-
-const (
-	NO_PADDING    EncodingBytes = 0
-	FOUR_PADDING  EncodingBytes = 4
-	EIGHT_PADDING EncodingBytes = 8
+	"errors"
 )
 
 // In koa, we use hexadecimal encoding
-
 type EncodeError struct {
 	Operand interface{}
 }
@@ -44,60 +34,36 @@ func (e EncodeError) Error() string {
 }
 
 // EncodeOperand() encodes operand to bytes.
-func EncodeOperand(operand interface{}, convertBytes EncodingBytes) ([]byte, error) {
-	convertFunc, err := selectConvertFunc(convertBytes)
-	if err != nil {
-		return nil, err
-	}
-
+func EncodeOperand(operand interface{}) ([]byte, error) {
 	switch op := operand.(type) {
 	case int:
-		return encodeInt(int64(op), convertFunc)
+		return encodeInt(int64(op))
 
 	case int64:
-		return encodeInt(op, convertFunc)
+		return encodeInt(op)
 
 	case string:
 		return encodeString(op)
 
 	case bool:
-		return encodeBool(op, convertFunc)
+		return encodeBool(op)
 
 	default:
 		return nil, EncodeError{op}
 	}
 }
 
-func selectConvertFunc(bytes EncodingBytes) (convertToBytes, error) {
-	switch bytes {
-	case NO_PADDING:
-		return convertToByte, nil
-	case FOUR_PADDING:
-		return convertTo4Bytes, nil
-	case EIGHT_PADDING:
-		return convertTo8Bytes, nil
-	default:
-		return nil, errors.New("EncodingBytes does not match")
-	}
-}
-
 // Encode integer to hexadecimal bytes
-// ex) When EncodingBytes is 8 : int 123 => 0x000000000000007b
-// ex) When EncodingBytes is 4 : int 123 => 0x0000007b
-// ex) When EncodingBytes is 0 : int 123 => 0x7b
-func encodeInt(operand int64, convertFunc convertToBytes) ([]byte, error) {
-	s := convertFunc(operand)
+// ex) int 123 => 0x000000000000007b
+func encodeInt(operand int64) ([]byte, error) {
+	byteSlice := make([]byte, 8)
+	binary.BigEndian.PutUint64(byteSlice, uint64(operand))
 
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return byteSlice, nil
 }
 
 // Encode string to hexadecimal bytes
-// ex) string "abc" => 0x616263
+// ex) string "abc" => 0x6162630000000000
 func encodeString(operand string) ([]byte, error) {
 	if len(operand) > 8 {
 		return nil, errors.New("Length of string must shorter than 8")
@@ -121,65 +87,16 @@ func encodeString(operand string) ([]byte, error) {
 }
 
 // Encode boolean to hexadecimal bytes
-// ex) When EncodingBytes is 8 : bool true => 0x0000000000000001
-// ex) When EncodingBytes is 4 : bool true => 0x00000001
-// ex) When EncodingBytes is 0 : bool true => 0x01
-
-// ex) When EncodingBytes is 8 : bool false => 0x0000000000000000
-// ex) When EncodingBytes is 4 : bool false => 0x00000000
-// ex) When EncodingBytes is 0 : bool false => 0x00
-func encodeBool(operand bool, convertFunc convertToBytes) ([]byte, error) {
-	var src string
+// ex) bool true  => 0x0000000000000001
+// ex) bool false => 0x0000000000000000
+func encodeBool(operand bool) ([]byte, error) {
+	byteSlice := make([]byte, 8)
 
 	if operand {
-		src = convertFunc(1)
+		binary.BigEndian.PutUint64(byteSlice, 1)
 	} else {
-		src = convertFunc(0)
+		binary.BigEndian.PutUint64(byteSlice, 0)
 	}
 
-	dst, err := hex.DecodeString(src)
-	if err != nil {
-		return nil, err
-	}
-
-	return dst, nil
-
-}
-
-func convertToByte(operand int64) string {
-	var zeroSet string
-
-	src := strconv.FormatUint(uint64(operand), 16)
-
-	if len(src)%2 == 1 {
-		zeroSet += "0"
-	}
-
-	return zeroSet + src
-}
-
-// convert to 4 byte
-func convertTo4Bytes(operand int64) string {
-	var zeroSet string
-
-	src := strconv.FormatUint(uint64(operand), 16)
-	diff := 8 - len(src)
-
-	for ; diff > 0; diff-- {
-		zeroSet += "0"
-	}
-	return zeroSet + src
-}
-
-// convert to 8 byte
-func convertTo8Bytes(operand int64) string {
-	var zeroSet string
-
-	src := strconv.FormatUint(uint64(operand), 16)
-	diff := 16 - len(src)
-
-	for ; diff > 0; diff-- {
-		zeroSet += "0"
-	}
-	return zeroSet + src
+	return byteSlice, nil
 }

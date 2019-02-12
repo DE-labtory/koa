@@ -60,10 +60,11 @@ func encodeValues(params ...interface{}) ([]Value, error) {
 	values := make([]Value, len(params))
 
 	for index, param := range params {
-		bytesValue, err := encoding.EncodeOperand(param, encoding.NO_PADDING)
+		bytesValue, err := encoding.EncodeOperand(param)
 		if err != nil {
 			return nil, err
 		}
+
 		values[index] = append(values[index], bytesValue...)
 	}
 
@@ -74,7 +75,7 @@ func encodeSizes(values []Value) ([]Size, error) {
 	sizes := make([]Size, len(values))
 
 	for index, value := range values {
-		size, err := encoding.EncodeOperand(len(value), encoding.FOUR_PADDING)
+		size, err := encoding.EncodeOperand(len(value))
 		if err != nil {
 			return nil, err
 		}
@@ -89,13 +90,13 @@ func encodePointers(sizes []Size, values []Value) ([]Pointer, error) {
 	pointers := make([]Pointer, len(values))
 
 	for index := 0; index < len(values); index++ {
-		length := len(values) * 4
+		length := len(values) * 8
 
 		for from := 0; from < index; from++ {
 			length += len(sizes[from]) + len(values[from])
 		}
 
-		pointer, err := encoding.EncodeOperand(length, encoding.FOUR_PADDING)
+		pointer, err := encoding.EncodeOperand(length)
 		if err != nil {
 			return nil, err
 		}

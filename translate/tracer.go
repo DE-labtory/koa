@@ -76,7 +76,7 @@ func (m *MemEntryTable) Define(id string, value interface{}) (MemEntry, error) {
 		Offset: m.MemoryCounter,
 	}
 
-	encodedValue, err := encoding.EncodeOperand(value, encoding.EIGHT_PADDING)
+	encodedValue, err := encoding.EncodeOperand(value)
 	if err != nil {
 		return entry, err
 	}
