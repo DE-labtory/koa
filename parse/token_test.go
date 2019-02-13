@@ -40,7 +40,7 @@ func TestLookupIdent(t *testing.T) {
 		tokType := LookupIdent(input)
 
 		if tokType != test.expectedTokenType {
-			t.Fatalf("tests[%d] - wrong token Type. expected=%q, got=%q",
+			t.Fatalf("tests[%d] - wrong token Type. Expected=%q, got=%q",
 				i, test.expectedTokenType, input)
 		}
 	}

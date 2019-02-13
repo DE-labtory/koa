@@ -190,12 +190,12 @@ func compareToken(t *testing.T, i int, tok parse.Token, tt lexTestCase) {
 	t.Helper()
 
 	if tok.Type != tt.expectedType {
-		t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+		t.Fatalf("tests[%d] - tokentype wrong. Expected=%q, got=%q",
 			i, parse.TokenTypeMap[tt.expectedType], parse.TokenTypeMap[tok.Type])
 	}
 
 	if tok.Val != tt.expectedValue {
-		t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+		t.Fatalf("tests[%d] - literal wrong. Expected=%q, got=%q",
 			i, tt.expectedValue, tok.Val)
 	}
 }

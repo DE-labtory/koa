@@ -225,13 +225,13 @@ func bar(Parameter : (Identifier: a, Type: int)) void {
 		stmt, err := Parse(tt.buf)
 
 		if err != nil && err.Error() != tt.expectedErr.Error() {
-			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
+			t.Errorf(`test[%d] - Wrong error returned Expected="%v", got="%v"`,
 				i, tt.expectedErr, err)
 			continue
 		}
 
 		if err == nil && stmt.String() != tt.expected {
-			t.Errorf(`test[%d] - Wrong result returned expected="%s", got="%s"`,
+			t.Errorf(`test[%d] - Wrong result returned Expected="%s", got="%s"`,
 				i, tt.expected, stmt.String())
 		}
 	}
@@ -275,7 +275,7 @@ func TestCurTokenIs(t *testing.T) {
 	for i, test := range tests {
 		ret := curTokenIs(&tokenBuf, test.tokenType)
 		if ret != test.expected {
-			t.Fatalf("test[%d] - curTokenIs() result wrong. expected=%t, got=%t", i, test.expected, ret)
+			t.Fatalf("test[%d] - curTokenIs() result wrong. Expected=%t, got=%t", i, test.expected, ret)
 		}
 		tokenBuf.Read()
 	}
@@ -315,7 +315,7 @@ func TestNextTokenIs(t *testing.T) {
 	for i, test := range tests {
 		ret := nextTokenIs(&tokenBuf, test.tokenType)
 		if ret != test.expected {
-			t.Fatalf("test[%d] - nextTokenIs() result wrong. expected=%t, got=%t", i, test.expected, ret)
+			t.Fatalf("test[%d] - nextTokenIs() result wrong. Expected=%t, got=%t", i, test.expected, ret)
 		}
 		tokenBuf.Read()
 	}
@@ -353,7 +353,7 @@ func TestCurPrecedence(t *testing.T) {
 	for i, test := range tests {
 		ret := curPrecedence(&tokenBuf)
 		if ret != test.expected {
-			t.Fatalf("test[%d] - curPrecedence() result wrong. expected=%d, got=%d", i, test.expected, ret)
+			t.Fatalf("test[%d] - curPrecedence() result wrong. Expected=%d, got=%d", i, test.expected, ret)
 		}
 		tokenBuf.Read()
 	}
@@ -388,7 +388,7 @@ func TestNextPrecedence(t *testing.T) {
 	for i, test := range tests {
 		ret := nextPrecedence(&tokenBuf)
 		if ret != test.expected {
-			t.Fatalf("test[%d] - curPrecedence() result wrong. expected=%d, got=%d", i, test.expected, ret)
+			t.Fatalf("test[%d] - curPrecedence() result wrong. Expected=%d, got=%d", i, test.expected, ret)
 		}
 		tokenBuf.Read()
 	}
@@ -420,7 +420,7 @@ func TestPeekNumber_IsValid(t *testing.T) {
 	for i, test := range tests {
 		n := test.n
 		if n.isValid() != test.expected {
-			t.Fatalf("test[%d] - isValid() result wrong. expected=%t, got=%t", i, test.expected, n.isValid())
+			t.Fatalf("test[%d] - isValid() result wrong. Expected=%t, got=%t", i, test.expected, n.isValid())
 		}
 	}
 }
@@ -471,7 +471,7 @@ func TestExpectNext(t *testing.T) {
 		retError := expectNext(&tokenBuf, test.token)
 		if retError != nil && retError.Error() != test.expectedError.Error() {
 			t.Fatalf("test[%d] - expectNext() result wrong.\n"+
-				"expected error: %s\n"+
+				"Expected error: %s\n"+
 				"got error: %s", i, test.expectedError.Error(), retError.Error())
 		}
 
@@ -544,7 +544,7 @@ func TestParseIdentifier(t *testing.T) {
 			setupScope: defaultSetupScopeFn,
 			expected:   nil,
 			expectedErrs: NotExistSymError{
-				source: Token{
+				Source: Token{
 					Ident,
 					"a",
 					125,
@@ -616,17 +616,17 @@ func TestParseIdentifier(t *testing.T) {
 		exp, err := parseIdentifier(test.buf)
 
 		if err != nil && err.Error() != test.expectedErrs.Error() {
-			t.Fatalf("test[%d] - wrong error. expected=%s, got=%s", i, test.expectedErrs, err)
+			t.Fatalf("test[%d] - wrong error. Expected=%s, got=%s", i, test.expectedErrs, err)
 		}
 
 		switch exp {
 		case nil:
 			if test.expected != nil {
-				t.Fatalf("test[%d] - wrong result. expected=%s, got=%s", i, test.expected.String(), exp.String())
+				t.Fatalf("test[%d] - wrong result. Expected=%s, got=%s", i, test.expected.String(), exp.String())
 			}
 		case &ast.Identifier{Value: exp.String()}:
 			if exp.String() != exp.String() {
-				t.Fatalf("test[%d] - wrong result. expected=%s, got=%s", i, test.expected.String(), exp.String())
+				t.Fatalf("test[%d] - wrong result. Expected=%s, got=%s", i, test.expected.String(), exp.String())
 			}
 		}
 	}
@@ -675,12 +675,12 @@ func TestParseIntegerLiteral(t *testing.T) {
 		tokenBuf.sp = i
 		exp, err := parseIntegerLiteral(&tokenBuf)
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. Expected=%s, got=%s",
 				i, test.expectedErr, err.Error())
 		}
 
 		if exp != nil && exp.String() != test.expected.String() {
-			t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseIntegerLiteral() wrong error. Expected=%s, got=%s",
 				i, test.expectedErr, err.Error())
 		}
 	}
@@ -723,7 +723,7 @@ func TestParseBooleanLiteral(t *testing.T) {
 		exp, err := parseBooleanLiteral(&tokenBuf)
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf(`test[%d] - TestParseBooleanLiteral() wrong error. expected="%s", got="%s"`,
+			t.Fatalf(`test[%d] - TestParseBooleanLiteral() wrong error. Expected="%s", got="%s"`,
 				i, test.expectedErr.Error(), err.Error())
 		}
 
@@ -733,7 +733,7 @@ func TestParseBooleanLiteral(t *testing.T) {
 		}
 
 		if err == nil && lit.String() != test.expected.String() {
-			t.Fatalf(`test[%d] - TestParseBooleanLiteral() wrong result. expected="%s", got="%s"`,
+			t.Fatalf(`test[%d] - TestParseBooleanLiteral() wrong result. Expected="%s", got="%s"`,
 				i, test.expected, lit.String())
 		}
 	}
@@ -780,7 +780,7 @@ func TestParseStringLiteral(t *testing.T) {
 		switch err != nil {
 		case true:
 			if err.Error() != test.expectedErr.Error() {
-				t.Fatalf("test[%d] - TestParseStringLiteral() wrong error. expected=%s, got=%s",
+				t.Fatalf("test[%d] - TestParseStringLiteral() wrong error. Expected=%s, got=%s",
 					i, test.expectedErr, err.Error())
 			}
 		}
@@ -788,7 +788,7 @@ func TestParseStringLiteral(t *testing.T) {
 		switch exp != nil {
 		case true:
 			if exp.String() != test.expected.String() {
-				t.Fatalf("test[%d] - TestParseStringLiteral() wrong result. expected=%s, got=%s",
+				t.Fatalf("test[%d] - TestParseStringLiteral() wrong result. Expected=%s, got=%s",
 					i, test.expected, exp.String())
 			}
 		}
@@ -1054,13 +1054,13 @@ if ( true ) {  } else {  }
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionLiteral() wrong error\n"+
-				"expected: %s\n"+
+				"Expected: %s\n"+
 				"got: %s", i, test.expectedErr.Error(), err.Error())
 		}
 
 		if exp != nil && exp.String() != test.expectedExpr {
 			t.Fatalf("test[%d] - TestParseFunctionLiteral wrong result\n"+
-				"expected: %s\n"+
+				"Expected: %s\n"+
 				"got: %s", i, test.expectedExpr, exp.String())
 		}
 	}
@@ -1147,13 +1147,13 @@ func TestParseFunctionParameter(t *testing.T) {
 		identifiers, err := parseFunctionParameterList(test.buf)
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionParameter() wrong error.\n"+
-				"expected: %s\n"+
+				"Expected: %s\n"+
 				"got: %s", i, test.expectedErr.Error(), err.Error())
 		} else {
 			for j, identifier := range identifiers {
 				if identifier.String() != test.expected[j] {
 					t.Fatalf("test[%d-%d] - TestParseFunctionParameter() failed.\n"+
-						"expected: %s\n"+
+						"Expected: %s\n"+
 						"got: %s", i, j, test.expected[j], identifier)
 				}
 			}
@@ -1299,13 +1299,13 @@ func TestMakePrefixExpression(t *testing.T) {
 		exp, err := makePrefixExpression(tt.buf)
 
 		if err != nil && err.Error() != tt.expectedErr.Error() {
-			t.Errorf(`test[%d] - Wrong error returned expected="%v", got="%v"`,
+			t.Errorf(`test[%d] - Wrong error returned Expected="%v", got="%v"`,
 				i, tt.expectedErr, err)
 			continue
 		}
 
 		if err == nil && exp.String() != tt.expected {
-			t.Errorf(`test[%d] - Wrong result returned expected="%s", got="%s"`,
+			t.Errorf(`test[%d] - Wrong result returned Expected="%s", got="%s"`,
 				i, tt.expected, exp.String())
 		}
 	}
@@ -1421,11 +1421,11 @@ func TestMakeInfixExpression(t *testing.T) {
 		exp, err := makeInfixExpression(test.buf, &test.prefix, LOWEST)
 
 		if err != nil && test.expectedErr.Error() != err.Error() {
-			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. Expected=%s, got=%s",
 				i, test.expected, err.Error())
 		}
 		if err == nil && test.expected != exp.String() {
-			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. Expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
 	}
@@ -1518,12 +1518,12 @@ func TestParseInfixExpression(t *testing.T) {
 		exp, err := parseInfixExpression(test.buf, &test.left)
 
 		if err != nil && test.expectedErr.Error() != err.Error() {
-			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong error. Expected=%s, got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 
 		if err == nil && test.expected != exp.String() {
-			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestMakeInfixExpression() wrong result. Expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
 	}
@@ -1630,14 +1630,14 @@ func TestParseGroupedExpression(t *testing.T) {
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong error.\n"+
-				"expected=%s,\n"+
+				"Expected=%s,\n"+
 				"got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 
 		if exp != nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseGroupedExpression() wrong answer.\n"+
-				"expected=%s,\n"+
+				"Expected=%s,\n"+
 				"got=%s",
 				i, test.expected, exp.String())
 		}
@@ -1734,14 +1734,14 @@ func TestParseReturnStatement(t *testing.T) {
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error.\n"+
-				"expected=%s,\n"+
+				"Expected=%s,\n"+
 				"got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 
 		if exp != nil && exp.String() != test.expected {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong result.\n"+
-				"expected=%s,\n"+
+				"Expected=%s,\n"+
 				"got=%s",
 				i, test.expected, exp.String())
 		}
@@ -1986,11 +1986,11 @@ func TestParseCallExpression(t *testing.T) {
 		exp, err := parseCallExpression(test.buf, test.function)
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - parseCallExpression() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - parseCallExpression() wrong error. Expected=%s, got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 		if exp != nil && exp.String() != test.expected {
-			t.Fatalf("test[%d] - parseCallExpression() wrong answer. expected=%s, got=%s",
+			t.Fatalf("test[%d] - parseCallExpression() wrong answer. Expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
 	}
@@ -2145,7 +2145,7 @@ func TestParseCallArguments(t *testing.T) {
 		exp, err := parseCallArguments(test.buf)
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. Expected=%s, got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 
@@ -2154,7 +2154,7 @@ func TestParseCallArguments(t *testing.T) {
 		}
 		mockFn.Arguments = exp
 		if exp != nil && mockFn.String() != test.expected {
-			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseCallArguments() wrong error. Expected=%s, got=%s",
 				i, test.expected, mockFn.String())
 		}
 	}
@@ -2545,13 +2545,13 @@ func TestParseReassignStatement(t *testing.T) {
 		stmt, err := parseReassignStatement(test.buf)
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - parseReassignStatement() returns wrong error.\n"+
-				"expected=%s\n"+
+				"Expected=%s\n"+
 				"got=%s", i, test.expectedErr.Error(), err.Error())
 		}
 
 		if stmt != nil && stmt.String() != test.expected {
 			t.Fatalf("test[%d] - parseReassignStatement() returns wrong result.\n"+
-				"expected=%s\n"+
+				"Expected=%s\n"+
 				"got=%s", i, test.expected, stmt.String())
 		}
 	}
@@ -2764,12 +2764,12 @@ func TestParseExpression(t *testing.T) {
 		exp, err := parseExpression(test.buf, LOWEST)
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - parseExpression() with wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - parseExpression() with wrong error. Expected=%s, got=%s",
 				i, test.expectedErr.Error(), err)
 		}
 
 		if err == nil && exp.String() != test.expected {
-			t.Fatalf("test[%d] - parseExpression() with wrong expression. expected=%s, got=%s",
+			t.Fatalf("test[%d] - parseExpression() with wrong expression. Expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
 	}
@@ -2972,12 +2972,12 @@ func TestParseIfStatement(t *testing.T) {
 
 		// verify
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - TestParseIfStatement() wrong error. expected=%s got=%s",
+			t.Fatalf("test[%d] - TestParseIfStatement() wrong error. Expected=%s got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 
 		if stmt != nil && stmt.String() != test.expected {
-			t.Fatalf("test[%d] - TestParseIfStatement() wrong result. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseIfStatement() wrong result. Expected=%s, got=%s",
 				i, test.expected, stmt.String())
 		}
 
@@ -3185,12 +3185,12 @@ bool c = true`,
 
 		// verify
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - TestParseBlockStatement() wrong error. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseBlockStatement() wrong error. Expected=%s, got=%s",
 				i, test.expectedErr.Error(), err.Error())
 		}
 
 		if exp != nil && exp.String() != test.expected {
-			t.Fatalf("test[%d] - TestParseBlockStatement() wrong result. expected=%s, got=%s",
+			t.Fatalf("test[%d] - TestParseBlockStatement() wrong result. Expected=%s, got=%s",
 				i, test.expected, exp.String())
 		}
 
@@ -3899,13 +3899,13 @@ func TestParseStatement(t *testing.T) {
 
 		// verify
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Errorf(`test[%d] - parseStatement wrong error. expected="%v", got="%v"`,
+			t.Errorf(`test[%d] - parseStatement wrong error. Expected="%v", got="%v"`,
 				i, test.expectedErr, err)
 			continue
 		}
 
 		if err == nil && stmt.String() != test.expectedStmt {
-			t.Errorf(`test[%d] - parseStatement wrong result. expected="%s", got="%s"`,
+			t.Errorf(`test[%d] - parseStatement wrong result. Expected="%s", got="%s"`,
 				i, test.expectedStmt, stmt.String())
 		}
 
@@ -4056,13 +4056,13 @@ func TestParseExpressionStatement(t *testing.T) {
 		stmt, err := parseExpressionStatement(test.buf)
 		if stmt != nil && stmt.String() != test.expectedStmt {
 			t.Fatalf("test[%d] - TestParseFunctionStatement wrong answer.\n"+
-				"expected= %s\n"+
+				"Expected= %s\n"+
 				"got= %s", i, test.expectedStmt, stmt.String())
 		}
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseFunctionStatement wrong error.\n"+
-				"expected= %s\n"+
+				"Expected= %s\n"+
 				"got= %s", i, test.expectedErr.Error(), err.Error())
 		}
 	}
@@ -4240,7 +4240,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 
 		// verify
 		if err != nil && err.Error() != tt.expectedErr.Error() {
-			t.Errorf("test[%d] - updateScopeSymbol returns unexpected error, expected=\"%s\", got=\"%s\"",
+			t.Errorf("test[%d] - updateScopeSymbol returns unexpected error, Expected=\"%s\", got=\"%s\"",
 				i, err.Error(), tt.expectedErr.Error())
 		}
 		// verify
