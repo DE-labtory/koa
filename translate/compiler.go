@@ -80,14 +80,40 @@ func expectFuncJumper(c ast.Contract, funcMap FuncMap) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-// Generates a bytecode of function jumper.
+// Generates the function jumper in front of the bytecode.
 func generateFuncJumper(c ast.Contract, bytecode *Bytecode, funcMap FuncMap) error {
+	funcJpr := NewBytecode()
+
+	// Loads the function selector of call function.
+	funcJpr.Emerge(opcode.LoadFunc)
+
+	// Compares and finds the corresponding function selector.
+	for _, f := range c.Functions {
+		if err := compileFunctionLiteral(f, funcJpr, funcMap); err != nil {
+			return err
+		}
+	}
+
+	// No match to any function selector, Revert!
+	funcJpr.Emerge(opcode.JumpDst)
+	operand, err := encoding.EncodeOperand(0)
+	if err != nil {
+		return err
+	}
+	funcJpr.Emerge(opcode.Push, operand)
+	funcJpr.Emerge(opcode.DUP)
+	funcJpr.Emerge(opcode.Returning)
+
+	// Add function jumper to bytecode
+	// [bytecode] => [function jumper][bytecode]
+	funcJpr.Append(bytecode)
+	bytecode = funcJpr
+
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
+func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode, funcMap FuncMap) error {
 	return nil
 }
 
