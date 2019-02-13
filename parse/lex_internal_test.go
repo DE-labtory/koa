@@ -43,7 +43,7 @@ func TestState_cut(t *testing.T) {
 		state := test.inputState
 		token := state.cut(test.inputTokenType)
 		if token != test.expectedToken {
-			t.Fatalf("tests[%d] - Token wrong. expected=%q, got=%q",
+			t.Fatalf("tests[%d] - Token wrong. Expected=%q, got=%q",
 				i, test.expectedToken, token)
 		}
 	}
@@ -93,11 +93,11 @@ func TestState_next(t *testing.T) {
 	for i, test := range tests {
 		ch := s.next()
 		if ch != test.expectedCh {
-			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
+			t.Errorf("tests[%d] - rune wrong. Expected=%q, got=%q",
 				i, test.expectedCh, ch)
 		}
 		if s.column != test.col {
-			t.Errorf("tests[%d] - column wrong. expected=%d, got=%d",
+			t.Errorf("tests[%d] - column wrong. Expected=%d, got=%d",
 				i, test.col, s.column)
 		}
 	}
@@ -134,11 +134,11 @@ func TestState_backup(t *testing.T) {
 		ch := s.next()
 
 		if ch != test.expectedPeekCh {
-			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
+			t.Errorf("tests[%d] - rune wrong. Expected=%q, got=%q",
 				i, test.expectedPeekCh, ch)
 		}
 		if s.column != test.col {
-			t.Errorf("tests[%d] - column wrong. expected=%d, got=%d",
+			t.Errorf("tests[%d] - column wrong. Expected=%d, got=%d",
 				i, test.col, s.column)
 		}
 
@@ -174,7 +174,7 @@ func TestState_peek(t *testing.T) {
 	for i, test := range tests {
 		ch := s.peek()
 		if ch != test.expectedPeekCh {
-			t.Errorf("tests[%d] - rune wrong. expected=%q, got=%q",
+			t.Errorf("tests[%d] - rune wrong. Expected=%q, got=%q",
 				i, test.expectedPeekCh, ch)
 		}
 		s.next()
@@ -207,7 +207,7 @@ func TestState_accept(t *testing.T) {
 		}
 
 		if ans := s.accept(valid); ans != test.expectedBool {
-			t.Errorf("tests[%d] - error. expected=%t, got=%t", i, test.expectedBool, ans)
+			t.Errorf("tests[%d] - error. Expected=%t, got=%t", i, test.expectedBool, ans)
 		}
 
 	}
@@ -329,7 +329,7 @@ func TestLex_defaultStateFn(t *testing.T) {
 		e := MockEmitter{}
 		e.emitFunc = func(tok Token) {
 			if tok.Type != test.expectedTokenType {
-				t.Errorf("tests[%d] - wrong token type. expected=%s, got=%s",
+				t.Errorf("tests[%d] - wrong token type. Expected=%s, got=%s",
 					i, TokenTypeMap[test.expectedTokenType], TokenTypeMap[tok.Type])
 			}
 		}
@@ -355,7 +355,7 @@ func TestStringStateFn(t *testing.T) {
 				t.Errorf("tests[%d] - Wrong token type", i)
 			}
 			if tok.Val != test.expectedVal {
-				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.expectedVal, tok.Val)
+				t.Errorf("tests[%d] - rune wrong. Expected=%s, got=%s", i, test.expectedVal, tok.Val)
 			}
 		}
 		stringStateFn(s, e)
@@ -404,14 +404,14 @@ func TestErrorStringStateFn(t *testing.T) {
 					t.Errorf("tests[%d] - Wrong token type", i)
 				}
 				if tok.Val != test.firstExpectedVal {
-					t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.firstExpectedVal, tok.Val)
+					t.Errorf("tests[%d] - rune wrong. Expected=%s, got=%s", i, test.firstExpectedVal, tok.Val)
 				}
 			} else if count == 1 { //secondCall
 				if tok.Type != test.secondExpectedType {
 					t.Errorf("tests[%d] - Wrong token type", i)
 				}
 				if tok.Val != test.secondExpectedVal {
-					t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.secondExpectedVal, tok.Val)
+					t.Errorf("tests[%d] - rune wrong. Expected=%s, got=%s", i, test.secondExpectedVal, tok.Val)
 				}
 			}
 			count++
@@ -449,7 +449,7 @@ func TestNumberStateFn(t *testing.T) {
 				t.Errorf("tests[%d] - Wrong token type", i)
 			}
 			if tok.Val != test.expectedVal {
-				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.expectedVal, tok.Val)
+				t.Errorf("tests[%d] - rune wrong. Expected=%s, got=%s", i, test.expectedVal, tok.Val)
 			}
 		}
 		numberStateFn(s, e)
@@ -488,7 +488,7 @@ func TestIdentifierStateFn(t *testing.T) {
 				t.Errorf("tests[%d] - Wrong token type", i)
 			}
 			if tok.Val != test.expectedVal {
-				t.Errorf("tests[%d] - rune wrong. expected=%s, got=%s", i, test.expectedVal, tok.Val)
+				t.Errorf("tests[%d] - rune wrong. Expected=%s, got=%s", i, test.expectedVal, tok.Val)
 			}
 		}
 		identifierStateFn(s, e)
@@ -568,12 +568,12 @@ func TestNewTokenBuffer(t *testing.T) {
 	}
 
 	if buf.cur.Type != Contract {
-		t.Errorf("NewTokenBuffer has wrong cur token expected=%v, got=%v",
+		t.Errorf("NewTokenBuffer has wrong cur token Expected=%v, got=%v",
 			Eol, buf.cur.Type)
 	}
 
 	if buf.next.Type != Lbrace {
-		t.Errorf("NewTokenBuffer has wrong next token expected=%v, got=%v",
+		t.Errorf("NewTokenBuffer has wrong next token Expected=%v, got=%v",
 			Contract, buf.next.Type)
 	}
 }

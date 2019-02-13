@@ -165,55 +165,55 @@ func consumeSemi(buf TokenBuffer) {
 // Error contains error which happened during
 // parsing tokens
 type Error struct {
-	source Token
-	reason string
+	Source Token
+	Reason string
 }
 
 func (e Error) Error() string {
 	return fmt.Sprintf("[line %d, column %d] [%s] %s",
-		e.source.Line, e.source.Column, TokenTypeMap[e.source.Type], e.reason)
+		e.Source.Line, e.Source.Column, TokenTypeMap[e.Source.Type], e.Reason)
 }
 
 // ExpectError happens during parsing expectNext
 type ExpectError struct {
-	source   Token
-	expected TokenType
+	Source   Token
+	Expected TokenType
 }
 
 func (e ExpectError) Error() string {
-	return fmt.Sprintf("[line %d, column %d] expected [%s], but got [%s]",
-		e.source.Line, e.source.Column, TokenTypeMap[e.expected], TokenTypeMap[e.source.Type])
+	return fmt.Sprintf("[line %d, column %d] Expected [%s], but got [%s]",
+		e.Source.Line, e.Source.Column, TokenTypeMap[e.Expected], TokenTypeMap[e.Source.Type])
 }
 
 // dupSymError occur when there is duplicated symbol
 type DupSymError struct {
-	source Token
+	Source Token
 }
 
 func (e DupSymError) Error() string {
 	return fmt.Sprintf("[line %d, column %d] symbol [%s] already exist",
-		e.source.Line, e.source.Column, e.source.Val)
+		e.Source.Line, e.Source.Column, e.Source.Val)
 }
 
 // prefixError occur when there is invalid prefix type
 type PrefixError struct {
-	source Token
-	right  ast.Expression
+	Source Token
+	Right  ast.Expression
 }
 
 func (e PrefixError) Error() string {
 	return fmt.Sprintf("[line %d, columnd %d] Invalid prefix of %s",
-		e.source.Line, e.source.Column, e.right.String())
+		e.Source.Line, e.Source.Column, e.Right.String())
 }
 
 // NotExistSymError occur when there is no target symbol
 type NotExistSymError struct {
-	source Token
+	Source Token
 }
 
 func (e NotExistSymError) Error() string {
 	return fmt.Sprintf("[lint %d, column %d] symbol [%s] is not exist",
-		e.source.Line, e.source.Column, e.source.Val)
+		e.Source.Line, e.Source.Column, e.Source.Val)
 }
 
 type (
@@ -313,7 +313,7 @@ func parseContractStart(buf TokenBuffer) error {
 }
 
 // parseContractEnd validates whether contracts finish with
-// right-brace, otherwise throw error
+// Right-brace, otherwise throw error
 func parseContractEnd(buf TokenBuffer) error {
 	if err := expectNext(buf, Rbrace); err != nil {
 		return err
@@ -775,7 +775,7 @@ func parseReassignStatement(buf TokenBuffer) (ast.Statement, error) {
 	stmt := &ast.ReassignStatement{}
 	token := buf.Read()
 	if token.Type != Ident {
-		return nil, ExpectError{source: token, expected: Ident}
+		return nil, ExpectError{Source: token, Expected: Ident}
 	}
 
 	if exist := scope.Get(token.Val); exist == nil {
@@ -896,10 +896,10 @@ func parseIfStatement(buf TokenBuffer) (*ast.IfStatement, error) {
 // PROTOCOL:
 //   reading token from TokenBuffer **only and must** be done in
 //   parsing statement/expression function. And in parseBlockStatement,
-//   parser reads from left-brace until meeting right-brace.
-//   and consume right-brace.
+//   parser reads from left-brace until meeting Right-brace.
+//   and consume Right-brace.
 //
-//  parseBlockStatement parse: { ... } <-- left-brace + statements + right-brace
+//  parseBlockStatement parse: { ... } <-- left-brace + statements + Right-brace
 //
 func parseBlockStatement(buf TokenBuffer) (*ast.BlockStatement, error) {
 	if err := expectNext(buf, Lbrace); err != nil {
