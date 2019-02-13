@@ -114,6 +114,24 @@ func generateFuncJumper(c ast.Contract, bytecode *Bytecode, funcMap FuncMap) err
 
 // TODO: implement me w/ test cases :-)
 func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode, funcMap FuncMap) error {
+	// Duplicates the function selector to find.
+	bytecode.Emerge(opcode.DUP)
+	// Pushes the function selector of this function literal.
+	selector := string(abi.Selector(s.Signature()))
+	funcSel, err := encoding.EncodeOperand(selector)
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, funcSel)
+	bytecode.Emerge(opcode.EQ)
+	// If the result is equal, Pushed the pc to jump.
+	pc, err := encoding.EncodeOperand(funcMap[selector])
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, pc)
+	bytecode.Emerge(opcode.Jumpi)
+
 	return nil
 }
 
