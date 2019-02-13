@@ -17,6 +17,8 @@
 package parse_test
 
 import (
+	"bytes"
+	"html/template"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
@@ -24,9 +26,6 @@ import (
 )
 
 type parserTestCase struct {
-	returnTestCase []struct {
-		returnValue string
-	}
 	assignTestCase []struct {
 		ds    ast.DataStructure
 		ident string
@@ -58,262 +57,101 @@ type parserTestCase struct {
 	}
 }
 
-func TestParse(t *testing.T) {
-	input := `
-	contract {
-		//// testReturn must have return statements, this function is for 
-		//// testing return statements.
-		//func testReturnStatement() {
-		//	return 1
-		//	return a
-		//	return a * b + 1
-		//	return a * (b + 1)
-		//	return (
-		//		a)
-		//	return add(1, 2)
-		//	return add(
-		//		1,
-		//		2)
-		//	return add(
-		//		1,
-		//		2 /* at this point there's SEMICOLON, should consume */
-		//	)
-		//}
-		//
-		///* testIntType  
-		//is for testing int assign statements */
-		//func testAssignStatement(foo int) string {
-		//	int a = 1
-		//	int a = 1 + 2
-		//	int a =
-		//		1 + 2
-		//	int a = (foo + 1) * 2
-		//	int a = add(1 + 2, 3) + 4
-		//	int a = add(1 % 2, 3) / 4
-		//	
-		//	// This is not working code according to go-spec
-		//	//
-		//	// int a = add(1 + 2, 3) 
-		//	//	 + 4
-		//	
-		//	string a = "hello"
-		//	string a = 
-		//		"hello"
-		//	string tabbed_string = "hello, \t world"
-		//
-		//	bool a = true
-		//	bool b= false
-		//}
-		//
-		//// testIfElse is for testing if-else statements and should only contain
-		//// if-else statements
-		//func testIfStatement(foo int, bar string, baz string) int {
-		//	if (true) {}
-		//
-		//	if (1 != 1 + 2) {
-		//		int a = 1
-		//		string a = "hello"
-		//	}
-		//
-		//	if (foo) {} else {}
-		//	
-		//	if (foo) {
-		//		int a = 1
-		//		string a = "hello"
-		//	} else {
-		//		int a = 1
-		//		string a = "hello"
-		//	}
-		//}
-		//
-		//// testExpressionStatement is for testing expression statement and should
-		//// only contain expression statement
-		//func testExpressionStatement(foo bool) bool {
-		//	add(1, 2)
-		//	add(add(1, 2), 3)
-		//	add(add(1,
-		//		2), 3)
-		//	add(add(1, 2),
-		//		3)
-		//	add(
-		//		add(
-		//			1, 
-		//			2
-		//		),
-		//		3
-		//	)
-		//}
-		//
-		//// testInlineReturnStatement is for testing inline-function, in the case when
-		//// return statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineReturnStatement() string { return "hello" }
-		//
-		//// testInlineAssignStatement is for testing inline-function, in the case when
-		//// assign statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineAssignStatement() { int a = 1 }
-		//
-		//// testInlineConditionStatement is for testing inline-function, in the case when
-		//// condition statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineConditionStatement() { if(true) {} else {} }
-		//
-		//// testInlineExpressionStatement is for testing inline-function, in the case when
-		//// expression statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineExpressionStatement() { add(1, 2) }
-	}	
-`
-	tcs := parserTestCase{
-		returnTestCase: []struct {
-			returnValue string
-		}{
-			{"1"},
-			{"a"},
-			{"((a * b) + 1)"},
-			{"(a * (b + 1))"},
-			{"a"},
-			{"function add( 1, 2 )"},
-			{"function add( 1, 2 )"},
-			{"function add( 1, 2 )"},
-		},
-		assignTestCase: []struct {
-			ds    ast.DataStructure
-			ident string
-			value string
-		}{
-			{ast.IntType, "a", "1"},
-			{ast.IntType, "a", "(1 + 2)"},
-			{ast.IntType, "a", "(1 + 2)"},
-			{ast.IntType, "a", "((foo + 1) * 2)"},
-			{ast.IntType, "a", "(function add( (1 + 2), 3 ) + 4)"},
-			{ast.IntType, "a", "(function add( (1 % 2), 3 ) / 4)"},
-			{ast.StringType, "a", "\"hello\""},
-			{ast.StringType, "a", "\"hello\""},
-			{ast.StringType, "tabbed_string", "\"hello, \\t world\""},
-			{ast.BoolType, "a", "true"},
-			{ast.BoolType, "b", "false"},
-		},
-		conditionTestCase: []struct {
-			condition   string
-			consequence []string
-			alternative []string
-		}{
-			{
-				condition: "true",
-			},
-			{
-				condition: "(1 != (1 + 2))",
-				consequence: []string{
-					"int a = 1",
-					"string a = \"hello\"",
-				},
-			},
-			{
-				condition: "foo",
-			},
-			{
-				condition: "foo",
-				consequence: []string{
-					"int a = 1",
-					"string a = \"hello\"",
-				},
-				alternative: []string{
-					"int a = 1",
-					"string a = \"hello\"",
-				},
-			},
-		},
-		expressionStmtTestCase: []struct {
-			expression string
-		}{
-			{"function add( 1, 2 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-		},
-		inlineReturnStmtTestCase: struct {
-			returnValue string
-		}{"\"hello\""},
-		inlineAssignStmtTestCase: struct {
-			ds    ast.DataStructure
-			ident string
-			value string
-		}{ast.IntType, "a", "1"},
-		inlineConditionTestCase: struct {
-			condition   string
-			consequence []string
-			alternative []string
-		}{
-			condition:   "true",
-			consequence: []string{},
-			alternative: []string{},
-		},
-		inlineExpressionStmtTestCase: struct {
-			expression string
-		}{"function add( 1, 2 )"},
-	}
+type returnStmtExpect struct {
+	returnValue ast.Expression
+}
 
+type assertFnHeader func(fn *ast.FunctionLiteral)
+
+type testContractTmpl struct {
+	FuncName string
+	Args     string
+	RetType  string
+	Stmts    []string
+}
+
+const singleFnContractTmpl = `
+contract {
+    func {{.FuncName}}({{.Args}}) {{.RetType}} {
+        {{range .Stmts}}
+		{{.}}
+        {{end}}
+    }
+}
+`
+
+var tmplInstance, _ = template.New("ContractTemplate").Parse(singleFnContractTmpl)
+
+func genTestContractCode(c testContractTmpl) string {
+	out := bytes.NewBufferString("")
+	tmplInstance.Execute(out, c)
+	return out.String()
+}
+
+func parseTestContract(input string) (*ast.Contract, error) {
 	l := parse.NewLexer(input)
 	buf := parse.NewTokenBuffer(l)
-	contract, err := parse.Parse(buf)
+	return parse.Parse(buf)
+}
 
-	if err != nil {
-		t.Errorf("parser error: %q", err)
-		t.FailNow()
+func TestReturnStatement(t *testing.T) {
+	tests := []struct {
+		contractTmpl testContractTmpl
+		chkFnHeader  assertFnHeader
+		expected     returnStmtExpect
+	}{
+		{
+			contractTmpl: testContractTmpl{
+				FuncName: "returnStatement1",
+				Args:     "",
+				RetType:  "",
+				Stmts: []string{
+					"return 1",
+				},
+			},
+			chkFnHeader: func(fn *ast.FunctionLiteral) {
+				if fn.ReturnType != ast.VoidType {
+					t.Errorf("testReturn() has wrong return type expected=%v, got=%v",
+						ast.VoidType.String(), fn.ReturnType.String())
+				}
+
+				if len(fn.Parameters) != 0 {
+					t.Errorf("testReturn() has wrong parameters length got=%v",
+						len(fn.Parameters))
+				}
+			},
+			expected: returnStmtExpect{
+				returnValue: &ast.IntegerLiteral{Value: 1},
+			},
+		},
 	}
-	for _, fn := range contract.Functions {
-		testFunctionLiteral(t, fn, tcs)
+
+	for _, tt := range tests {
+		input := genTestContractCode(tt.contractTmpl)
+		contract, err := parseTestContract(input)
+
+		if err != nil {
+			t.Errorf("parser error: %q", err)
+			t.FailNow()
+		}
+
+		testReturnStatement(t, tt.chkFnHeader, contract.Functions[0], tt.expected)
 	}
 }
 
-func testFunctionLiteral(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Helper()
-	switch fn.Name.Value {
-	case "testReturnStatement":
-		testReturnStatementFunc(t, fn, tt)
-	case "testAssignStatement":
-		testAssignStatementFunc(t, fn, tt)
-	case "testIfStatement":
-		testIfElseStatementFunc(t, fn, tt)
-	case "testExpressionStatement":
-		testExpressionStatementFunc(t, fn, tt)
-	case "testInlineReturnStatement":
-		testInlineReturnStatementFunc(t, fn, tt)
-	case "testInlineAssignStatement":
-		testInlineAssignStatementFunc(t, fn, tt)
-	case "testInlineConditionStatement":
-		testInlineConditionStatement(t, fn, tt)
-	case "testInlineExpressionStatement":
-		testInlineExpressionStatement(t, fn, tt)
-	}
-}
+func testReturnStatement(t *testing.T, chkFnHeader assertFnHeader, fn *ast.FunctionLiteral, tt returnStmtExpect) {
+	t.Logf("test return statement - [%s]", fn.Name)
 
-func testReturnStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test return statement")
-
-	// test testReturn() function body, parameters, return type
-	if fn.ReturnType != ast.VoidType {
-		t.Errorf("testReturn() has wrong return type expected=%v, got=%v",
-			ast.VoidType.String(), fn.ReturnType.String())
-	}
-
-	if len(fn.Parameters) != 0 {
-		t.Errorf("testReturn() has wrong parameters length got=%v",
-			len(fn.Parameters))
-	}
+	chkFnHeader(fn)
 
 	// test testReturn's return statements
-	for i, stmt := range fn.Body.Statements {
+	for _, stmt := range fn.Body.Statements {
 		returnStmt, ok := stmt.(*ast.ReturnStatement)
 		if !ok {
 			t.Errorf("function body stmt is not *ast.ReturnStatement. got=%T", stmt)
 		}
 
-		tc := tt.returnTestCase[i]
-		testExpression(t, returnStmt.ReturnValue, tc.returnValue)
+		testExpression2(t, returnStmt.ReturnValue, tt.returnValue)
 	}
 }
 
@@ -511,6 +349,12 @@ func testInlineExpressionStatement(t *testing.T, fn *ast.FunctionLiteral, tt par
 func testExpression(t *testing.T, exp ast.Expression, expected string) {
 	if exp.String() != expected {
 		t.Errorf(`expression is not "%s", bot got "%s"`, exp.String(), expected)
+	}
+}
+
+func testExpression2(t *testing.T, exp ast.Expression, expected ast.Expression) {
+	if exp.String() != expected.String() {
+		t.Errorf(`expression is not "%s", bot got "%s"`, exp.String(), expected.String())
 	}
 }
 
