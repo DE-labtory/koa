@@ -18,6 +18,7 @@ package parse_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"text/template"
 
@@ -348,6 +349,38 @@ func TestReturnStatement(t *testing.T) {
 						RetType:  "string",
 						Stmts: []string{
 							"return a",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.StringType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.Identifier{Value: "a"},
+				},
+			},
+			expectedErr: parse.NotExistSymError{Source: parse.Token{Type: parse.Ident, Val: "a", Line: 3, Column: 17}},
+		},
+		/*
+			// void return
+			func returnStatement7() string {
+				return
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement7",
+						Args:     "",
+						RetType:  "string",
+						Stmts: []string{
+							"return",
 						},
 					},
 				},
@@ -932,17 +965,367 @@ func runAssignStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efh expe
 	}
 }
 
-// TODO: add test cases
 func TestIfElseStatement(t *testing.T) {
 	tests := []struct {
 		contractTmpl      contractTmplData
 		expectedFnHeaders []expectedFnHeader
 		expected          []ast.IfStatement
-	}{}
+		expectedErr       error
+	}{
+		/*
+			func ifStatement1() {
+				if (true) {}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement1",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"if (true) {}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition:   &ast.BooleanLiteral{Value: true},
+					Consequence: &ast.BlockStatement{},
+					Alternative: &ast.BlockStatement{},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement2(a int, b int) int {
+				if (1 != 1 + 2) {
+					return a
+				} else {
+					return b
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement2",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"if (1 != 1 + 2) {",
+							"	return a",
+							"} else {",
+							"	return b",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "a", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.NOT_EQ,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 1},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+					},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "a"},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "b"},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement3(a int, b int) int {
+				if (1 < 1 + 2) {
+					return a
+				} else {
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement3",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"if (1 < 1 + 2) {",
+							"	return a",
+							"} else {",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "a", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.LT,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 1},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+					},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "a"},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement4(a int, b int) int {
+				if (1 != 1 + 2) {
+				} else {
+					return b
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement4",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"if (1 != 1 + 2) {",
+							"} else {",
+							"	return b",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "a", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.NOT_EQ,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 1},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+					},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "b"},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement5(foo bool) {
+				if (foo) {
+					int a = 1
+				} else {
+					int a = 2
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement5",
+						Args:     "foo bool",
+						RetType:  "",
+						Stmts: []string{
+							"if (foo) {",
+							"	int a = 1",
+							"} else {",
+							"	int a = 2",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{argIdent: "foo", argType: ast.BoolType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.Identifier{Value: "foo"},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.AssignStatement{
+								Type:     ast.IntType,
+								Variable: ast.Identifier{Value: "a"},
+								Value:    &ast.IntegerLiteral{Value: 1},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.AssignStatement{
+								Type:     ast.IntType,
+								Variable: ast.Identifier{Value: "a"},
+								Value:    &ast.IntegerLiteral{Value: 2},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement5(foo bool) {
+				if (foo) {
+					bool a = true
+					if (a) {
+						int a = 1
+					}
+				} else {
+					int a = 2
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement5",
+						Args:     "foo bool",
+						RetType:  "",
+						Stmts: []string{
+							"if (foo) {",
+							"	bool a = true",
+							"	if (a) {",
+							"		int a = 1",
+							"	}",
+							"} else {",
+							"	int a = 2",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{argIdent: "foo", argType: ast.BoolType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.Identifier{Value: "foo"},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.IfStatement{
+								Condition: &ast.Identifier{Value: "a"},
+								Consequence: &ast.BlockStatement{
+									Statements: []ast.Statement{
+										&ast.AssignStatement{
+											Type:     ast.IntType,
+											Variable: ast.Identifier{Value: "a"},
+											Value:    &ast.IntegerLiteral{Value: 1},
+										},
+									},
+								},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.AssignStatement{
+								Type:     ast.IntType,
+								Variable: ast.Identifier{Value: "a"},
+								Value:    &ast.IntegerLiteral{Value: 2},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: parse.DupSymError{
+				Source: parse.Token{Type: parse.Ident, Val: "a", Line: 6, Column: 15}},
+		},
+	}
 
 	for _, tt := range tests {
 		input := createTestContractCode(tt.contractTmpl)
 		contract, err := parseTestContract(input)
+
+		if err != nil && err == tt.expectedErr {
+			continue
+		}
 
 		if err != nil {
 			t.Errorf("parser error: %q", err)
@@ -975,10 +1358,160 @@ func TestExpressionStatement(t *testing.T) {
 		contractTmpl      contractTmplData
 		expectedFnHeaders []expectedFnHeader
 		expected          []ast.ExpressionStatement
-	}{}
+		expectedErr       error
+	}{
+		///*
+		//	func add() {
+		//	}
+		//	func expressionStatement1() {
+		//		add()
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "add",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{},
+		//			},
+		//			{
+		//				FuncName: "expressionStatement",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"add()",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.ExpressionStatement{
+		//		{},
+		//		{
+		//			Expr: &ast.CallExpression{
+		//				Function: &ast.Identifier{Value: "add"},
+		//				Arguments: []ast.Expression{},
+		//			},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+		///*
+		//	func add() {
+		//	}
+		//	func expressionStatement1() {
+		//		add(1, 2)
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "add",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{},
+		//			},
+		//			{
+		//				FuncName: "expressionStatement",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"add(1, 2)",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.ExpressionStatement{
+		//		{},
+		//		{
+		//			Expr: &ast.CallExpression{
+		//				Function: &ast.Identifier{Value: "add"},
+		//				Arguments: []ast.Expression{
+		//					&ast.IntegerLiteral{Value: 1},
+		//					&ast.IntegerLiteral{Value: 2},
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+		///*
+		//	func add() {
+		//	}
+		//	func expressionStatement1(foo int) {
+		//		add(foo, 2)
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "add",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{},
+		//			},
+		//			{
+		//				FuncName: "expressionStatement",
+		//				Args:     "foo int",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"add(foo, 2)",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.ExpressionStatement{
+		//		{},
+		//		{
+		//			Expr: &ast.CallExpression{
+		//				Function: &ast.Identifier{Value: "add"},
+		//				Arguments: []ast.Expression{
+		//					&ast.Identifier{Value: "foo"},
+		//					&ast.IntegerLiteral{Value: 2},
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+	}
 
 	for _, tt := range tests {
 		input := createTestContractCode(tt.contractTmpl)
+		fmt.Println("input", input)
 		contract, err := parseTestContract(input)
 
 		if err != nil {
@@ -1000,10 +1533,15 @@ func runExpressionStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efh 
 	for _, stmt := range fn.Body.Statements {
 		exprStmt, ok := stmt.(*ast.ExpressionStatement)
 		if !ok {
-			t.Errorf("function body stmt is not *ast.IfStatement. got=%T", stmt)
+			t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", stmt)
 		}
 		testExpression(t, exprStmt.Expr, tt.Expr)
 	}
+}
+
+// TODO:
+func TestReassignStatement(t *testing.T) {
+
 }
 
 func testExpression(t *testing.T, exp ast.Expression, expected ast.Expression) {
