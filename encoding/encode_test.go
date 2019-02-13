@@ -18,7 +18,6 @@ package encoding_test
 
 import (
 	"bytes"
-	"errors"
 	"testing"
 
 	"github.com/DE-labtory/koa/encoding"
@@ -47,8 +46,8 @@ func TestEncodeOperand(t *testing.T) {
 		},
 		{
 			operand:      "1234567890",
-			expectedByte: nil,
-			expectedErr:  errors.New("Length of string must shorter than 8"),
+			expectedByte: []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			expectedErr:  nil,
 		},
 		{
 			operand:      "~!@#$%^&",

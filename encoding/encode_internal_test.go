@@ -18,7 +18,6 @@ package encoding
 
 import (
 	"bytes"
-	"errors"
 	"testing"
 )
 
@@ -73,8 +72,8 @@ func TestEncodeString(t *testing.T) {
 		},
 		{
 			operand:     "~!@#$%^&*()_+",
-			expected:    nil,
-			expectedErr: errors.New("Length of string must shorter than 8"),
+			expected:    []byte{0x7e, 0x21, 0x40, 0x23, 0x24, 0x25, 0x5e, 0x26, 0x2a, 0x28, 0x29, 0x5f, 0x2b, 0x00, 0x00, 0x00},
+			expectedErr: nil,
 		},
 		{
 			operand:  "12!@qw",
