@@ -54,11 +54,46 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		}
 	}
 
-	if err := generateFuncJumper(bytecode); err != nil {
+	if err := expectFuncJumper(c, funcMap); err != nil {
+		return *bytecode, err
+	}
+
+	if err := generateFuncJumper(c, bytecode, funcMap); err != nil {
 		return *bytecode, err
 	}
 
 	return *bytecode, nil
+}
+
+// Expects a size of the function jumper and updates the function map.
+func expectFuncJumper(c ast.Contract, funcMap FuncMap) error {
+	expectedJpr := NewBytecode()
+	if err := generateFuncJumper(c, expectedJpr, funcMap); err != nil {
+		return err
+	}
+
+	// Updates the function map with a size of function jumper.
+	for funcSel, pc := range funcMap {
+		funcMap[funcSel] = pc + len(expectedJpr.RawByte)
+	}
+
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+// Generates a bytecode of function jumper.
+func generateFuncJumper(c ast.Contract, bytecode *Bytecode, funcMap FuncMap) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Bytecode) error {
+	return nil
 }
 
 func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
@@ -70,12 +105,6 @@ func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
 	return &abi.ABI{
 		Methods: abiMethods,
 	}, nil
-}
-
-// TODO: implement me w/ test cases :-)
-// Generates a bytecode of function jumper.
-func generateFuncJumper(bytecode *Bytecode) error {
-	return nil
 }
 
 // Generates the ABI of functions in contract.
@@ -194,11 +223,6 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer Mem
 
 func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) error {
 	return compileExpression(s.Expr, bytecode)
-}
-
-// TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
-	return nil
 }
 
 // TODO: implement me w/ test cases :-)
@@ -326,10 +350,5 @@ func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
 
 // TODO: implement me w/ test cases :-)
 func compileIdentifier(e *ast.Identifier, bytecode *Bytecode) error {
-	return nil
-}
-
-// TODO: implement me w/ test cases :-)
-func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Bytecode) error {
 	return nil
 }

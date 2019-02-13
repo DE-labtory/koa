@@ -30,8 +30,20 @@ type expressionCompileTestCase struct {
 	expected   Bytecode
 }
 
-// TODO: implement test cases :-)
+func TestExpectFuncJumper(t *testing.T) {
+
+}
+
 func TestGenerateFuncJumper(t *testing.T) {
+
+}
+
+func TestCompileFunctionLiteral(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileParameterLiteral(t *testing.T) {
 
 }
 
@@ -240,11 +252,6 @@ func TestCompileExpressionStatement(t *testing.T) {
 			}
 		}
 	}
-
-}
-
-// TODO: implement test cases :-)
-func TestCompileFunctionLiteral(t *testing.T) {
 
 }
 
@@ -922,11 +929,6 @@ func TestCompileBooleanLiteral(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompileIdentifier(t *testing.T) {
-
-}
-
-// TODO: implement test cases :-)
-func TestCompileParameterLiteral(t *testing.T) {
 
 }
 
