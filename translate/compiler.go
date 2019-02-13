@@ -26,6 +26,13 @@ import (
 	"github.com/DE-labtory/koa/opcode"
 )
 
+type FuncMap map[string]int
+
+func (m FuncMap) Declare(f ast.FunctionLiteral, b Bytecode) {
+	funcSel := abi.Selector(f.Signature())
+	m[string(funcSel)] = len(b.RawByte)
+}
+
 // TODO: implement me w/ test cases :-)
 // CompileContract() compiles a smart contract.
 // returns bytecode and error.
@@ -37,7 +44,11 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 
 	memTracer := NewMemEntryTable()
 
+	funcMap := FuncMap{}
+
 	for _, f := range c.Functions {
+		funcMap.Declare(*f, *bytecode)
+
 		if err := compileFunction(*f, bytecode, memTracer); err != nil {
 			return *bytecode, err
 		}
@@ -118,9 +129,6 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 
 	case *ast.ExpressionStatement:
 		return compileExpressionStatement(statement, bytecode)
-
-	case *ast.FunctionLiteral:
-		return compileFunctionLiteral(statement, bytecode)
 
 	default:
 		return nil
@@ -218,9 +226,6 @@ func compileExpression(e ast.Expression, bytecode *Bytecode) error {
 
 	case *ast.Identifier:
 		return compileIdentifier(expr, bytecode)
-
-	case *ast.ParameterLiteral:
-		return compileParameterLiteral(expr, bytecode)
 
 	default:
 		return errors.New("compileExpression() error")
