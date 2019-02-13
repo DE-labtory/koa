@@ -212,7 +212,7 @@ type NotExistSymError struct {
 }
 
 func (e NotExistSymError) Error() string {
-	return fmt.Sprintf("[lint %d, column %d] symbol [%s] is not exist",
+	return fmt.Sprintf("[line %d, column %d] symbol [%s] is not exist",
 		e.Source.Line, e.Source.Column, e.Source.Val)
 }
 

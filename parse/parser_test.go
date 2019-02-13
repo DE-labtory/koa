@@ -99,13 +99,12 @@ func chkFnHeader(t *testing.T, fn *ast.FunctionLiteral, efh expectedFnHeader) {
 	}
 }
 
-// TODO: 1. add multi function contract test cases
-// TODO: 2. test edge cases - type mismatch, return undefined variable
 func TestReturnStatement(t *testing.T) {
 	tests := []struct {
 		contractTmpl      contractTmplData
 		expectedFnHeaders []expectedFnHeader
 		expected          []ast.ReturnStatement
+		expectedErr       error
 	}{
 		/*
 			func returnStatement1() int {
@@ -133,6 +132,7 @@ func TestReturnStatement(t *testing.T) {
 			expected: []ast.ReturnStatement{
 				{ReturnValue: &ast.IntegerLiteral{Value: 1}},
 			},
+			expectedErr: nil,
 		},
 		/*
 			func returnStatement2(a int) {
@@ -165,6 +165,7 @@ func TestReturnStatement(t *testing.T) {
 					ReturnValue: &ast.Identifier{Value: "a"},
 				},
 			},
+			expectedErr: nil,
 		},
 		/*
 			func returnStatement3(a int, b int) int {
@@ -206,6 +207,7 @@ func TestReturnStatement(t *testing.T) {
 					},
 				},
 			},
+			expectedErr: nil,
 		},
 		/*
 			func returnStatement4(a int) int {
@@ -240,6 +242,7 @@ func TestReturnStatement(t *testing.T) {
 					ReturnValue: &ast.Identifier{Value: "a"},
 				},
 			},
+			expectedErr: nil,
 		},
 		/*
 			func returnStatement5(a int) int {
@@ -296,12 +299,81 @@ func TestReturnStatement(t *testing.T) {
 					ReturnValue: &ast.Identifier{Value: "b"},
 				},
 			},
+			expectedErr: nil,
+		},
+		/*
+			// type mismatch - invalid return type
+			func returnStatement6() string {
+				return 1
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement6",
+						Args:     "",
+						RetType:  "string",
+						Stmts: []string{
+							"return 1",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.StringType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.IntegerLiteral{Value: 1},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			// symbol resolution - return undefined variable
+			func returnStatement7() string {
+				return a
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement7",
+						Args:     "",
+						RetType:  "string",
+						Stmts: []string{
+							"return a",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.StringType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.Identifier{Value: "a"},
+				},
+			},
+			expectedErr: parse.NotExistSymError{Source: parse.Token{Type: parse.Ident, Val: "a", Line: 3, Column: 17}},
 		},
 	}
 
 	for _, tt := range tests {
 		input := createTestContractCode(tt.contractTmpl)
 		contract, err := parseTestContract(input)
+
+		if err != nil && err == tt.expectedErr {
+			continue
+		}
 
 		if err != nil {
 			t.Errorf("parser error: %q", err)
@@ -329,7 +401,6 @@ func runReturnStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efhs exp
 	}
 }
 
-// TODO: add test cases
 func TestAssignStatement(t *testing.T) {
 	tests := []struct {
 		contractTmpl      contractTmplData
