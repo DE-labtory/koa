@@ -48,7 +48,7 @@ type MemDefiner interface {
 // GetOffsetOfEntry() returns the offset of the memory entry corresponding the Id.
 // GetSizeOfEntry() returns the size of the memory entry corresponding the Id.
 type MemEntryGetter interface {
-	GetEntry(id string) (MemEntry, error)
+	Entry(id string) (MemEntry, error)
 }
 
 // MemEntry saves size and offset of the value which the variable has.
@@ -82,7 +82,7 @@ func (m *MemEntryTable) Define(id string) MemEntry {
 	return entry
 }
 
-func (m MemEntryTable) GetEntry(id string) (MemEntry, error) {
+func (m MemEntryTable) Entry(id string) (MemEntry, error) {
 	entry, ok := m.EntryMap[id]
 	if !ok {
 		return MemEntry{}, EntryError{

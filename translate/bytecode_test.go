@@ -18,13 +18,14 @@ package translate_test
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
 
 	"github.com/DE-labtory/koa/opcode"
 	"github.com/DE-labtory/koa/translate"
 )
 
-func TestBytecodeEmerge(t *testing.T) {
+func TestBytecode_Emerge(t *testing.T) {
 	tests := []struct {
 		op       opcode.Type
 		operands [][]byte
@@ -139,4 +140,92 @@ func TestBytecodeEmerge(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestBytecode_Append(t *testing.T) {
+	tests := []struct {
+		front  translate.Bytecode
+		back   translate.Bytecode
+		expect translate.Bytecode
+	}{
+		{
+			front: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Add), 0x01, 0x02},
+				AsmCode: []string{"Add", "01", "02"},
+			},
+			back: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Mul), 0x11, 0x22},
+				AsmCode: []string{"Mul", "11", "22"},
+			},
+			expect: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Add), 0x01, 0x02, byte(opcode.Mul), 0x11, 0x22},
+				AsmCode: []string{"Add", "01", "02", "Mul", "11", "22"},
+			},
+		},
+		{
+			front: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Add), 0x01, 0x02},
+				AsmCode: []string{"Add", "01", "02"},
+			},
+			back: translate.Bytecode{
+				RawByte: make([]byte, 0),
+				AsmCode: make([]string, 0),
+			},
+			expect: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Add), 0x01, 0x02},
+				AsmCode: []string{"Add", "01", "02"},
+			},
+		},
+		{
+			front: translate.Bytecode{
+				RawByte: make([]byte, 0),
+				AsmCode: make([]string, 0),
+			},
+			back: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Mul), 0x11, 0x22},
+				AsmCode: []string{"Mul", "11", "22"},
+			},
+			expect: translate.Bytecode{
+				RawByte: []byte{byte(opcode.Mul), 0x11, 0x22},
+				AsmCode: []string{"Mul", "11", "22"},
+			},
+		},
+		{
+			front: translate.Bytecode{
+				RawByte: make([]byte, 0),
+				AsmCode: make([]string, 0),
+			},
+			back: translate.Bytecode{
+				RawByte: make([]byte, 0),
+				AsmCode: make([]string, 0),
+			},
+			expect: translate.Bytecode{
+				RawByte: make([]byte, 0),
+				AsmCode: make([]string, 0),
+			},
+		},
+	}
+
+	for i, test := range tests {
+		result := test.front
+		result.Append(&test.back)
+
+		if !compareByteCode(result, test.expect) {
+			t.Fatalf("test[%d] - Append() result wrong. expected %x, got=%x",
+				i, test.expect, result)
+		}
+	}
+}
+
+func compareByteCode(b1 translate.Bytecode, b2 translate.Bytecode) bool {
+
+	if !bytes.Equal(b1.RawByte, b2.RawByte) {
+		return false
+	}
+
+	if !reflect.DeepEqual(b1.AsmCode, b2.AsmCode) {
+		return false
+	}
+
+	return true
 }

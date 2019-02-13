@@ -28,8 +28,15 @@ type Bytecode struct {
 	AsmCode []string
 }
 
+func NewBytecode() *Bytecode {
+	return &Bytecode{
+		RawByte: make([]byte, 0),
+		AsmCode: make([]string, 0),
+	}
+}
+
 // Emerge() translates instruction to bytecode
-// An operand of operands should be 4 bytes.
+// An operand of operands should be 8 bytes.
 func (b *Bytecode) Emerge(operator opcode.Type, operands ...[]byte) int {
 	// Translate operator to byte
 	b.RawByte = append(b.RawByte, byte(operator))
@@ -52,4 +59,16 @@ func (b *Bytecode) Emerge(operator opcode.Type, operands ...[]byte) int {
 
 	// Returns next bytecode position
 	return len(b.AsmCode)
+}
+
+// Append() combines two bytecodes.
+// The bytecode of parameter will be appended to the end.
+func (b *Bytecode) Append(bytecode *Bytecode) {
+	for _, aByte := range bytecode.RawByte {
+		b.RawByte = append(b.RawByte, aByte)
+	}
+
+	for _, anAsm := range bytecode.AsmCode {
+		b.AsmCode = append(b.AsmCode, anAsm)
+	}
 }

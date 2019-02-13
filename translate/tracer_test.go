@@ -105,14 +105,14 @@ func TestMemEntryTable_GetEntry(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		entry, err := mTable.GetEntry(test.id)
+		entry, err := mTable.Entry(test.id)
 
 		if err != nil && err.Error() != test.err.Error() {
-			t.Fatalf("test[%d] - GetEntry() error wrong. expected=%v, err=%v", i, test.err, err)
+			t.Fatalf("test[%d] - Entry() error wrong. expected=%v, err=%v", i, test.err, err)
 		}
 
 		if entry != test.expected {
-			t.Fatalf("test[%d] - GetEntry() result wrong. expected=%x, got=%x", i, test.expected, entry)
+			t.Fatalf("test[%d] - Entry() result wrong. expected=%x, got=%x", i, test.expected, entry)
 		}
 	}
 }
