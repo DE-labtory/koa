@@ -129,3 +129,40 @@ func TestEncodeBool(t *testing.T) {
 		}
 	}
 }
+
+func TestEncodeBytes(t *testing.T) {
+	tests := []struct {
+		operand  []byte
+		expected []byte
+	}{
+		{
+			operand:  []byte{0x01},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+		},
+		{
+			operand:  []byte{0x01, 0x02},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02},
+		},
+		{
+			operand:  []byte{},
+			expected: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		},
+	}
+
+	for i, test := range tests {
+		op := test.operand
+		bytecode, err := encodeBytes(op)
+
+		if err != nil {
+			t.Fatalf("test[%d] - encodeBytes() had error. err=%v", i, err)
+		}
+
+		if !bytes.Equal(bytecode, test.expected) {
+			t.Fatalf("test[%d] - encodeBytes() result wrong. expected=%x, got=%x", i, test.expected, bytecode)
+		}
+
+		if len(bytecode) != 8 {
+			t.Fatalf("test[%d] - encodeBytes() result wrong. expected=8, got=%x", i, bytecode)
+		}
+	}
+}
