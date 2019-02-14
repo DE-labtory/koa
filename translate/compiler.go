@@ -29,25 +29,24 @@ import (
 // TODO: implement me w/ test cases :-)
 // CompileContract() compiles a smart contract.
 // returns bytecode and error.
-func CompileContract(c ast.Contract) (Bytecode, error) {
-	bytecode := &Bytecode{
-		RawByte: make([]byte, 0),
-		AsmCode: make([]string, 0),
+func CompileContract(c ast.Contract) (Asm, error) {
+	asm := &Asm{
+		AsmCodes: make([]AsmCode, 0),
 	}
 
 	memTracer := NewMemEntryTable()
 
 	for _, f := range c.Functions {
-		if err := compileFunction(*f, bytecode, memTracer); err != nil {
-			return *bytecode, err
+		if err := compileFunction(*f, asm, memTracer); err != nil {
+			return *asm, err
 		}
 	}
 
-	if err := generateFuncJumper(bytecode); err != nil {
-		return *bytecode, err
+	if err := generateFuncJumper(asm); err != nil {
+		return *asm, err
 	}
 
-	return *bytecode, nil
+	return *asm, nil
 }
 
 func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
@@ -63,7 +62,7 @@ func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
 
 // TODO: implement me w/ test cases :-)
 // Generates a bytecode of function jumper.
-func generateFuncJumper(bytecode *Bytecode) error {
+func generateFuncJumper(bytecode *Asm) error {
 	return nil
 }
 
@@ -86,7 +85,7 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 // TODO: implement me w/ test cases :-)
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
-func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode, tracer MemTracer) error {
+func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) error {
 	// TODO: generate function identifier with Keccak256()
 
 	statements := f.Body.Statements
@@ -102,7 +101,7 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode, tracer MemTracer
 // TODO: implement me w/ test cases :-)
 // compileStatement() compiles a statement in function.
 // Generates and adds output to bytecode.
-func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) error {
+func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
 	switch statement := s.(type) {
 	case *ast.AssignStatement:
 		return compileAssignStatement(statement, bytecode, tracer)
@@ -111,7 +110,7 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 		return compileReturnStatement(statement, bytecode)
 
 	case *ast.IfStatement:
-		return compileIfStatement(statement, bytecode)
+		return compileIfStatement(statement, bytecode, tracer)
 
 	case *ast.BlockStatement:
 		return compileBlockStatement(statement, bytecode, tracer)
@@ -142,7 +141,7 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 // 	[size]
 // 	[value]
 //
-func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode, memDefiner MemDefiner) error {
+func compileAssignStatement(s *ast.AssignStatement, bytecode *Asm, memDefiner MemDefiner) error {
 	if err := compileExpression(s.Value, bytecode); err != nil {
 		return err
 	}
@@ -165,16 +164,94 @@ func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode, memDefin
 }
 
 // TODO: implement me w/ test cases :-)
-func compileReturnStatement(s *ast.ReturnStatement, bytecode *Bytecode) error {
+func compileReturnStatement(s *ast.ReturnStatement, bytecode *Asm) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileIfStatement(s *ast.IfStatement, bytecode *Bytecode) error {
+// compileIfStatement() compiles a 'if statement'.
+//
+// Ex)
+//
+// translate
+// 	'if (expression){
+// 		// Consequence...
+//  }else {
+// 		// Alternative...
+//  }'
+// to
+//  'push <expression> push <pc-to-jumpdst-1> jumpi <Consequence...> push <pc-to-end-of-jumpdst-2> jump jumpdst-1 <Alternative...> jumpdst-2'
+//
+func compileIfStatement(s *ast.IfStatement, bytecode *Asm, tracer MemTracer) error {
+
+	if err := compileExpression(s.Condition, bytecode); err != nil {
+		return err
+	}
+
+	if s.Alternative != nil {
+		return compileIfElse(s, bytecode, tracer)
+	}
+
+	return compileIf(s, bytecode, tracer)
+}
+
+func compileIfElse(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+
+	l1 := len(asm.AsmCodes)
+	if err := compileBlockStatement(s.Consequence, asm, tracer); err != nil {
+		return err
+	}
+	// 'push <expression> <Consequence...>'
+
+	l2 := len(asm.AsmCodes)
+	if err := compileBlockStatement(s.Alternative, asm, tracer); err != nil {
+		return err
+	}
+	// 'push <Consequence...> <Alternative...>'
+
+	l3 := len(asm.AsmCodes)
+	pc2al, err := encoding.EncodeOperand(l2 + 6)
+	if err != nil {
+		return err
+	}
+
+	asm.EmergeAt(l1, opcode.Jumpi)
+	asm.EmergeAt(l1, opcode.Push, pc2al)
+	// 'push <expression> push <pc-to-Alternative> jumpi <Consequence...> <Alternative...>'
+
+	pc2EndOfAlter, err := encoding.EncodeOperand(l3 + 6)
+	if err != nil {
+		return err
+	}
+
+	asm.EmergeAt(l2+3, opcode.Jump)
+	asm.EmergeAt(l2+3, opcode.Push, pc2EndOfAlter)
+	// 'push <expression> push <pc-to-Alternative> jumpi <Consequence...> push <pc-to-end-of-Alternative> jump <Alternative...>'
+
 	return nil
 }
 
-func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer MemTracer) error {
+func compileIf(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+
+	l1 := len(asm.AsmCodes)
+	if err := compileBlockStatement(s.Consequence, asm, tracer); err != nil {
+		return err
+	}
+	l2 := len(asm.AsmCodes)
+	// 'push <expression> <Consequence...>'
+
+	pc2al, err := encoding.EncodeOperand(l2 + 1)
+	if err != nil {
+		return err
+	}
+
+	asm.EmergeAt(l1, opcode.Jump)
+	asm.EmergeAt(l1, opcode.Push, pc2al)
+	// 'push <expression> push <pc-to-end-of-Consequence> jump <Consequence...>'
+
+	return nil
+}
+
+func compileBlockStatement(s *ast.BlockStatement, bytecode *Asm, tracer MemTracer) error {
 	for _, statement := range s.Statements {
 		if err := compileStatement(statement, bytecode, tracer); err != nil {
 			return err
@@ -184,19 +261,19 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer Mem
 	return nil
 }
 
-func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) error {
+func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Asm) error {
 	return compileExpression(s.Expr, bytecode)
 }
 
 // TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
+func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Asm) error {
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 // compileExpression() compiles a expression in statement.
 // Generates and adds ouput to bytecode.
-func compileExpression(e ast.Expression, bytecode *Bytecode) error {
+func compileExpression(e ast.Expression, bytecode *Asm) error {
 	switch expr := e.(type) {
 	case *ast.CallExpression:
 		return compileCallExpression(expr, bytecode)
@@ -228,11 +305,11 @@ func compileExpression(e ast.Expression, bytecode *Bytecode) error {
 }
 
 // TODO: implement me w/ test cases :-)
-func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
+func compileCallExpression(e *ast.CallExpression, bytecode *Asm) error {
 	return nil
 }
 
-func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
+func compileInfixExpression(e *ast.InfixExpression, bytecode *Asm) error {
 	if err := compileExpression(e.Left, bytecode); err != nil {
 		return err
 	}
@@ -276,7 +353,7 @@ func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
 	return nil
 }
 
-func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
+func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Asm) error {
 	if err := compileExpression(e.Right, bytecode); err != nil {
 		return err
 	}
@@ -293,7 +370,7 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error 
 	return nil
 }
 
-func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
+func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Asm) error {
 	operand, err := encoding.EncodeOperand(e.Value)
 	if err != nil {
 		return err
@@ -304,12 +381,12 @@ func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
 }
 
 // TODO: implement me w/ test cases :-)
-func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
+func compileStringLiteral(e *ast.StringLiteral, bytecode *Asm) error {
 	return nil
 
 }
 
-func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
+func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Asm) error {
 	operand, err := encoding.EncodeOperand(e.Value)
 	if err != nil {
 		return err
@@ -320,11 +397,11 @@ func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
 }
 
 // TODO: implement me w/ test cases :-)
-func compileIdentifier(e *ast.Identifier, bytecode *Bytecode) error {
+func compileIdentifier(e *ast.Identifier, bytecode *Asm) error {
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
-func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Bytecode) error {
+func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Asm) error {
 	return nil
 }
