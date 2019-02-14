@@ -80,6 +80,11 @@ func TestEncodeOperand(t *testing.T) {
 			expectedByte: nil,
 			expectedErr:  encoding.EncodeError{'c'},
 		},
+		{
+			operand:      []byte{0x01, 0x02, 0x03},
+			expectedByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03},
+			expectedErr:  nil,
+		},
 	}
 
 	for i, test := range tests {

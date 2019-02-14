@@ -21,6 +21,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common/math"
 )
 
 // In koa, we use hexadecimal encoding
@@ -46,6 +49,9 @@ func EncodeOperand(operand interface{}) ([]byte, error) {
 
 	case bool:
 		return encodeBool(op)
+
+	case []byte:
+		return encodeBytes(op)
 
 	default:
 		return nil, EncodeError{op}
@@ -98,4 +104,17 @@ func encodeBool(operand bool) ([]byte, error) {
 	}
 
 	return byteSlice, nil
+}
+
+// Encode boolean to hexadecimal bytes
+// ex) []byte{0x01, 0x02, 0x03, 0x04}  => 0x0000000001020304
+func encodeBytes(operand []byte) ([]byte, error) {
+	copiedBytes := make([]byte, 8)
+
+	tmp := new(big.Int)
+	tmp.SetBytes(operand)
+
+	math.ReadBits(tmp, copiedBytes)
+
+	return copiedBytes, nil
 }
