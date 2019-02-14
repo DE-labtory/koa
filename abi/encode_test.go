@@ -27,7 +27,7 @@ func TestEncode(t *testing.T) {
 	test := struct {
 		args1 int64
 		args2 string
-		args3 int
+		args3 int64
 	}{
 		args1: 50,
 		args2: "HelloKOA",

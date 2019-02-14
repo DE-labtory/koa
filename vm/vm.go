@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"errors"
 
+	"github.com/DE-labtory/koa/encoding"
 	"github.com/DE-labtory/koa/opcode"
 )
 
@@ -342,7 +343,7 @@ func (push) Do(stack *stack, asm asmReader, _ *Memory, contract *CallFunc) error
 	if !ok {
 		return ErrInvalidData
 	}
-	item := item(bytesToInt32(data.hex()))
+	item := bytesToItem(data.hex())
 	stack.push(item)
 
 	return nil
@@ -352,8 +353,11 @@ func (push) hex() []uint8 {
 	return []uint8{uint8(opcode.Push)}
 }
 
-// TODO: implement me w/ test cases :-)
-func (mload) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+func (mload) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	offset, size := stack.pop(), stack.pop()
+	value := memory.GetVal(uint64(offset), uint64(size))
+
+	stack.push(bytesToItem(value))
 	return nil
 }
 
@@ -361,8 +365,14 @@ func (mload) hex() []uint8 {
 	return []uint8{uint8(opcode.Mload)}
 }
 
-// TODO: implement me w/ test cases :-)
-func (mstore) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+func (mstore) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	offset, size, value := stack.pop(), stack.pop(), stack.pop()
+
+	memSize := uint64(memory.Len()) + uint64(size)
+	memory.Resize(memSize)
+
+	convertedValue := int64ToBytes(int64(value))
+	memory.Sets(uint64(offset), uint64(size), convertedValue)
 	return nil
 }
 
@@ -370,8 +380,15 @@ func (mstore) hex() []uint8 {
 	return []uint8{uint8(opcode.Mstore)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (loadfunc) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
+	function := callfunc.function()
+
+	convertedFunc, err := encoding.EncodeOperand(function)
+	if err != nil {
+		return err
+	}
+
+	stack.push(bytesToItem(convertedFunc))
 	return nil
 }
 
@@ -379,8 +396,12 @@ func (loadfunc) hex() []uint8 {
 	return []uint8{uint8(opcode.LoadFunc)}
 }
 
-// TODO: implement me w/ test cases :-)
 func (loadargs) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
+	index := stack.pop()
+	argument := callfunc.arguments(int(index))
+
+	stack.push(bytesToItem(argument))
+
 	return nil
 }
 
@@ -388,7 +409,7 @@ func (loadargs) hex() []uint8 {
 	return []uint8{uint8(opcode.LoadArgs)}
 }
 
-// TODO: implement me w/ test cases :-)
+// TODO: Implements test case :-)
 func (returning) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
 	return nil
 }
@@ -451,34 +472,34 @@ func (swap) hex() []uint8 {
 	return []uint8{uint8(opcode.SWAP)}
 }
 
-func int32ToBytes(int32 int32) []byte {
-	byteSlice := make([]byte, 4)
-	binary.BigEndian.PutUint32(byteSlice, uint32(int32))
+func int64ToBytes(int64 int64) []byte {
+	byteSlice := make([]byte, 8)
+	binary.BigEndian.PutUint64(byteSlice, uint64(int64))
 	return byteSlice
 }
 
-func bytesToInt32(bytes []byte) int32 {
-	int32 := int32(binary.BigEndian.Uint32(bytes))
-	return int32
+func bytesToItem(bytes []byte) item {
+	item := item(binary.BigEndian.Uint64(bytes))
+	return item
 }
 
 func euclidean_div(a item, b item) (item, item) {
-	var q int32
-	var r int32
-	A := int32(a)
-	B := int32(b)
+	var q int64
+	var r int64
+	A := int64(a)
+	B := int64(b)
 
 	if A < 0 && B > 0 {
-		q = int32(A/B) - 1
+		q = int64(A/B) - 1
 		r = A - (B * q)
 	} else if A > 0 && B < 0 {
-		q = int32(A / B)
+		q = int64(A / B)
 		r = A - (B * q)
 	} else if A > 0 && B > 0 {
-		q = int32(A / B)
+		q = int64(A / B)
 		r = A - (B * q)
 	} else if A < 0 && B < 0 {
-		q = int32((A + B) / B)
+		q = int64((A + B) / B)
 		r = A - (B * q)
 	}
 
