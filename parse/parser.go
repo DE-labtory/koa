@@ -815,6 +815,7 @@ func parseCallArguments(buf TokenBuffer) ([]ast.Expression, error) {
 	}
 
 	if curTokenIs(buf, Rparen) {
+		buf.Read()
 		return args, nil
 	}
 
