@@ -28,9 +28,9 @@ import (
 
 type FuncMap map[string]int
 
-func (m FuncMap) Declare(f ast.FunctionLiteral, b Bytecode) {
-	funcSel := abi.Selector(f.Signature())
-	m[string(funcSel)] = len(b.RawByte)
+func (m FuncMap) Declare(signature string, b Bytecode) {
+	funcSel := abi.Selector(signature)
+	m[string(funcSel)] = len(b.AsmCode)
 }
 
 // TODO: implement me w/ test cases :-)
@@ -42,19 +42,14 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		AsmCode: make([]string, 0),
 	}
 
-	memTracer := NewMemEntryTable()
-
 	funcMap := FuncMap{}
-
-	expectedFuncJmpr, err := expectFuncJmpr(c)
-	if err != nil {
+	if err := expectFuncJmpr(c, bytecode, funcMap); err != nil {
 		return *bytecode, err
 	}
 
-	bytecode.Append(expectedFuncJmpr)
-
+	memTracer := NewMemEntryTable()
 	for _, f := range c.Functions {
-		funcMap.Declare(*f, *bytecode)
+		funcMap.Declare(f.Signature(), *bytecode)
 
 		if err := compileFunction(*f, bytecode, memTracer); err != nil {
 			return *bytecode, err
@@ -74,29 +69,42 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 }
 
 // Expects a size of the function jumper and emerges with the unmeaningful value.
-func expectFuncJmpr(c ast.Contract) (*Bytecode, error) {
-	expectedFuncJmpr := NewBytecode()
+func expectFuncJmpr(c ast.Contract, bytecode *Bytecode, funcMap FuncMap) error {
+	// Pushes the location of revert with the unmeaningful value.
+	operand, err := encoding.EncodeOperand(0)
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, operand)
 
 	// Loads the function selector of call function.
-	expectedFuncJmpr.Emerge(opcode.LoadFunc)
+	bytecode.Emerge(opcode.LoadFunc)
 
 	// Adds the logic to compare and find the corresponding function selector with the unmeaningful value.
+	funcMap.Declare("FuncJmpr", *bytecode)
 	for range c.Functions {
-		if err := compileFuncSelector(expectedFuncJmpr, "", 0); err != nil {
-			return expectedFuncJmpr, err
+		if err := compileFuncSelector(bytecode, string(abi.Selector("")), 0); err != nil {
+			return err
 		}
 	}
 
-	if err := compileRevert(expectedFuncJmpr); err != nil {
-		return expectedFuncJmpr, err
-	}
+	// No match to any function selector, Revert!
+	funcMap.Declare("Revert", *bytecode)
+	bytecode.Emerge(opcode.Returning)
 
-	return expectedFuncJmpr, nil
+	return nil
 }
 
 // Generates the function jumper bytecode.
 func generateFuncJmpr(c ast.Contract, funcMap FuncMap) (*Bytecode, error) {
 	funcJmpr := NewBytecode()
+
+	// Pushes the location of revert.
+	operand, err := encoding.EncodeOperand(funcMap[string(abi.Selector("Revert"))])
+	if err != nil {
+		return funcJmpr, err
+	}
+	funcJmpr.Emerge(opcode.Push, operand)
 
 	// Loads the function selector of call function.
 	funcJmpr.Emerge(opcode.LoadFunc)
@@ -111,9 +119,7 @@ func generateFuncJmpr(c ast.Contract, funcMap FuncMap) (*Bytecode, error) {
 	}
 
 	// No match to any function selector, Revert!
-	if err := compileRevert(funcJmpr); err != nil {
-		return funcJmpr, err
-	}
+	funcJmpr.Emerge(opcode.Returning)
 
 	return funcJmpr, nil
 }
@@ -135,21 +141,6 @@ func relocateFuncJmpr(bytecode *Bytecode, funcJmpr *Bytecode) error {
 	for i := range funcJmpr.AsmCode {
 		bytecode.AsmCode[i] = funcJmpr.AsmCode[i]
 	}
-
-	return nil
-}
-
-// Compiles the revert logic.
-// Reverting is the logic which exits the program for not finding any destination to jump.
-func compileRevert(bytecode *Bytecode) error {
-	bytecode.Emerge(opcode.JumpDst)
-	operand, err := encoding.EncodeOperand(0)
-	if err != nil {
-		return err
-	}
-	bytecode.Emerge(opcode.Push, operand)
-	bytecode.Emerge(opcode.DUP)
-	bytecode.Emerge(opcode.Returning)
 
 	return nil
 }

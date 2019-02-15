@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/opcode"
 )
@@ -30,24 +31,295 @@ type expressionCompileTestCase struct {
 	expected   Bytecode
 }
 
-func TestExpectFuncJumper(t *testing.T) {
+func TestExpectFuncJmpr(t *testing.T) {
+	tests := []struct {
+		contract       ast.Contract
+		expectBytecode *Bytecode
+		expectFuncMap  FuncMap
+		err            error
+	}{
+		{
+			contract: ast.Contract{
+				Functions: []*ast.FunctionLiteral{
+					{
+						Name: &ast.Identifier{
+							Value: "foo",
+						},
+					},
+				},
+			},
+			expectBytecode: &Bytecode{
+				RawByte: []byte{
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x24,
+					0x30,
+					0x21, 0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x29,
+					0x26,
+				},
+				AsmCode: []string{
+					"Push", "0000000000000000",
+					"LoadFunc",
+					"DUP",
+					"Push", "c5d2460100000000",
+					"EQ",
+					"Push", "0000000000000000",
+					"Jumpi",
+					"Returning",
+				},
+			},
+			expectFuncMap: FuncMap{
+				string(abi.Selector("FuncJmpr")): 3,
+				string(abi.Selector("Revert")):   10,
+			},
+			err: nil,
+		},
+	}
 
+	for i, test := range tests {
+		b := NewBytecode()
+		funcMap := FuncMap{}
+
+		err := expectFuncJmpr(test.contract, b, funcMap)
+
+		if !compareByteCode(*b, *test.expectBytecode) {
+			t.Fatalf("test[%d] - expectFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectBytecode, b)
+		}
+
+		if !compareFuncMap(funcMap, test.expectFuncMap) {
+			t.Fatalf("test[%d] - expectFuncJmpr() FuncMap result wrong.\nexpected=%v,\ngot=%v", i, test.expectFuncMap, funcMap)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - expectFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
 }
 
-func TestGenerateFuncJumper(t *testing.T) {
+func TestGenerateFuncJmpr(t *testing.T) {
+	tests := []struct {
+		contract ast.Contract
+		expect   *Bytecode
+		err      error
+	}{
+		{
+			contract: ast.Contract{
+				Functions: []*ast.FunctionLiteral{
+					{
+						Name: &ast.Identifier{
+							Value: "foo",
+						},
+						Parameters: []*ast.ParameterLiteral{},
+					},
+					{
+						Name: &ast.Identifier{
+							Value: "sam",
+						},
+						Parameters: nil,
+					},
+				},
+			},
+			expect: &Bytecode{
+				RawByte: []byte{
+					// Pushes revert
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					// LoadFunc
+					0x24,
+					// Func 1
+					0x30,
+					0x21, 0x1b, 0x24, 0xaa, 0xbc, 0x00, 0x00, 0x00, 0x00,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x29,
+					// Func 2
+					0x30,
+					0x21, 0x9f, 0x24, 0xb4, 0x67, 0x00, 0x00, 0x00, 0x00,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+					0x29,
+					// Revert
+					0x26,
+				},
+				AsmCode: []string{
+					"Push", "0000000000000000",
+					"LoadFunc",
+					"DUP",
+					"Push", "1b24aabc00000000",
+					"EQ",
+					"Push", "0000000000000000",
+					"Jumpi",
+					"DUP",
+					"Push", "9f24b46700000000",
+					"EQ",
+					"Push", "0000000000000001",
+					"Jumpi",
+					"Returning",
+				},
+			},
+			err: nil,
+		},
+	}
 
+	for i, test := range tests {
+		funcMap := FuncMap{}
+		setupFuncMap(test.contract, funcMap)
+
+		funcJmpr, err := generateFuncJmpr(test.contract, funcMap)
+
+		if !compareByteCode(*funcJmpr, *test.expect) {
+			t.Fatalf("test[%d] - generateFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expect, funcJmpr)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - generateFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
 }
 
-func TestRelocateFuncJumper(t *testing.T) {
+func TestRelocateFuncJmpr(t *testing.T) {
+	tests := []struct {
+		bytecode *Bytecode
+		funcJmpr *Bytecode
+		expect   *Bytecode
+		err      error
+	}{
+		{
+			bytecode: &Bytecode{
+				RawByte: []byte{
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x24,
+					0x30,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x29,
+					0x26,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				},
+				AsmCode: []string{
+					"Push", "0000000000000000",
+					"LoadFunc",
+					"DUP",
+					"Push", "0000000000000000",
+					"EQ",
+					"Push", "0000000000000000",
+					"Jumpi",
+					"Returning",
+					"Push", "0000000000000000",
+					"Push", "0000000000000000",
+				},
+			},
+			funcJmpr: &Bytecode{
+				RawByte: []byte{
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x24,
+					0x30,
+					0x21, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34,
+					0x29,
+					0x26,
+				},
+				AsmCode: []string{
+					"Push", "0000000000000000",
+					"LoadFunc",
+					"DUP",
+					"Push", "1234567890123456",
+					"EQ",
+					"Push", "0000000000001234",
+					"Jumpi",
+					"Returning",
+				},
+			},
+			expect: &Bytecode{
+				RawByte: []byte{
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x24,
+					0x30,
+					0x21, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34,
+					0x29,
+					0x26,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				},
+				AsmCode: []string{
+					"Push", "0000000000000000",
+					"LoadFunc",
+					"DUP",
+					"Push", "1234567890123456",
+					"EQ",
+					"Push", "0000000000001234",
+					"Jumpi",
+					"Returning",
+					"Push", "0000000000000000",
+					"Push", "0000000000000000",
+				},
+			},
+			err: nil,
+		},
+	}
 
-}
+	for i, test := range tests {
+		err := relocateFuncJmpr(test.bytecode, test.funcJmpr)
 
-func TestCompileRevert(t *testing.T) {
+		if !compareByteCode(*test.bytecode, *test.expect) {
+			t.Fatalf("test[%d] - relocateFuncJmpr() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, test.bytecode)
+		}
 
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - relocateFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
 }
 
 func TestCompileFuncSelector(t *testing.T) {
+	tests := []struct {
+		funcSelector string
+		funcDst      int
+		expect       *Bytecode
+		err          error
+	}{
+		{
+			funcSelector: string(abi.Selector("Foo()")),
+			funcDst:      0,
+			expect: &Bytecode{
+				RawByte: []byte{
+					0x30,
+					0x21, 0xbf, 0xb4, 0xeb, 0xcf, 0x00, 0x00, 0x00, 0x00,
+					0x14,
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x29,
+				},
+				AsmCode: []string{
+					"DUP",
+					"Push", "bfb4ebcf00000000",
+					"EQ",
+					"Push", "0000000000000000",
+					"Jumpi",
+				},
+			},
+			err: nil,
+		},
+	}
 
+	for i, test := range tests {
+		b := NewBytecode()
+		err := compileFuncSelector(b, test.funcSelector, test.funcDst)
+
+		if !compareByteCode(*b, *test.expect) {
+			t.Fatalf("test[%d] - compileFuncSelector() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, b)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - compileFuncSelector() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+
+	}
 }
 
 // TODO: implement test cases :-)
@@ -1008,4 +1280,24 @@ func compareByteCode(b1 Bytecode, b2 Bytecode) bool {
 	}
 
 	return true
+}
+
+func compareFuncMap(funcMap1 FuncMap, funcMap2 FuncMap) bool {
+	if len(funcMap1) != len(funcMap2) {
+		return false
+	}
+
+	for funcSel, item := range funcMap1 {
+		if item != funcMap2[funcSel] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func setupFuncMap(c ast.Contract, funcMap FuncMap) {
+	for i, f := range c.Functions {
+		funcMap[string(abi.Selector(f.Signature()))] = i
+	}
 }

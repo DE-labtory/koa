@@ -35,14 +35,16 @@ func TestFuncMap_Declare(t *testing.T) {
 			funcLiteral: makeFuncLiteral("foo", ast.VoidType),
 			b: translate.Bytecode{
 				RawByte: []byte{01, 02, 03, 04},
+				AsmCode: []string{"01020304"},
 			},
-			pc:  4,
+			pc:  1,
 			len: 1,
 		},
 		{
 			funcLiteral: makeFuncLiteral("bar", ast.IntType),
 			b: translate.Bytecode{
 				RawByte: []byte{05, 06},
+				AsmCode: []string{"05", "06"},
 			},
 			pc:  2,
 			len: 2,
@@ -51,6 +53,7 @@ func TestFuncMap_Declare(t *testing.T) {
 			funcLiteral: makeFuncLiteral("sam", ast.StringType),
 			b: translate.Bytecode{
 				RawByte: []byte{11, 12, 13, 14, 15, 16},
+				AsmCode: []string{"11", "12", "13", "14", "15", "16"},
 			},
 			pc:  6,
 			len: 3,
@@ -60,7 +63,7 @@ func TestFuncMap_Declare(t *testing.T) {
 	fMap := translate.FuncMap{}
 
 	for i, test := range tests {
-		fMap.Declare(test.funcLiteral, test.b)
+		fMap.Declare(test.funcLiteral.Signature(), test.b)
 
 		result := fMap[string(abi.Selector(test.funcLiteral.Signature()))]
 		if test.pc != result {
