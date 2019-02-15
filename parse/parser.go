@@ -369,10 +369,13 @@ func parseStatement(buf TokenBuffer) (ast.Statement, error) {
 		return parseIfStatement(buf)
 	case Return:
 		return parseReturnStatement(buf)
-	case Ident:
-		return parseReassignStatement(buf)
 	default:
-		return parseExpressionStatement(buf)
+		switch buf.Peek(NEXT).Type {
+		case Assign:
+			return parseReassignStatement(buf)
+		default:
+			return parseExpressionStatement(buf)
+		}
 	}
 }
 
