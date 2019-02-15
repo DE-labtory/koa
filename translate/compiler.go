@@ -46,6 +46,13 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 
 	funcMap := FuncMap{}
 
+	expectedFuncJmpr, err := expectFuncJmpr(c)
+	if err != nil {
+		return *bytecode, err
+	}
+
+	bytecode.Append(expectedFuncJmpr)
+
 	for _, f := range c.Functions {
 		funcMap.Declare(*f, *bytecode)
 
@@ -54,82 +61,116 @@ func CompileContract(c ast.Contract) (Bytecode, error) {
 		}
 	}
 
-	if err := expectFuncJumper(c, funcMap); err != nil {
+	funcJmpr, err := generateFuncJmpr(c, funcMap)
+	if err != nil {
 		return *bytecode, err
 	}
 
-	if err := generateFuncJumper(c, bytecode, funcMap); err != nil {
+	if err := relocateFuncJmpr(bytecode, funcJmpr); err != nil {
 		return *bytecode, err
 	}
 
 	return *bytecode, nil
 }
 
-// Expects a size of the function jumper and updates the function map.
-func expectFuncJumper(c ast.Contract, funcMap FuncMap) error {
-	expectedJpr := NewBytecode()
-	if err := generateFuncJumper(c, expectedJpr, funcMap); err != nil {
-		return err
-	}
-
-	// Updates the function map with a size of function jumper.
-	for funcSel, pc := range funcMap {
-		funcMap[funcSel] = pc + len(expectedJpr.RawByte)
-	}
-
-	return nil
-}
-
-// Generates the function jumper in front of the bytecode.
-func generateFuncJumper(c ast.Contract, bytecode *Bytecode, funcMap FuncMap) error {
-	funcJpr := NewBytecode()
+// Expects a size of the function jumper and emerges with the unmeaningful value.
+func expectFuncJmpr(c ast.Contract) (*Bytecode, error) {
+	expectedFuncJmpr := NewBytecode()
 
 	// Loads the function selector of call function.
-	funcJpr.Emerge(opcode.LoadFunc)
+	expectedFuncJmpr.Emerge(opcode.LoadFunc)
 
-	// Compares and finds the corresponding function selector.
+	// Adds the logic to compare and find the corresponding function selector with the unmeaningful value.
+	for range c.Functions {
+		if err := compileFuncSelector(expectedFuncJmpr, "", 0); err != nil {
+			return expectedFuncJmpr, err
+		}
+	}
+
+	if err := compileRevert(expectedFuncJmpr); err != nil {
+		return expectedFuncJmpr, err
+	}
+
+	return expectedFuncJmpr, nil
+}
+
+// Generates the function jumper bytecode.
+func generateFuncJmpr(c ast.Contract, funcMap FuncMap) (*Bytecode, error) {
+	funcJmpr := NewBytecode()
+
+	// Loads the function selector of call function.
+	funcJmpr.Emerge(opcode.LoadFunc)
+
+	// Adds the logic to compare and find the corresponding function selector.
 	for _, f := range c.Functions {
-		if err := compileFunctionLiteral(f, funcJpr, funcMap); err != nil {
-			return err
+		selector := string(abi.Selector(f.Signature()))
+		funcDst := funcMap[selector]
+		if err := compileFuncSelector(funcJmpr, selector, funcDst); err != nil {
+			return funcJmpr, err
 		}
 	}
 
 	// No match to any function selector, Revert!
-	funcJpr.Emerge(opcode.JumpDst)
-	operand, err := encoding.EncodeOperand(0)
-	if err != nil {
-		return err
+	if err := compileRevert(funcJmpr); err != nil {
+		return funcJmpr, err
 	}
-	funcJpr.Emerge(opcode.Push, operand)
-	funcJpr.Emerge(opcode.DUP)
-	funcJpr.Emerge(opcode.Returning)
 
-	// Add function jumper to bytecode
-	// [bytecode] => [function jumper][bytecode]
-	funcJpr.Append(bytecode)
-	bytecode = funcJpr
+	return funcJmpr, nil
+}
+
+// Relocate the function jumper of bytecode with new function jumper.
+func relocateFuncJmpr(bytecode *Bytecode, funcJmpr *Bytecode) error {
+	if len(bytecode.RawByte) < len(funcJmpr.RawByte) {
+		return fmt.Errorf("Can't relocate the function jumper. Bytecode=%x, FuncJmpr=%x", bytecode.RawByte, funcJmpr.RawByte)
+	}
+
+	if len(bytecode.AsmCode) < len(funcJmpr.AsmCode) {
+		return fmt.Errorf("Can't relocate the function jumper. Bytecode=%x, FuncJmpr=%x", bytecode.AsmCode, funcJmpr.AsmCode)
+	}
+
+	for i := range funcJmpr.RawByte {
+		bytecode.RawByte[i] = funcJmpr.RawByte[i]
+	}
+
+	for i := range funcJmpr.AsmCode {
+		bytecode.AsmCode[i] = funcJmpr.AsmCode[i]
+	}
 
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode, funcMap FuncMap) error {
+// Compiles the revert logic.
+// Reverting is the logic which exits the program for not finding any destination to jump.
+func compileRevert(bytecode *Bytecode) error {
+	bytecode.Emerge(opcode.JumpDst)
+	operand, err := encoding.EncodeOperand(0)
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, operand)
+	bytecode.Emerge(opcode.DUP)
+	bytecode.Emerge(opcode.Returning)
+
+	return nil
+}
+
+// Compiles a function of function jumper with its function selector
+func compileFuncSelector(bytecode *Bytecode, funcSelector string, funcDst int) error {
 	// Duplicates the function selector to find.
 	bytecode.Emerge(opcode.DUP)
 	// Pushes the function selector of this function literal.
-	selector := string(abi.Selector(s.Signature()))
-	funcSel, err := encoding.EncodeOperand(selector)
+	selector, err := encoding.EncodeOperand(funcSelector)
 	if err != nil {
 		return err
 	}
-	bytecode.Emerge(opcode.Push, funcSel)
+	bytecode.Emerge(opcode.Push, selector)
 	bytecode.Emerge(opcode.EQ)
-	// If the result is equal, Pushed the pc to jump.
-	pc, err := encoding.EncodeOperand(funcMap[selector])
+	// If the result is equal, pushed the destination to jump.
+	dst, err := encoding.EncodeOperand(funcDst)
 	if err != nil {
 		return err
 	}
-	bytecode.Emerge(opcode.Push, pc)
+	bytecode.Emerge(opcode.Push, dst)
 	bytecode.Emerge(opcode.Jumpi)
 
 	return nil

@@ -38,7 +38,15 @@ func TestGenerateFuncJumper(t *testing.T) {
 
 }
 
-func TestCompileFunctionLiteral(t *testing.T) {
+func TestRelocateFuncJumper(t *testing.T) {
+
+}
+
+func TestCompileRevert(t *testing.T) {
+
+}
+
+func TestCompileFuncSelector(t *testing.T) {
 
 }
 
