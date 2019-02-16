@@ -932,7 +932,7 @@ func TestCompileStringLiteral(t *testing.T) {
 					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)
 					0x21, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x00, // Push 0x3131313131313100
 					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
-					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000000 (offset)},
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)},
 					0x23, // Memory store
 				},
 				AsmCode: []string{"Push", "7373737373737373",
@@ -940,7 +940,7 @@ func TestCompileStringLiteral(t *testing.T) {
 					"Push", "0000000000000000",
 					"Push", "3131313131313100",
 					"Push", "0000000000000008",
-					"Push", "0000000000000008",
+					"Push", "0000000000000000",
 					"Mstore"},
 			},
 		},
@@ -954,7 +954,7 @@ func TestCompileStringLiteral(t *testing.T) {
 					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)
 					0x21, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, // Push 0x3131313131313131
 					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000008 (size)
-					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, // Push 0x0000000000000000 (offset)},
+					0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Push 0x0000000000000000 (offset)},
 					0x23, // Memory store
 				},
 				AsmCode: []string{"Push", "7373737373737373",
@@ -962,7 +962,7 @@ func TestCompileStringLiteral(t *testing.T) {
 					"Push", "0000000000000000",
 					"Push", "3131313131313131",
 					"Push", "0000000000000008",
-					"Push", "0000000000000008",
+					"Push", "0000000000000000",
 					"Mstore"},
 			},
 		},
@@ -1045,7 +1045,9 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 		}
 
 		if !compareByteCode(*bytecode, test.expected) {
-			t.Fatalf("test[%d] - %s result wrong. expected %x, got=%x",
+			t.Fatalf("test[%d] - %s result wrong. "+
+				"\nexpected %x, "+
+				"\ngot %x",
 				i, testFuncName, test.expected, bytecode)
 		}
 	}

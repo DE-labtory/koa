@@ -310,13 +310,12 @@ func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode, memDefiner M
 	}
 
 	for len(operand) >= 8 {
-		memEntry := memDefiner.Define(e.Value)
-		size, err := encoding.EncodeOperand(memEntry.Size)
+		size, err := encoding.EncodeOperand(8)
 		if err != nil {
 			return err
 		}
 
-		offset, err := encoding.EncodeOperand(memEntry.Offset)
+		offset, err := encoding.EncodeOperand(memDefiner.MemCounter())
 		if err != nil {
 			return err
 		}

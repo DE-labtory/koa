@@ -105,7 +105,7 @@ func TestMemEntryTable_GetEntry(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		entry, err := mTable.GetEntry(test.id)
+		entry, err := mTable.Entry(test.id)
 
 		if err != nil && err.Error() != test.err.Error() {
 			t.Fatalf("test[%d] - GetEntry() error wrong. expected=%v, err=%v", i, test.err, err)
