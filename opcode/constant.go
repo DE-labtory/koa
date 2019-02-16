@@ -227,27 +227,29 @@ const (
 	// [y]           [y]
 	LoadArgs Type = 0x25
 
-	// Push the data which stored in 'memory' to stack
-	//
+	// Jump to position at which function was called
 	// Ex)
-	// [offset]
-	// [size]         [memory[offset:offset+size]]
-	// [x]       ==>  [x]
-	// [y]            [y]
+	// [value]
+	// [funcSel]
+	// [position]  ==>  [value]
+	// [y]              [y]
 	Returning Type = 0x26
+
+	// Jump to last position (Terminate the contract)
+	Revert Type = 0x27
 
 	// pop the data which present specific pc to jump
 	// The opcode pointed to by pc must be JumpDst.
-	Jump Type = 0x27
+	Jump Type = 0x28
 
 	// jumpDst should be where the jump will be.
-	JumpDst Type = 0x28
+	JumpDst Type = 0x29
 
 	// Pop the first two items in the stack.
 	// First item pointed to where to jump.
 	// Second item should be bool data that decide to jump.
 	// If second item is false, jump to first item(pc) pointed to
-	Jumpi Type = 0x29
+	Jumpi Type = 0x30
 
 	// Duplicate data that exists at the top of the stack.
 	//
@@ -255,7 +257,7 @@ const (
 	//           [a]
 	// [a]  ==>  [a]
 	// [b]       [b]
-	DUP Type = 0x30
+	DUP Type = 0x31
 
 	// Swap the first two items in the stack
 	//
@@ -264,7 +266,7 @@ const (
 	// [a]       [b]
 	// [b]  ==>  [a]
 	// [c]       [c]
-	SWAP Type = 0x31
+	SWAP Type = 0x32
 )
 
 // Change the bytecode of an opcode to string.
@@ -313,14 +315,16 @@ func (p Type) String() (string, error) {
 	case 0x26:
 		return "Returning", nil
 	case 0x27:
-		return "Jump", nil
+		return "Revert", nil
 	case 0x28:
-		return "JumpDst", nil
+		return "Jump", nil
 	case 0x29:
-		return "Jumpi", nil
+		return "JumpDst", nil
 	case 0x30:
-		return "DUP", nil
+		return "Jumpi", nil
 	case 0x31:
+		return "DUP", nil
+	case 0x32:
 		return "SWAP", nil
 
 	default:
