@@ -565,6 +565,8 @@ func parseStringLiteral(buf TokenBuffer) (ast.Expression, error) {
 // parseFunctionLiteral parse functional expression
 // first parse name, and parse parameter, body
 func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
+	enterScope()
+
 	lit := &ast.FunctionLiteral{}
 	var err error
 
@@ -601,6 +603,7 @@ func parseFunctionLiteral(buf TokenBuffer) (*ast.FunctionLiteral, error) {
 	}
 
 	consumeSemi(buf)
+	leaveScope()
 
 	return lit, nil
 }

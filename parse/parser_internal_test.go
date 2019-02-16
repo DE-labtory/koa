@@ -164,6 +164,45 @@ func bar() void {
 				[]Token{
 					{Type: Contract, Val: "contract"},
 					{Type: Lbrace, Val: "{"},
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "foo"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: IntType, Val: "int"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Function, Val: "func"},
+					{Type: Ident, Val: "bar"},
+					{Type: Lparen, Val: "("},
+					{Type: Ident, Val: "a"},
+					{Type: IntType, Val: "int"},
+					{Type: Rparen, Val: ")"},
+					{Type: Lbrace, Val: "{"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Rbrace, Val: "}"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Eof},
+				},
+				0,
+			},
+			expected: `
+contract {
+func foo(Parameter : (Identifier: a, Type: int)) void {
+
+}
+func bar(Parameter : (Identifier: a, Type: int)) void {
+
+}
+}`,
+		},
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Contract, Val: "contract"},
+					{Type: Lbrace, Val: "{"},
 					{Type: IntType, Val: "int"},
 					{Type: Ident, Val: "a"},
 					{Type: Assign, Val: "="},
