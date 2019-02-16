@@ -17,8 +17,9 @@
 package translate_test
 
 import (
-	"bytes"
 	"testing"
+
+	"bytes"
 
 	"github.com/DE-labtory/koa/opcode"
 	"github.com/DE-labtory/koa/translate"
@@ -28,7 +29,7 @@ func TestBytecodeEmerge(t *testing.T) {
 	tests := []struct {
 		op       opcode.Type
 		operands [][]byte
-		result   translate.Bytecode
+		result   translate.Asm
 	}{
 		{
 			op: opcode.Add,
@@ -36,9 +37,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0x01},
 				{0x02},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.Add), 0x01, 0x02},
-				AsmCode: []string{"Add", "01", "02"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
+					{
+						RawByte: []byte{0x01},
+						Value:   "01",
+					},
+					{
+						RawByte: []byte{0x02},
+						Value:   "02",
+					},
+				},
 			},
 		},
 		{
@@ -47,9 +60,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0x11},
 				{0x22},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.Mul), 0x11, 0x22},
-				AsmCode: []string{"Mul", "11", "22"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.Mul)},
+						Value:   "Mul",
+					},
+					{
+						RawByte: []byte{0x11},
+						Value:   "11",
+					},
+					{
+						RawByte: []byte{0x22},
+						Value:   "22",
+					},
+				},
 			},
 		},
 		{
@@ -58,9 +83,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0xff},
 				{0xff},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.Mload), 0xff, 0xff},
-				AsmCode: []string{"Mload", "ff", "ff"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.Mload)},
+						Value:   "Mload",
+					},
+					{
+						RawByte: []byte{0xff},
+						Value:   "ff",
+					},
+					{
+						RawByte: []byte{0xff},
+						Value:   "ff",
+					},
+				},
 			},
 		},
 		// How to deal with byte overflow
@@ -70,9 +107,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0xff, 0xff},
 				{0xff, 0xff},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.LoadFunc), 0xff, 0xff, 0xff, 0xff},
-				AsmCode: []string{"LoadFunc", "ffff", "ffff"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0xff, 0xff},
+						Value:   "ffff",
+					},
+					{
+						RawByte: []byte{0xff, 0xff},
+						Value:   "ffff",
+					},
+				},
 			},
 		},
 		{
@@ -81,9 +130,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0x12, 0x34},
 				{0x56, 0x78},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.LoadFunc), 0x12, 0x34, 0x56, 0x78},
-				AsmCode: []string{"LoadFunc", "1234", "5678"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0x12, 0x34},
+						Value:   "1234",
+					},
+					{
+						RawByte: []byte{0x56, 0x78},
+						Value:   "5678",
+					},
+				},
 			},
 		},
 		{
@@ -92,9 +153,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0x12, 0x34, 0x56},
 				{0xab, 0xcd, 0xef},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.LoadFunc), 0x12, 0x34, 0x56, 0xab, 0xcd, 0xef},
-				AsmCode: []string{"LoadFunc", "123456", "abcdef"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0x12, 0x34, 0x56},
+						Value:   "123456",
+					},
+					{
+						RawByte: []byte{0xab, 0xcd, 0xef},
+						Value:   "abcdef",
+					},
+				},
 			},
 		},
 		{
@@ -103,9 +176,21 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0x12, 0x34, 0x56, 0x78, 0x9a},
 				{0xab, 0xcd, 0xef},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.LoadFunc), 0x12, 0x34, 0x56, 0x78, 0x9a, 0xab, 0xcd, 0xef},
-				AsmCode: []string{"LoadFunc", "123456789a", "abcdef"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0x12, 0x34, 0x56, 0x78, 0x9a},
+						Value:   "123456789a",
+					},
+					{
+						RawByte: []byte{0xab, 0xcd, 0xef},
+						Value:   "abcdef",
+					},
+				},
 			},
 		},
 		{
@@ -116,26 +201,45 @@ func TestBytecodeEmerge(t *testing.T) {
 				{0x12, 0x34, 0x56},
 				{0xab, 0xcd, 0xef},
 			},
-			result: translate.Bytecode{
-				RawByte: []byte{byte(opcode.LoadFunc), 0x12, 0x34, 0x56, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0xab, 0xcd, 0xef},
-				AsmCode: []string{"LoadFunc", "123456", "abcdef", "123456", "abcdef"},
+			result: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					translate.AsmCode{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0x12, 0x34, 0x56},
+						Value:   "123456",
+					},
+					{
+						RawByte: []byte{0xab, 0xcd, 0xef},
+						Value:   "abcdef",
+					},
+					{
+						RawByte: []byte{0x12, 0x34, 0x56},
+						Value:   "123456",
+					},
+					{
+						RawByte: []byte{0xab, 0xcd, 0xef},
+						Value:   "abcdef",
+					},
+				},
 			},
 		},
 	}
 
 	for i, tt := range tests {
-		b := translate.Bytecode{}
-		b.Emerge(tt.op, tt.operands...)
-
-		if !bytes.Equal(b.RawByte, tt.result.RawByte) {
-			t.Errorf("test[%d] - bytecode.Emerge generate wrong RawByte expected=%v, got=%v",
-				i, tt.result.RawByte, b.RawByte)
-		}
-
-		for j, code := range b.AsmCode {
-			if code != tt.result.AsmCode[j] {
+		a := translate.Asm{}
+		a.Emerge(tt.op, tt.operands...)
+		for j, code := range a.AsmCodes {
+			if code.Value != tt.result.AsmCodes[j].Value {
 				t.Errorf("test[%d] - bytecode.Emerge generate wrong AsmCode at [%d], expected=%v, got=%v",
-					i, j, tt.result.AsmCode[j], code)
+					i, j, tt.result.AsmCodes[j], code.Value)
+			}
+
+			if !bytes.Equal(code.RawByte, tt.result.AsmCodes[j].RawByte) {
+				t.Errorf("test[%d] - bytecode.Emerge generate wrong RawByte expected=%v, got=%v",
+					i, tt.result.AsmCodes[j].RawByte, code.RawByte)
 			}
 		}
 	}

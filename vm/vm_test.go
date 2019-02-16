@@ -21,6 +21,9 @@ import (
 
 	"reflect"
 
+	"bytes"
+
+	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/opcode"
 )
 
@@ -42,8 +45,8 @@ func makeTestByteCode(slice ...interface{}) []byte {
 
 func TestAdd(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(1),
-		uint8(opcode.Push), int32ToBytes(2),
+		uint8(opcode.Push), int64ToBytes(1),
+		uint8(opcode.Push), int64ToBytes(2),
 		uint8(opcode.Add),
 	)
 	testExpected := item(3)
@@ -60,8 +63,8 @@ func TestAdd(t *testing.T) {
 
 func TestAdd_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(-20),
-		uint8(opcode.Push), int32ToBytes(30),
+		uint8(opcode.Push), int64ToBytes(-20),
+		uint8(opcode.Push), int64ToBytes(30),
 		uint8(opcode.Add),
 	)
 	testExpected := item(10)
@@ -78,8 +81,8 @@ func TestAdd_negative(t *testing.T) {
 
 func TestMul(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(3),
-		uint8(opcode.Push), int32ToBytes(5),
+		uint8(opcode.Push), int64ToBytes(3),
+		uint8(opcode.Push), int64ToBytes(5),
 		uint8(opcode.Mul),
 	)
 	testExpected := item(15)
@@ -96,8 +99,8 @@ func TestMul(t *testing.T) {
 
 func TestMul_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(-3),
-		uint8(opcode.Push), int32ToBytes(5),
+		uint8(opcode.Push), int64ToBytes(-3),
+		uint8(opcode.Push), int64ToBytes(5),
 		uint8(opcode.Mul),
 	)
 	testExpected := item(-15)
@@ -114,8 +117,8 @@ func TestMul_negative(t *testing.T) {
 
 func TestSub(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(50),
-		uint8(opcode.Push), int32ToBytes(20),
+		uint8(opcode.Push), int64ToBytes(50),
+		uint8(opcode.Push), int64ToBytes(20),
 		uint8(opcode.Sub),
 	)
 	testExpected := item(30)
@@ -132,8 +135,8 @@ func TestSub(t *testing.T) {
 
 func TestSub_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(-20),
-		uint8(opcode.Push), int32ToBytes(50),
+		uint8(opcode.Push), int64ToBytes(-20),
+		uint8(opcode.Push), int64ToBytes(50),
 		uint8(opcode.Sub),
 	)
 	testExpected := item(-70)
@@ -150,8 +153,8 @@ func TestSub_negative(t *testing.T) {
 
 func TestDiv(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(14),
-		uint8(opcode.Push), int32ToBytes(5),
+		uint8(opcode.Push), int64ToBytes(14),
+		uint8(opcode.Push), int64ToBytes(5),
 		uint8(opcode.Div),
 	)
 	testExpected := item(2)
@@ -170,8 +173,8 @@ func TestDiv(t *testing.T) {
 // Be careful! int.Div and int.Quo is different
 func TestDiv_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(-20),
-		uint8(opcode.Push), int32ToBytes(6),
+		uint8(opcode.Push), int64ToBytes(-20),
+		uint8(opcode.Push), int64ToBytes(6),
 		uint8(opcode.Div),
 	)
 	testExpected := item(-4)
@@ -188,8 +191,8 @@ func TestDiv_negative(t *testing.T) {
 
 func TestMod(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(14),
-		uint8(opcode.Push), int32ToBytes(5),
+		uint8(opcode.Push), int64ToBytes(14),
+		uint8(opcode.Push), int64ToBytes(5),
 		uint8(opcode.Mod),
 	)
 	testExpected := item(4)
@@ -206,8 +209,8 @@ func TestMod(t *testing.T) {
 
 func TestMod_negative(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(-20),
-		uint8(opcode.Push), int32ToBytes(6),
+		uint8(opcode.Push), int64ToBytes(-20),
+		uint8(opcode.Push), int64ToBytes(6),
 		uint8(opcode.Mod),
 	)
 	testExpected := item(4)
@@ -224,8 +227,8 @@ func TestMod_negative(t *testing.T) {
 
 func TestAnd(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(0xAC), // 000...10101100
-		uint8(opcode.Push), int32ToBytes(0xF0), // 000...11110000
+		uint8(opcode.Push), int64ToBytes(0xAC), // 000...10101100
+		uint8(opcode.Push), int64ToBytes(0xF0), // 000...11110000
 		uint8(opcode.And),
 	)
 	testExpected := item(0xA0) // 000...10100000
@@ -242,8 +245,8 @@ func TestAnd(t *testing.T) {
 
 func TestOr(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(0xAC), //  000...10101100
-		uint8(opcode.Push), int32ToBytes(0xF0), //  000...11110000
+		uint8(opcode.Push), int64ToBytes(0xAC), //  000...10101100
+		uint8(opcode.Push), int64ToBytes(0xF0), //  000...11110000
 		uint8(opcode.Or),
 	)
 	testExpected := item(0xFC) // 000...11111100
@@ -260,8 +263,8 @@ func TestOr(t *testing.T) {
 
 func TestLT(t *testing.T) {
 	tests := []struct {
-		x      int32
-		y      int32
+		x      int64
+		y      int64
 		answer int
 	}{
 		{1, 2, 1}, // true = 1 , false = 0
@@ -272,8 +275,8 @@ func TestLT(t *testing.T) {
 
 	for i, test := range tests {
 		testByteCode := makeTestByteCode(
-			uint8(opcode.Push), int32ToBytes(test.x),
-			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.Push), int64ToBytes(test.x),
+			uint8(opcode.Push), int64ToBytes(test.y),
 			uint8(opcode.LT),
 		)
 		testExpected := item(test.answer)
@@ -291,8 +294,8 @@ func TestLT(t *testing.T) {
 
 func TestLTE(t *testing.T) {
 	tests := []struct {
-		x      int32
-		y      int32
+		x      int64
+		y      int64
 		answer int
 	}{
 		{1, 2, 1}, // true = 1 , false = 0
@@ -305,8 +308,8 @@ func TestLTE(t *testing.T) {
 
 	for i, test := range tests {
 		testByteCode := makeTestByteCode(
-			uint8(opcode.Push), int32ToBytes(test.x),
-			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.Push), int64ToBytes(test.x),
+			uint8(opcode.Push), int64ToBytes(test.y),
 			uint8(opcode.LTE),
 		)
 		testExpected := item(test.answer)
@@ -324,8 +327,8 @@ func TestLTE(t *testing.T) {
 
 func TestGT(t *testing.T) {
 	tests := []struct {
-		x      int32
-		y      int32
+		x      int64
+		y      int64
 		answer int
 	}{
 		{1, 2, 0}, // true = 1 , false = 0
@@ -336,8 +339,8 @@ func TestGT(t *testing.T) {
 
 	for i, test := range tests {
 		testByteCode := makeTestByteCode(
-			uint8(opcode.Push), int32ToBytes(test.x),
-			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.Push), int64ToBytes(test.x),
+			uint8(opcode.Push), int64ToBytes(test.y),
 			uint8(opcode.GT),
 		)
 		testExpected := item(test.answer)
@@ -355,8 +358,8 @@ func TestGT(t *testing.T) {
 
 func TestGTE(t *testing.T) {
 	tests := []struct {
-		x      int32
-		y      int32
+		x      int64
+		y      int64
 		answer int
 	}{
 		{1, 2, 0}, // true = 1 , false = 0
@@ -369,8 +372,8 @@ func TestGTE(t *testing.T) {
 
 	for i, test := range tests {
 		testByteCode := makeTestByteCode(
-			uint8(opcode.Push), int32ToBytes(test.x),
-			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.Push), int64ToBytes(test.x),
+			uint8(opcode.Push), int64ToBytes(test.y),
 			uint8(opcode.GTE),
 		)
 		testExpected := item(test.answer)
@@ -388,8 +391,8 @@ func TestGTE(t *testing.T) {
 
 func TestEQ(t *testing.T) {
 	tests := []struct {
-		x      int32
-		y      int32
+		x      int64
+		y      int64
 		answer int
 	}{
 		{1, 1, 1}, // true = 1 , false = 0
@@ -400,8 +403,8 @@ func TestEQ(t *testing.T) {
 
 	for i, test := range tests {
 		testByteCode := makeTestByteCode(
-			uint8(opcode.Push), int32ToBytes(test.x),
-			uint8(opcode.Push), int32ToBytes(test.y),
+			uint8(opcode.Push), int64ToBytes(test.x),
+			uint8(opcode.Push), int64ToBytes(test.y),
 			uint8(opcode.EQ),
 		)
 		testExpected := item(test.answer)
@@ -419,8 +422,8 @@ func TestEQ(t *testing.T) {
 
 func TestNOT(t *testing.T) {
 	tests := []struct {
-		x      int32
-		answer int32
+		x      int64
+		answer int64
 	}{
 		{0, -1}, // ^x = -x-1  0x00000000 -> 0xFFFFFFFF
 		{3, -4},
@@ -428,7 +431,7 @@ func TestNOT(t *testing.T) {
 
 	for i, test := range tests {
 		testByteCode := makeTestByteCode(
-			uint8(opcode.Push), int32ToBytes(test.x),
+			uint8(opcode.Push), int64ToBytes(test.x),
 			uint8(opcode.NOT),
 		)
 		testExpected := item(test.answer)
@@ -446,8 +449,8 @@ func TestNOT(t *testing.T) {
 
 func TestPop(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(1),
-		uint8(opcode.Push), int32ToBytes(2),
+		uint8(opcode.Push), int64ToBytes(1),
+		uint8(opcode.Push), int64ToBytes(2),
 		uint8(opcode.Pop),
 	)
 	testExpected := []item{1}
@@ -470,8 +473,8 @@ func TestPop(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(1),
-		uint8(opcode.Push), int32ToBytes(2),
+		uint8(opcode.Push), int64ToBytes(1),
+		uint8(opcode.Push), int64ToBytes(2),
 	)
 
 	testExpected := []item{1, 2}
@@ -495,7 +498,7 @@ func TestPush(t *testing.T) {
 func TestPush_invalid(t *testing.T) {
 	testByteCode := makeTestByteCode(
 		uint8(opcode.Push), uint8(opcode.Push),
-		uint8(opcode.Push), int32ToBytes(3),
+		uint8(opcode.Push), int64ToBytes(3),
 	)
 
 	_, err := Execute(testByteCode, nil, nil)
@@ -505,23 +508,175 @@ func TestPush_invalid(t *testing.T) {
 	}
 }
 
-// TODO: implement test cases :-)
 func TestMload(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int64ToBytes(8), // size
+		uint8(opcode.Push), int64ToBytes(0), // offset
+		uint8(opcode.Mload),
+		uint8(opcode.Push), int64ToBytes(8), // size
+		uint8(opcode.Push), int64ToBytes(8), // offset
+		uint8(opcode.Mload),
+	)
 
+	testMemory := NewMemory()
+	testMemory.Resize(16)
+	testMemory.Sets(0, 8, int64ToBytes(40))
+	testMemory.Sets(8, 8, int64ToBytes(20))
+
+	testExpected := []struct {
+		value  []byte
+		size   uint64
+		offset uint64
+	}{
+		{
+			value:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14},
+			size:   8,
+			offset: 0,
+		},
+		{
+			value:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28},
+			size:   8,
+			offset: 8,
+		},
+	}
+
+	stack, err := Execute(testByteCode, testMemory, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if stack.len() != 2 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	}
+
+	for _, test := range testExpected {
+		value := stack.pop()
+		if !bytes.Equal(int64ToBytes(int64(value)), test.value) {
+			t.Errorf("Invalid memory value - expected=%x, got=%x", test.value, value)
+		}
+	}
 }
 
-// TODO: implement test cases :-)
 func TestMstore(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int64ToBytes(20), // value
+		uint8(opcode.Push), int64ToBytes(8), // size
+		uint8(opcode.Push), int64ToBytes(0), // offset
+		uint8(opcode.Mstore),
+		uint8(opcode.Push), int64ToBytes(40), // value
+		uint8(opcode.Push), int64ToBytes(8), // size
+		uint8(opcode.Push), int64ToBytes(8), // offset
+		uint8(opcode.Mstore),
+	)
 
+	testExpected := []struct {
+		value  []byte
+		size   uint64
+		offset uint64
+	}{
+		{
+			value:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14},
+			size:   8,
+			offset: 0,
+		},
+		{
+			value:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28},
+			size:   8,
+			offset: 8,
+		},
+	}
+
+	memory := NewMemory()
+
+	stack, err := Execute(testByteCode, memory, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if stack.len() != 0 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	}
+
+	for _, test := range testExpected {
+		value := memory.GetVal(test.offset, test.size)
+		if !bytes.Equal(value, test.value) {
+			t.Errorf("Invalid memory value - expected=%x, got=%x", test.value, value)
+		}
+	}
 }
 
-// TODO: implement test cases :-)
 func TestLoadFunc(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.LoadFunc),
+	)
 
+	callFunc := &CallFunc{
+		Func: abi.Selector("foo(int64,bool,string)"),
+	}
+
+	testExpected := []byte{0x00, 0x00, 0x00, 0x00, 0xf2, 0x61, 0xd0, 0x09}
+
+	stack, err := Execute(testByteCode, nil, callFunc)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if stack.len() != 1 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	}
+
+	if !bytes.Equal(int64ToBytes(int64(stack.pop())), testExpected) {
+		t.Error("Invalid")
+	}
 }
 
-// TODO: implement test cases :-)
 func TestLoadArgs(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int64ToBytes(0), // value
+		uint8(opcode.LoadArgs),
+		uint8(opcode.Push), int64ToBytes(1), // value
+		uint8(opcode.LoadArgs),
+		uint8(opcode.Push), int64ToBytes(2), // value
+		uint8(opcode.LoadArgs),
+	)
+
+	encodedParams, err := abi.Encode(50, "HelloKOA", 256)
+	if err != nil {
+		t.Error(err)
+	}
+	callFunc := &CallFunc{
+		Args: encodedParams,
+	}
+
+	testExpected := []struct {
+		value []byte
+	}{
+		{
+			value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00},
+		},
+		{
+			value: []byte{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x4b, 0x4f, 0x41},
+		},
+		{
+			value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x32},
+		},
+	}
+
+	stack, err := Execute(testByteCode, nil, callFunc)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if stack.len() != 3 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	}
+
+	for _, expected := range testExpected {
+		value := stack.pop()
+		if !bytes.Equal(int64ToBytes(int64(value)), expected.value) {
+			t.Errorf("Invalid bytes - expected = %x, got = %x", expected.value, value)
+		}
+	}
 
 }
 
@@ -542,12 +697,12 @@ func TestCallFunc_arguments(t *testing.T) {
 
 func TestJumpOp(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
-		uint8(opcode.Push), int32ToBytes(1), // 0 , 1
-		uint8(opcode.Push), int32ToBytes(7), // 2 , 3
+		uint8(opcode.Push), int64ToBytes(1), // 0 , 1
+		uint8(opcode.Push), int64ToBytes(7), // 2 , 3
 		uint8(opcode.Jump),                  // 4
-		uint8(opcode.Push), int32ToBytes(2), // 5 , 6
+		uint8(opcode.Push), int64ToBytes(2), // 5 , 6
 		uint8(opcode.JumpDst),               // 7 ( jump to here! )
-		uint8(opcode.Push), int32ToBytes(3), // 8 , 9
+		uint8(opcode.Push), int64ToBytes(3), // 8 , 9
 	)
 
 	testExpected := []item{1, 3}
@@ -570,13 +725,13 @@ func TestJumpOp(t *testing.T) {
 
 func TestJumpiJump(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
-		uint8(opcode.Push), int32ToBytes(1), // 0 , 1
-		uint8(opcode.Push), int32ToBytes(0), // 2 , 3(false)
-		uint8(opcode.Push), int32ToBytes(9), // 4 , 5
+		uint8(opcode.Push), int64ToBytes(1), // 0 , 1
+		uint8(opcode.Push), int64ToBytes(0), // 2 , 3(false)
+		uint8(opcode.Push), int64ToBytes(9), // 4 , 5
 		uint8(opcode.Jumpi),                 // 6
-		uint8(opcode.Push), int32ToBytes(2), // 7 , 8
+		uint8(opcode.Push), int64ToBytes(2), // 7 , 8
 		uint8(opcode.JumpDst),               // 9 ( jump to here! )
-		uint8(opcode.Push), int32ToBytes(3), // 10 , 11
+		uint8(opcode.Push), int64ToBytes(3), // 10 , 11
 	)
 
 	testExpected := []item{1, 3}
@@ -599,13 +754,13 @@ func TestJumpiJump(t *testing.T) {
 
 func TestJumpiNotJump(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
-		uint8(opcode.Push), int32ToBytes(1), // 0 , 1
-		uint8(opcode.Push), int32ToBytes(1), // 2 , 3(true)
-		uint8(opcode.Push), int32ToBytes(9), // 4 , 5
+		uint8(opcode.Push), int64ToBytes(1), // 0 , 1
+		uint8(opcode.Push), int64ToBytes(1), // 2 , 3(true)
+		uint8(opcode.Push), int64ToBytes(9), // 4 , 5
 		uint8(opcode.Jumpi),                 // 6
-		uint8(opcode.Push), int32ToBytes(2), // 7 , 8
+		uint8(opcode.Push), int64ToBytes(2), // 7 , 8
 		uint8(opcode.JumpDst),               // 9 ( jump to here! )
-		uint8(opcode.Push), int32ToBytes(3), // 10 , 11
+		uint8(opcode.Push), int64ToBytes(3), // 10 , 11
 	)
 
 	testExpected := []item{1, 2, 3}
@@ -628,7 +783,7 @@ func TestJumpiNotJump(t *testing.T) {
 
 func TestDUP(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(1),
+		uint8(opcode.Push), int64ToBytes(1),
 		uint8(opcode.DUP),
 	)
 
@@ -652,8 +807,8 @@ func TestDUP(t *testing.T) {
 
 func TestSWAP(t *testing.T) {
 	testByteCode := makeTestByteCode(
-		uint8(opcode.Push), int32ToBytes(1),
-		uint8(opcode.Push), int32ToBytes(2),
+		uint8(opcode.Push), int64ToBytes(1),
+		uint8(opcode.Push), int64ToBytes(2),
 		uint8(opcode.SWAP),
 	)
 

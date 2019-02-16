@@ -17,17 +17,24 @@
 package translate
 
 import (
-	"bytes"
-	"reflect"
+	"errors"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/opcode"
 )
 
+type setupTracer func() MemTracer
+
+func defaultSetupTracer() MemTracer {
+	return NewMemEntryTable()
+}
+
 type expressionCompileTestCase struct {
-	expression ast.Expression
-	expected   Bytecode
+	setupTracer
+	expression  ast.Expression
+	expected    Asm
+	expectedErr error
 }
 
 // TODO: implement test cases :-)
@@ -53,7 +60,7 @@ func TestCompileStatement(t *testing.T) {
 func TestCompileAssignStatement(t *testing.T) {
 	tests := []struct {
 		statement *ast.AssignStatement
-		expected  *Bytecode
+		expected  *Asm
 	}{
 		{
 			// int a = true
@@ -66,18 +73,36 @@ func TestCompileAssignStatement(t *testing.T) {
 				},
 				Type: ast.BoolType,
 			},
-			expected: &Bytecode{
-				RawByte: []byte{
-					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
-					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					byte(opcode.Mstore),
-				},
-				AsmCode: []string{
-					"Push", "0000000000000001",
-					"Push", "0000000000000008",
-					"Push", "0000000000000000",
-					"Mstore",
+			expected: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
 				},
 			},
 		},
@@ -92,40 +117,57 @@ func TestCompileAssignStatement(t *testing.T) {
 				},
 				Type: ast.IntType,
 			},
-			expected: &Bytecode{
-				RawByte: []byte{
-					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
-					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					byte(opcode.Mstore),
-				},
-				AsmCode: []string{
-					"Push", "0000000000000005",
-					"Push", "0000000000000008",
-					"Push", "0000000000000000",
-					"Mstore",
+			expected: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
+						Value:   "0000000000000005",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
 				},
 			},
 		},
 	}
 
 	for i, test := range tests {
-		b := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
+		a := &Asm{
+			AsmCodes: make([]AsmCode, 0),
 		}
 
 		memTracer := NewMemEntryTable()
 
-		err := compileAssignStatement(test.statement, b, memTracer)
+		err := compileAssignStatement(test.statement, a, memTracer)
 		if err != nil {
 			t.Fatalf("test[%d] - compileAssignStatement had error. err=%v",
 				i, err)
 		}
 
-		if !compareByteCode(*b, *test.expected) {
+		if !a.Equal(*test.expected) {
 			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
-				i, test.expected, b)
+				i, test.expected, a)
 		}
 	}
 }
@@ -135,9 +177,160 @@ func TestCompileReturnStatement(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
+//// TODO: implement test cases :-)
 func TestCompileIfStatement(t *testing.T) {
+	tests := []struct {
+		statement *ast.IfStatement
+		expected  Asm
+		err       error
+	}{
+		{
+			statement: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.ExpressionStatement{
+							Expr: &ast.IntegerLiteral{
+								Value: 12345678,
+							},
+						},
+					},
+				},
+				Alternative: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.ExpressionStatement{
+							Expr: &ast.IntegerLiteral{
+								Value: 12345678,
+							},
+						},
+					},
+				},
+			},
 
+			// [Push 0000000000000001 Push 000000000000000a Jumpi Push 0000000000bc614e Push 000000000000000c Jump Push 0000000000bc614e]
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						Value:   "000000000000000a",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+						Value:   "0000000000bc614e",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
+						Value:   "000000000000000c",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jump)},
+						Value:   "Jump",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+						Value:   "0000000000bc614e",
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			statement: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.ExpressionStatement{
+							Expr: &ast.IntegerLiteral{
+								Value: 12345678,
+							},
+						},
+					},
+				},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
+						Value:   "0000000000000005",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jump)},
+						Value:   "Jump",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+						Value:   "0000000000bc614e",
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		asm := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+
+		memTracer := NewMemEntryTable()
+		err := compileIfStatement(test.statement, asm, memTracer)
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - TestCompileIfStatement() error wrong. expected=%v, got=%v", i, test.err, err)
+		}
+
+		if !asm.Equal(test.expected) {
+			t.Fatalf("test[%d] - result wrong. \n expected %x, \n got=%x",
+				i, test.expected, asm)
+		}
+	}
 }
 
 func TestCompileBlockStatement(t *testing.T) {
@@ -145,122 +338,144 @@ func TestCompileBlockStatement(t *testing.T) {
 
 	tests := []struct {
 		statements *ast.BlockStatement
-		expected   Bytecode
+		expected   Asm
 		err        error
 	}{
 		{
 			statements: &ast.BlockStatement{
 				Statements: statements,
 			},
-			expected: Bytecode{
-				RawByte: []byte{byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2, byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
-				AsmCode: []string{"Push", "00000000000004d2", "Push", "0000000000000001"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2},
+						Value:   "00000000000004d2",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+				},
 			},
 			err: nil,
 		},
 	}
 
 	for i, test := range tests {
-		b := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
+		a := &Asm{
+			AsmCodes: make([]AsmCode, 0),
 		}
 
 		memTracer := NewMemEntryTable()
 
-		err := compileBlockStatement(test.statements, b, memTracer)
+		err := compileBlockStatement(test.statements, a, memTracer)
 
 		if err != nil && err != test.err {
 			t.Fatalf("test[%d] - TestCompileBlockStatement() error wrong. expected=%v, got=%v", i, test.err, err)
 		}
 
-		if !bytes.Equal(b.RawByte, test.expected.RawByte) {
-			t.Fatalf("test[%d] - TestCompileBlockStatement() result wrong for RawByte.\nexpected=%x, got=%x", i, test.expected.RawByte, b.RawByte)
-		}
-
-		for j, expected := range test.expected.AsmCode {
-			if expected != b.AsmCode[j] {
-				t.Fatalf("test[%d] - TestCompileBlockStatement() result wrong for RawByte.\nexpected=%v, got=%v", i, test.expected.AsmCode, b.AsmCode)
-			}
+		if !a.Equal(test.expected) {
+			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
+				i, test.expected, a)
 		}
 	}
 }
 
 func TestCompileExpressionStatement(t *testing.T) {
 	tests := []struct {
+		setupTracer
 		statement *ast.ExpressionStatement
-		expected  Bytecode
+		expected  Asm
 		err       error
 	}{
 		{
+			setupTracer: defaultSetupTracer,
 			statement: &ast.ExpressionStatement{
 				Expr: &ast.IntegerLiteral{
 					Value: 12345678,
 				},
 			},
-			expected: Bytecode{
-				RawByte: []byte{byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
-				AsmCode: []string{"Push", "0000000000bc614e"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+						Value:   "0000000000bc614e",
+					},
+				},
 			},
 			err: nil,
 		},
 		{
+			setupTracer: defaultSetupTracer,
 			statement: &ast.ExpressionStatement{
 				Expr: &ast.BooleanLiteral{
 					Value: true,
 				},
 			},
-			expected: Bytecode{
-				RawByte: []byte{byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
-				AsmCode: []string{"Push", "0000000000000001"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+				},
 			},
 			err: nil,
 		},
 	}
 
 	for i, test := range tests {
-		b := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
+		a := &Asm{
+			AsmCodes: make([]AsmCode, 0),
 		}
 
-		err := compileExpressionStatement(test.statement, b)
-
+		err := compileExpressionStatement(test.statement, a, test.setupTracer())
 		if err != nil && err != test.err {
 			t.Fatalf("test[%d] - TestCompileExpressionStatement() error wrong. expected=%v, got=%v", i, test.err, err)
 		}
 
-		if !bytes.Equal(b.RawByte, test.expected.RawByte) {
-			t.Fatalf("test[%d] - TestCompileExpressionStatement() result wrong for RawByte.\nexpected=%x, got=%x", i, test.expected.RawByte, b.RawByte)
-		}
-
-		for j, expected := range test.expected.AsmCode {
-			if expected != b.AsmCode[j] {
-				t.Fatalf("test[%d] - TestCompileExpressionStatement() result wrong for RawByte.\nexpected=%v, got=%v", i, test.expected.AsmCode, b.AsmCode)
-			}
+		if !a.Equal(test.expected) {
+			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
+				i, test.expected, a)
 		}
 	}
-
 }
 
-// TODO: implement test cases :-)
-func TestCompileFunctionLiteral(t *testing.T) {
-
-}
-
-// TODO: implement test cases :-)
-func TestCompileExpression(t *testing.T) {
-
-}
-
-// TODO: implement test cases :-)
-func TestCompileCallExpression(t *testing.T) {
-
-}
-
-// TODO: after implement compileIdentifier, add test cases for compiling
-// TODO: identifier contained infix expression
 //
+//// TODO: implement test cases :-)
+//func TestCompileFunctionLiteral(t *testing.T) {
+//
+//}
+//
+//// TODO: implement test cases :-)
+//func TestCompileExpression(t *testing.T) {
+//
+//}
+//
+//// TODO: implement test cases :-)
+//func TestCompileCallExpression(t *testing.T) {
+//
+//}
+//
+//// TODO: after implement compileIdentifier, add test cases for compiling
+//// TODO: identifier contained infix expression
+////
 // TestCompileInfixExpression tests compileInfixExpression and test cases
 // consists of three parts
 //
@@ -280,20 +495,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Plus,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x01,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Add",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
 				},
 			},
 		},
@@ -304,20 +527,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Minus,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x03,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Sub",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Sub)},
+						Value:   "Sub",
+					},
 				},
 			},
 		},
@@ -328,20 +559,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Asterisk,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x02,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Mul",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mul)},
+						Value:   "Mul",
+					},
 				},
 			},
 		},
@@ -352,20 +591,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Slash,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x04,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Div",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Div)},
+						Value:   "Div",
+					},
 				},
 			},
 		},
@@ -376,20 +623,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Mod,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x05,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Mod",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mod)},
+						Value:   "Mod",
+					},
 				},
 			},
 		},
@@ -400,20 +655,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.LT,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x10,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"LT",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.LT)},
+						Value:   "LT",
+					},
 				},
 			},
 		},
@@ -424,20 +687,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.GT,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x12,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"GT",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.GT)},
+						Value:   "GT",
+					},
 				},
 			},
 		},
@@ -448,20 +719,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.LTE,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x11,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"LTE",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.LTE)},
+						Value:   "LTE",
+					},
 				},
 			},
 		},
@@ -472,20 +751,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.GTE,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x13,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"GTE",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.GTE)},
+						Value:   "GTE",
+					},
 				},
 			},
 		},
@@ -496,20 +783,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.EQ,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x14,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"EQ",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.EQ)},
+						Value:   "EQ",
+					},
 				},
 			},
 		},
@@ -520,22 +815,32 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.NOT_EQ,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x14,
-					0x15,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"EQ",
-					"NOT",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.EQ)},
+						Value:   "EQ",
+					},
+					{
+						RawByte: []byte{byte(opcode.NOT)},
+						Value:   "NOT",
+					},
 				},
 			},
 		},
@@ -546,20 +851,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.LAND,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x06,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"And",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.And)},
+						Value:   "And",
+					},
 				},
 			},
 		},
@@ -570,20 +883,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.LOR,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x07,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Or",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Or)},
+						Value:   "Or",
+					},
 				},
 			},
 		},
@@ -601,26 +922,40 @@ func TestCompileInfixExpression(t *testing.T) {
 					Right:    &ast.IntegerLiteral{Value: 3},
 				},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
-					0x03,
-					0x01,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000002",
-					"Push",
-					"0000000000000003",
-					"Sub",
-					"Add",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03},
+						Value:   "0000000000000003",
+					},
+					{
+						RawByte: []byte{byte(opcode.Sub)},
+						Value:   "Sub",
+					},
+					{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
 				},
 			},
 		},
@@ -639,38 +974,58 @@ func TestCompileInfixExpression(t *testing.T) {
 					Right:    &ast.IntegerLiteral{Value: 3},
 				},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
-					0x02,
-					0x10,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000000",
-					"Push",
-					"0000000000000001",
-					"Add",
-					"Push",
-					"0000000000000002",
-					"Push",
-					"0000000000000003",
-					"Mul",
-					"LT",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03},
+						Value:   "0000000000000003",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mul)},
+						Value:   "Mul",
+					},
+					{
+						RawByte: []byte{byte(opcode.LT)},
+						Value:   "LT",
+					},
 				},
 			},
 		},
-		//
+
 		// 3. test edge cases - type mismatching, etc
-		//
+
 		// Add Integer with Boolean
 		{
 			expression: &ast.InfixExpression{
@@ -678,20 +1033,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Plus,
 				Right:    &ast.BooleanLiteral{Value: true},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x01,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000001",
-					"Add",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
 				},
 			},
 		},
@@ -702,20 +1065,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.EQ,
 				Right:    &ast.BooleanLiteral{Value: true},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x14,
-				},
-				AsmCode: []string{
-					"Push",
-					"0000000000000001",
-					"Push",
-					"0000000000000001",
-					"EQ",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.EQ)},
+						Value:   "EQ",
+					},
 				},
 			},
 		},
@@ -726,20 +1097,28 @@ func TestCompileInfixExpression(t *testing.T) {
 				Operator: ast.Asterisk,
 				Right:    &ast.IntegerLiteral{Value: 1},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x02,
-				},
-				AsmCode: []string{
-					"Push",
-					"ffffffffffffffff",
-					"Push",
-					"0000000000000001",
-					"Mul",
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+						Value:   "ffffffffffffffff",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mul)},
+						Value:   "Mul",
+					},
 				},
 			},
 		},
@@ -756,13 +1135,21 @@ func TestCompilePrefixExpression(t *testing.T) {
 				Operator: ast.Bang,
 				Right:    &ast.BooleanLiteral{Value: true},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x15,
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.NOT)},
+						Value:   "NOT",
+					},
 				},
-				AsmCode: []string{"Push", "0000000000000001", "NOT"},
 			},
 		},
 		{
@@ -770,13 +1157,21 @@ func TestCompilePrefixExpression(t *testing.T) {
 				Operator: ast.Minus,
 				Right:    &ast.IntegerLiteral{Value: 2},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-					0x16,
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Minus)},
+						Value:   "Minus",
+					},
 				},
-				AsmCode: []string{"Push", "0000000000000002", "Minus"},
 			},
 		},
 		{
@@ -784,13 +1179,21 @@ func TestCompilePrefixExpression(t *testing.T) {
 				Operator: ast.Minus,
 				Right:    &ast.BooleanLiteral{Value: true},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x16,
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Minus)},
+						Value:   "Minus",
+					},
 				},
-				AsmCode: []string{"Push", "0000000000000001", "Minus"},
 			},
 		},
 		// rather complex cases
@@ -804,14 +1207,25 @@ func TestCompilePrefixExpression(t *testing.T) {
 					},
 				},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-					0x16,
-					0x16,
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Minus)},
+						Value:   "Minus",
+					},
+					{
+						RawByte: []byte{byte(opcode.Minus)},
+						Value:   "Minus",
+					},
 				},
-				AsmCode: []string{"Push", "0000000000000001", "Minus", "Minus"},
 			},
 		},
 		{
@@ -824,14 +1238,25 @@ func TestCompilePrefixExpression(t *testing.T) {
 					},
 				},
 			},
-			expected: Bytecode{
-				RawByte: []byte{
-					0x21,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x15,
-					0x15,
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.NOT)},
+						Value:   "NOT",
+					},
+					{
+						RawByte: []byte{byte(opcode.NOT)},
+						Value:   "NOT",
+					},
 				},
-				AsmCode: []string{"Push", "0000000000000000", "NOT", "NOT"},
 			},
 		},
 	}
@@ -845,18 +1270,34 @@ func TestCompileIntegerLiteral(t *testing.T) {
 			expression: &ast.IntegerLiteral{
 				Value: 10,
 			},
-			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
-				AsmCode: []string{"Push", "000000000000000a"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						Value:   "000000000000000a",
+					},
+				},
 			},
 		},
 		{
 			expression: &ast.IntegerLiteral{
 				Value: 20,
 			},
-			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14},
-				AsmCode: []string{"Push", "0000000000000014"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14},
+						Value:   "0000000000000014",
+					},
+				},
 			},
 		},
 	}
@@ -870,18 +1311,34 @@ func TestCompileIntegerLiteral_negative(t *testing.T) {
 			expression: &ast.IntegerLiteral{
 				Value: -10,
 			},
-			expected: Bytecode{
-				RawByte: []byte{0x21, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF6},
-				AsmCode: []string{"Push", "fffffffffffffff6"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF6},
+						Value:   "fffffffffffffff6",
+					},
+				},
 			},
 		},
 		{
 			expression: &ast.IntegerLiteral{
 				Value: -20,
 			},
-			expected: Bytecode{
-				RawByte: []byte{0x21, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEC},
-				AsmCode: []string{"Push", "ffffffffffffffec"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEC},
+						Value:   "ffffffffffffffec",
+					},
+				},
 			},
 		},
 	}
@@ -889,30 +1346,107 @@ func TestCompileIntegerLiteral_negative(t *testing.T) {
 	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileStringLiteral(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			expression: &ast.StringLiteral{
+				Value: "a",
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "6100000000000000",
+					},
+				},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ab",
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x61, 0x62, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "6162000000000000",
+					},
+				},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ab,c",
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x61, 0x62, 0x2c, 0x63, 0x00, 0x00, 0x00, 0x00},
+						Value:   "61622c6300000000",
+					},
+				},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ababababababababababababababababab",
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{},
+			},
+			expectedErr: errors.New("Length of string must shorter than 8"),
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileBooleanLiteral(t *testing.T) {
 	tests := []expressionCompileTestCase{
 		{
 			expression: &ast.BooleanLiteral{
 				Value: false,
 			},
-			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				AsmCode: []string{"Push", "0000000000000000"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+				},
 			},
 		},
 		{
 			expression: &ast.BooleanLiteral{
 				Value: true,
 			},
-			expected: Bytecode{
-				RawByte: []byte{0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
-				AsmCode: []string{"Push", "0000000000000001"},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+				},
 			},
 		},
 	}
@@ -920,9 +1454,55 @@ func TestCompileBooleanLiteral(t *testing.T) {
 	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileIdentifier(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			setupTracer: func() MemTracer {
+				tracer := NewMemEntryTable()
+				tracer.Define("a")
+				return tracer
+			},
+			expression: &ast.Identifier{
+				Value: "a",
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mload)},
+						Value:   "Mload",
+					},
+				},
+			},
+		},
+		{
+			setupTracer: defaultSetupTracer,
+			expression: &ast.Identifier{
+				Value: "a",
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{},
+			},
+			expectedErr: EntryError{Id: "a"},
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
 // TODO: implement test cases :-)
@@ -932,41 +1512,51 @@ func TestCompileParameterLiteral(t *testing.T) {
 
 func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) {
 	for i, test := range tests {
-		bytecode := &Bytecode{
-			RawByte: make([]byte, 0),
-			AsmCode: make([]string, 0),
+		asm := &Asm{
+			AsmCodes: make([]AsmCode, 0),
 		}
 
 		var err error
 		var testFuncName string
+		var tracer MemTracer
+
+		if test.setupTracer != nil {
+			tracer = test.setupTracer()
+		}
 
 		// add your test expression here with its function name
 		switch expr := test.expression.(type) {
 		case *ast.BooleanLiteral:
 			testFuncName = "compileBooleanLiteral()"
-			err = compileBooleanLiteral(expr, bytecode)
+			err = compilePrimitive(expr.Value, asm)
 		case *ast.IntegerLiteral:
 			testFuncName = "compileIntegerLiteral()"
-			err = compileIntegerLiteral(expr, bytecode)
+			err = compilePrimitive(expr.Value, asm)
+		case *ast.StringLiteral:
+			testFuncName = "compileStringLiteral()"
+			err = compilePrimitive(expr.Value, asm)
 		case *ast.PrefixExpression:
 			testFuncName = "compilePrefixExpression()"
-			err = compilePrefixExpression(expr, bytecode)
+			err = compilePrefixExpression(expr, asm, tracer)
 		case *ast.InfixExpression:
 			testFuncName = "compileInfixExpression()"
-			err = compileInfixExpression(expr, bytecode)
+			err = compileInfixExpression(expr, asm, tracer)
+		case *ast.Identifier:
+			testFuncName = "compileIdentifier()"
+			err = compileIdentifier(expr, asm, tracer)
 		default:
 			t.Fatalf("%T type not support, abort.", expr)
 			t.FailNow()
 		}
 
-		if err != nil {
-			t.Fatalf("test[%d] - %s had error. err=%v",
-				i, testFuncName, err)
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - [%s] got unexpected error, expected=%s, got=%s",
+				i, testFuncName, test.expectedErr.Error(), err.Error())
 		}
 
-		if !compareByteCode(*bytecode, test.expected) {
-			t.Fatalf("test[%d] - %s result wrong. expected %x, got=%x",
-				i, testFuncName, test.expected, bytecode)
+		if !asm.Equal(test.expected) {
+			t.Fatalf("test[%d] - %s result wrong. \n expected %x, \n got=%x",
+				i, testFuncName, test.expected, asm)
 		}
 	}
 }
@@ -985,17 +1575,4 @@ func makeTempStatements() []ast.Statement {
 	})
 
 	return statements
-}
-
-func compareByteCode(b1 Bytecode, b2 Bytecode) bool {
-
-	if !bytes.Equal(b1.RawByte, b2.RawByte) {
-		return false
-	}
-
-	if !reflect.DeepEqual(b1.AsmCode, b2.AsmCode) {
-		return false
-	}
-
-	return true
 }

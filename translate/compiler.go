@@ -29,25 +29,24 @@ import (
 // TODO: implement me w/ test cases :-)
 // CompileContract() compiles a smart contract.
 // returns bytecode and error.
-func CompileContract(c ast.Contract) (Bytecode, error) {
-	bytecode := &Bytecode{
-		RawByte: make([]byte, 0),
-		AsmCode: make([]string, 0),
+func CompileContract(c ast.Contract) (Asm, error) {
+	asm := &Asm{
+		AsmCodes: make([]AsmCode, 0),
 	}
 
 	memTracer := NewMemEntryTable()
 
 	for _, f := range c.Functions {
-		if err := compileFunction(*f, bytecode, memTracer); err != nil {
-			return *bytecode, err
+		if err := compileFunction(*f, asm, memTracer); err != nil {
+			return *asm, err
 		}
 	}
 
-	if err := generateFuncJumper(bytecode); err != nil {
-		return *bytecode, err
+	if err := generateFuncJumper(asm); err != nil {
+		return *asm, err
 	}
 
-	return *bytecode, nil
+	return *asm, nil
 }
 
 func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
@@ -63,7 +62,7 @@ func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
 
 // TODO: implement me w/ test cases :-)
 // Generates a bytecode of function jumper.
-func generateFuncJumper(bytecode *Bytecode) error {
+func generateFuncJumper(bytecode *Asm) error {
 	return nil
 }
 
@@ -86,7 +85,7 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 // TODO: implement me w/ test cases :-)
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
-func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode, tracer MemTracer) error {
+func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) error {
 	// TODO: generate function identifier with Keccak256()
 
 	statements := f.Body.Statements
@@ -102,7 +101,7 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Bytecode, tracer MemTracer
 // TODO: implement me w/ test cases :-)
 // compileStatement() compiles a statement in function.
 // Generates and adds output to bytecode.
-func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) error {
+func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
 	switch statement := s.(type) {
 	case *ast.AssignStatement:
 		return compileAssignStatement(statement, bytecode, tracer)
@@ -111,13 +110,13 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 		return compileReturnStatement(statement, bytecode)
 
 	case *ast.IfStatement:
-		return compileIfStatement(statement, bytecode)
+		return compileIfStatement(statement, bytecode, tracer)
 
 	case *ast.BlockStatement:
 		return compileBlockStatement(statement, bytecode, tracer)
 
 	case *ast.ExpressionStatement:
-		return compileExpressionStatement(statement, bytecode)
+		return compileExpressionStatement(statement, bytecode, tracer)
 
 	case *ast.FunctionLiteral:
 		return compileFunctionLiteral(statement, bytecode)
@@ -142,12 +141,12 @@ func compileStatement(s ast.Statement, bytecode *Bytecode, tracer MemTracer) err
 // 	[size]
 // 	[value]
 //
-func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode, memDefiner MemDefiner) error {
-	if err := compileExpression(s.Value, bytecode); err != nil {
+func compileAssignStatement(s *ast.AssignStatement, asm *Asm, tracer MemTracer) error {
+	if err := compileExpression(s.Value, asm, tracer); err != nil {
 		return err
 	}
 
-	memEntry := memDefiner.Define(s.Variable.Value)
+	memEntry := tracer.Define(s.Variable.Value)
 	size, err := encoding.EncodeOperand(memEntry.Size)
 	if err != nil {
 		return err
@@ -158,23 +157,101 @@ func compileAssignStatement(s *ast.AssignStatement, bytecode *Bytecode, memDefin
 		return err
 	}
 
-	bytecode.Emerge(opcode.Push, size)
-	bytecode.Emerge(opcode.Push, offset)
-	bytecode.Emerge(opcode.Mstore)
+	asm.Emerge(opcode.Push, size)
+	asm.Emerge(opcode.Push, offset)
+	asm.Emerge(opcode.Mstore)
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
-func compileReturnStatement(s *ast.ReturnStatement, bytecode *Bytecode) error {
+func compileReturnStatement(s *ast.ReturnStatement, bytecode *Asm) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileIfStatement(s *ast.IfStatement, bytecode *Bytecode) error {
+// compileIfStatement() compiles a 'if statement'.
+//
+// Ex)
+//
+// translate
+// 	'if (expression){
+// 		// Consequence...
+//  }else {
+// 		// Alternative...
+//  }'
+// to
+//  'push <expression> push <pc-to-jumpdst-1> jumpi <Consequence...> push <pc-to-end-of-jumpdst-2> jump jumpdst-1 <Alternative...> jumpdst-2'
+//
+func compileIfStatement(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+
+	if err := compileExpression(s.Condition, asm, tracer); err != nil {
+		return err
+	}
+
+	if s.Alternative != nil {
+		return compileIfElse(s, asm, tracer)
+	}
+
+	return compileIf(s, asm, tracer)
+}
+
+func compileIfElse(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+
+	l1 := len(asm.AsmCodes)
+	if err := compileBlockStatement(s.Consequence, asm, tracer); err != nil {
+		return err
+	}
+	// 'push <expression> <Consequence...>'
+
+	l2 := len(asm.AsmCodes)
+	if err := compileBlockStatement(s.Alternative, asm, tracer); err != nil {
+		return err
+	}
+	// 'push <Consequence...> <Alternative...>'
+
+	l3 := len(asm.AsmCodes)
+	pc2al, err := encoding.EncodeOperand(l2 + 6)
+	if err != nil {
+		return err
+	}
+
+	asm.EmergeAt(l1, opcode.Jumpi)
+	asm.EmergeAt(l1, opcode.Push, pc2al)
+	// 'push <expression> push <pc-to-Alternative> jumpi <Consequence...> <Alternative...>'
+
+	pc2EndOfAlter, err := encoding.EncodeOperand(l3 + 6)
+	if err != nil {
+		return err
+	}
+
+	asm.EmergeAt(l2+3, opcode.Jump)
+	asm.EmergeAt(l2+3, opcode.Push, pc2EndOfAlter)
+	// 'push <expression> push <pc-to-Alternative> jumpi <Consequence...> push <pc-to-end-of-Alternative> jump <Alternative...>'
+
 	return nil
 }
 
-func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer MemTracer) error {
+func compileIf(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+
+	l1 := len(asm.AsmCodes)
+	if err := compileBlockStatement(s.Consequence, asm, tracer); err != nil {
+		return err
+	}
+	l2 := len(asm.AsmCodes)
+	// 'push <expression> <Consequence...>'
+
+	pc2al, err := encoding.EncodeOperand(l2 + 1)
+	if err != nil {
+		return err
+	}
+
+	asm.EmergeAt(l1, opcode.Jump)
+	asm.EmergeAt(l1, opcode.Push, pc2al)
+	// 'push <expression> push <pc-to-end-of-Consequence> jump <Consequence...>'
+
+	return nil
+}
+
+func compileBlockStatement(s *ast.BlockStatement, bytecode *Asm, tracer MemTracer) error {
 	for _, statement := range s.Statements {
 		if err := compileStatement(statement, bytecode, tracer); err != nil {
 			return err
@@ -184,43 +261,43 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Bytecode, tracer Mem
 	return nil
 }
 
-func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Bytecode) error {
-	return compileExpression(s.Expr, bytecode)
+func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Asm, tracer MemTracer) error {
+	return compileExpression(s.Expr, bytecode, tracer)
 }
 
 // TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Bytecode) error {
+func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Asm) error {
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
 // compileExpression() compiles a expression in statement.
 // Generates and adds ouput to bytecode.
-func compileExpression(e ast.Expression, bytecode *Bytecode) error {
+func compileExpression(e ast.Expression, asm *Asm, tracer MemTracer) error {
 	switch expr := e.(type) {
 	case *ast.CallExpression:
-		return compileCallExpression(expr, bytecode)
+		return compileCallExpression(expr, asm)
 
 	case *ast.InfixExpression:
-		return compileInfixExpression(expr, bytecode)
+		return compileInfixExpression(expr, asm, tracer)
 
 	case *ast.PrefixExpression:
-		return compilePrefixExpression(expr, bytecode)
+		return compilePrefixExpression(expr, asm, tracer)
 
 	case *ast.IntegerLiteral:
-		return compileIntegerLiteral(expr, bytecode)
+		return compilePrimitive(expr.Value, asm)
 
 	case *ast.StringLiteral:
-		return compileStringLiteral(expr, bytecode)
+		return compilePrimitive(expr.Value, asm)
 
 	case *ast.BooleanLiteral:
-		return compileBooleanLiteral(expr, bytecode)
+		return compilePrimitive(expr.Value, asm)
 
 	case *ast.Identifier:
-		return compileIdentifier(expr, bytecode)
+		return compileIdentifier(expr, asm, tracer)
 
 	case *ast.ParameterLiteral:
-		return compileParameterLiteral(expr, bytecode)
+		return compileParameterLiteral(expr, asm)
 
 	default:
 		return errors.New("compileExpression() error")
@@ -228,64 +305,64 @@ func compileExpression(e ast.Expression, bytecode *Bytecode) error {
 }
 
 // TODO: implement me w/ test cases :-)
-func compileCallExpression(e *ast.CallExpression, bytecode *Bytecode) error {
+func compileCallExpression(e *ast.CallExpression, asm *Asm) error {
 	return nil
 }
 
-func compileInfixExpression(e *ast.InfixExpression, bytecode *Bytecode) error {
-	if err := compileExpression(e.Left, bytecode); err != nil {
+func compileInfixExpression(e *ast.InfixExpression, asm *Asm, tracer MemTracer) error {
+	if err := compileExpression(e.Left, asm, tracer); err != nil {
 		return err
 	}
 
-	if err := compileExpression(e.Right, bytecode); err != nil {
+	if err := compileExpression(e.Right, asm, tracer); err != nil {
 		return err
 	}
 
 	switch e.Operator {
 	case ast.Plus:
-		bytecode.Emerge(opcode.Add)
+		asm.Emerge(opcode.Add)
 	case ast.Minus:
-		bytecode.Emerge(opcode.Sub)
+		asm.Emerge(opcode.Sub)
 	case ast.Asterisk:
-		bytecode.Emerge(opcode.Mul)
+		asm.Emerge(opcode.Mul)
 	case ast.Slash:
-		bytecode.Emerge(opcode.Div)
+		asm.Emerge(opcode.Div)
 	case ast.Mod:
-		bytecode.Emerge(opcode.Mod)
+		asm.Emerge(opcode.Mod)
 
 		//comparison
 	case ast.LT:
-		bytecode.Emerge(opcode.LT)
+		asm.Emerge(opcode.LT)
 	case ast.GT:
-		bytecode.Emerge(opcode.GT)
+		asm.Emerge(opcode.GT)
 	case ast.LTE:
-		bytecode.Emerge(opcode.LTE)
+		asm.Emerge(opcode.LTE)
 	case ast.GTE:
-		bytecode.Emerge(opcode.GTE)
+		asm.Emerge(opcode.GTE)
 	case ast.EQ:
-		bytecode.Emerge(opcode.EQ)
+		asm.Emerge(opcode.EQ)
 	case ast.NOT_EQ:
-		bytecode.Emerge(opcode.EQ)
-		bytecode.Emerge(opcode.NOT)
+		asm.Emerge(opcode.EQ)
+		asm.Emerge(opcode.NOT)
 	case ast.LAND:
-		bytecode.Emerge(opcode.And)
+		asm.Emerge(opcode.And)
 	case ast.LOR:
-		bytecode.Emerge(opcode.Or)
+		asm.Emerge(opcode.Or)
 	}
 
 	return nil
 }
 
-func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error {
-	if err := compileExpression(e.Right, bytecode); err != nil {
+func compilePrefixExpression(e *ast.PrefixExpression, asm *Asm, tracer MemTracer) error {
+	if err := compileExpression(e.Right, asm, tracer); err != nil {
 		return err
 	}
 
 	switch e.Operator {
 	case ast.Bang:
-		bytecode.Emerge(opcode.NOT)
+		asm.Emerge(opcode.NOT)
 	case ast.Minus:
-		bytecode.Emerge(opcode.Minus)
+		asm.Emerge(opcode.Minus)
 	default:
 		return fmt.Errorf("unknown operator %s", e.Operator.String())
 	}
@@ -293,38 +370,40 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode) error 
 	return nil
 }
 
-func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
-	operand, err := encoding.EncodeOperand(e.Value)
+func compilePrimitive(value interface{}, asm *Asm) error {
+	operand, err := encoding.EncodeOperand(value)
 	if err != nil {
 		return err
 	}
 
-	bytecode.Emerge(opcode.Push, operand)
+	asm.Emerge(opcode.Push, operand)
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
-	return nil
-
-}
-
-func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
-	operand, err := encoding.EncodeOperand(e.Value)
+func compileIdentifier(e *ast.Identifier, asm *Asm, tracer MemTracer) error {
+	memEntry, err := tracer.GetEntry(e.Value)
 	if err != nil {
 		return err
 	}
 
-	bytecode.Emerge(opcode.Push, operand)
+	size, err := encoding.EncodeOperand(memEntry.Size)
+	if err != nil {
+		return err
+	}
+
+	offset, err := encoding.EncodeOperand(memEntry.Offset)
+	if err != nil {
+		return err
+	}
+
+	asm.Emerge(opcode.Push, size)
+	asm.Emerge(opcode.Push, offset)
+	asm.Emerge(opcode.Mload)
+
 	return nil
 }
 
 // TODO: implement me w/ test cases :-)
-func compileIdentifier(e *ast.Identifier, bytecode *Bytecode) error {
-	return nil
-}
-
-// TODO: implement me w/ test cases :-)
-func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Bytecode) error {
+func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Asm) error {
 	return nil
 }
