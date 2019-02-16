@@ -107,7 +107,7 @@ func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
 		return compileAssignStatement(statement, bytecode, tracer)
 
 	case *ast.ReturnStatement:
-		return compileReturnStatement(statement, bytecode)
+		return compileReturnStatement(statement, bytecode, tracer)
 
 	case *ast.IfStatement:
 		return compileIfStatement(statement, bytecode, tracer)
@@ -163,8 +163,26 @@ func compileAssignStatement(s *ast.AssignStatement, asm *Asm, tracer MemTracer) 
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileReturnStatement(s *ast.ReturnStatement, bytecode *Asm) error {
+// compileReturnStatement compiles 'return' keyword
+//
+// PROTOCOL:
+//   if return value of return statement is nil, then
+//   return value zero
+func compileReturnStatement(s *ast.ReturnStatement, asm *Asm, tracer MemTracer) error {
+
+	var retVal ast.Expression
+
+	if s.ReturnValue == nil {
+		retVal = &ast.IntegerLiteral{Value: 0}
+	} else {
+		retVal = s.ReturnValue
+	}
+
+	if err := compileExpression(retVal, asm, tracer); err != nil {
+		return err
+	}
+
+	asm.Emerge(opcode.Returning)
 	return nil
 }
 
