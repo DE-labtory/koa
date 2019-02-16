@@ -12,7 +12,7 @@ func TestAssignStatement_String(t *testing.T) {
 		{
 			input: AssignStatement{
 				Type:     IntType,
-				Variable: Identifier{Value: "a"},
+				Variable: Identifier{Name: "a"},
 				Value:    &IntegerLiteral{Value: 1},
 			},
 			expected: "int a = 1",
@@ -20,7 +20,7 @@ func TestAssignStatement_String(t *testing.T) {
 		{
 			input: AssignStatement{
 				Type:     BoolType,
-				Variable: Identifier{Value: "asdf"},
+				Variable: Identifier{Name: "asdf"},
 				Value:    &StringLiteral{Value: "hello, world"},
 			},
 			// type mismatch is not considered here
@@ -29,7 +29,7 @@ func TestAssignStatement_String(t *testing.T) {
 		{
 			input: AssignStatement{
 				Type:     StringType,
-				Variable: Identifier{Value: "ff"},
+				Variable: Identifier{Name: "ff"},
 				Value:    &BooleanLiteral{Value: true},
 			},
 			// type mismatch is not considered here
@@ -49,23 +49,23 @@ func TestIdentifier_String(t *testing.T) {
 		expected string
 	}{
 		{
-			input:    Identifier{Value: "a"},
+			input:    Identifier{Name: "a"},
 			expected: "a",
 		},
 		{
-			input:    Identifier{Value: "zcf"},
+			input:    Identifier{Name: "zcf"},
 			expected: "zcf",
 		},
 		{
-			input:    Identifier{Value: "zcf asdf"},
+			input:    Identifier{Name: "zcf asdf"},
 			expected: "zcf asdf",
 		},
 		{
-			input:    Identifier{Value: "123"},
+			input:    Identifier{Name: "123"},
 			expected: "123",
 		},
 		{
-			input:    Identifier{Value: ""},
+			input:    Identifier{Name: ""},
 			expected: "",
 		},
 	}
@@ -158,7 +158,7 @@ func TestFunctionLiteral_String(t *testing.T) {
 	}{
 		{
 			FunctionLiteral{
-				Name:       &Identifier{Value: "foo"},
+				Name:       &Identifier{Name: "foo"},
 				Parameters: []*ParameterLiteral{},
 				Body:       &BlockStatement{},
 				ReturnType: StringType,
@@ -169,13 +169,13 @@ func TestFunctionLiteral_String(t *testing.T) {
 		},
 		{
 			FunctionLiteral{
-				Name:       &Identifier{Value: "foo"},
+				Name:       &Identifier{Name: "foo"},
 				Parameters: []*ParameterLiteral{},
 				Body: &BlockStatement{
 					Statements: []Statement{
 						&AssignStatement{
 							Type:     IntType,
-							Variable: Identifier{Value: "a"},
+							Variable: Identifier{Name: "a"},
 							Value:    &IntegerLiteral{Value: 1},
 						},
 					},
@@ -202,7 +202,7 @@ func TestReassignStatement_String(t *testing.T) {
 		{
 			input: ReassignStatement{
 				Variable: &Identifier{
-					Value: "foo",
+					Name: "foo",
 				},
 				Value: &BooleanLiteral{
 					Value: true,
@@ -213,7 +213,7 @@ func TestReassignStatement_String(t *testing.T) {
 		{
 			input: ReassignStatement{
 				Variable: &Identifier{
-					Value: "foo",
+					Name: "foo",
 				},
 				Value: &PrefixExpression{
 					Operator: Minus,
@@ -227,7 +227,7 @@ func TestReassignStatement_String(t *testing.T) {
 		{
 			input: ReassignStatement{
 				Variable: &Identifier{
-					Value: "foo",
+					Name: "foo",
 				},
 				Value: &InfixExpression{
 					Left: &StringLiteral{
@@ -274,7 +274,7 @@ func TestReturnStatement_String(t *testing.T) {
 		},
 		{
 			input: ReturnStatement{
-				ReturnValue: &Identifier{Value: "a"},
+				ReturnValue: &Identifier{Name: "a"},
 			},
 			expected: "return a",
 		},

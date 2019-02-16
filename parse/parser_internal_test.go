@@ -521,11 +521,11 @@ func TestParseIdentifier(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("ADD", &symbol.Integer{Name: &ast.Identifier{Value: "ADD"}})
+				scope.Set("ADD", &symbol.Integer{Name: &ast.Identifier{Name: "ADD"}})
 				return scope
 			},
 			expected: &ast.Identifier{
-				Value: "ADD",
+				Name: "ADD",
 			},
 			expectedErrs: nil,
 		},
@@ -624,7 +624,7 @@ func TestParseIdentifier(t *testing.T) {
 			if test.expected != nil {
 				t.Fatalf("test[%d] - wrong result. Expected=%s, got=%s", i, test.expected.String(), exp.String())
 			}
-		case &ast.Identifier{Value: exp.String()}:
+		case &ast.Identifier{Name: exp.String()}:
 			if exp.String() != exp.String() {
 				t.Fatalf("test[%d] - wrong result. Expected=%s, got=%s", i, test.expected.String(), exp.String())
 			}
@@ -1190,7 +1190,7 @@ func TestMakePrefixExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			expected: "(-a)",
@@ -1229,7 +1229,7 @@ func TestMakePrefixExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Value: "foo"}})
+				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Name: "foo"}})
 				return scope
 			},
 			expected: "(!(-foo))",
@@ -1245,7 +1245,7 @@ func TestMakePrefixExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Value: "foo"}})
+				scope.Set("foo", &symbol.Integer{Name: &ast.Identifier{Name: "foo"}})
 				return scope
 			},
 			expected: "(-(!foo))",
@@ -1571,7 +1571,7 @@ func TestParseGroupedExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			expected:    "(a + (1 - 2))",
@@ -1597,7 +1597,7 @@ func TestParseGroupedExpression(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			expected:    "((a + (1 - 2)) + 3)",
@@ -1818,7 +1818,7 @@ func TestParsePrefixExpression(t *testing.T) {
 		}
 
 		if expression.Right.String() != tt.expectedRight {
-			t.Errorf("tests[%d] - Value is not %s but got %s",
+			t.Errorf("tests[%d] - Name is not %s but got %s",
 				i, tt.expectedRight, expression.Right.String())
 		}
 	}
@@ -1847,7 +1847,7 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function:    &ast.Identifier{Value: "add"},
+			function:    &ast.Identifier{Name: "add"},
 			expected:    `function add( (1 + 2) )`,
 			expectedErr: nil,
 		},
@@ -1867,7 +1867,7 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function:    &ast.Identifier{Value: "testFunc"},
+			function:    &ast.Identifier{Name: "testFunc"},
 			expected:    `function testFunc( a, b, 5 )`,
 			expectedErr: nil,
 		},
@@ -1887,7 +1887,7 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function: &ast.Identifier{Value: "errorFunc"},
+			function: &ast.Identifier{Name: "errorFunc"},
 			expected: "",
 			expectedErr: Error{
 				Token{Type: Asterisk},
@@ -1912,14 +1912,14 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function:    &ast.Identifier{Value: "complexFunc"},
+			function:    &ast.Identifier{Name: "complexFunc"},
 			expected:    `function complexFunc( (a + b), (5 * 3) )`,
 			expectedErr: nil,
 		},
 		{
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("add", &symbol.Integer{Name: &ast.Identifier{Value: "add"}})
+				scope.Set("add", &symbol.Integer{Name: &ast.Identifier{Name: "add"}})
 				return scope
 			},
 			buf: &mockTokenBuffer{
@@ -1934,14 +1934,14 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function:    &ast.Identifier{Value: "complexFunc"},
+			function:    &ast.Identifier{Name: "complexFunc"},
 			expected:    `function complexFunc( function add(  ) )`,
 			expectedErr: nil,
 		},
 		{
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("add", &symbol.Integer{Name: &ast.Identifier{Value: "add"}})
+				scope.Set("add", &symbol.Integer{Name: &ast.Identifier{Name: "add"}})
 				return scope
 			},
 			buf: &mockTokenBuffer{
@@ -1958,7 +1958,7 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function:    &ast.Identifier{Value: "complexFunc"},
+			function:    &ast.Identifier{Name: "complexFunc"},
 			expected:    `function complexFunc( function add(  ), 1 )`,
 			expectedErr: nil,
 		},
@@ -1974,7 +1974,7 @@ func TestParseCallExpression(t *testing.T) {
 				},
 				0,
 			},
-			function:    &ast.Identifier{Value: "complexFunc"},
+			function:    &ast.Identifier{Name: "complexFunc"},
 			expected:    `function complexFunc(  )`,
 			expectedErr: nil,
 		},
@@ -2044,8 +2044,8 @@ func TestParseCallArguments(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Name: "b"}})
 				return scope
 			},
 			expected:    `function testFunction( a, b, 5 )`,
@@ -2068,8 +2068,8 @@ func TestParseCallArguments(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Name: "b"}})
 				return scope
 			},
 			expected:    `function testFunction( (a + b), (5 * 3) )`,
@@ -2106,7 +2106,7 @@ func TestParseCallArguments(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			expected: "",
@@ -2132,7 +2132,7 @@ func TestParseCallArguments(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("add", &symbol.Integer{Name: &ast.Identifier{Value: "add"}})
+				scope.Set("add", &symbol.Integer{Name: &ast.Identifier{Name: "add"}})
 				return scope
 			},
 			expected:    `function testFunction( function add(  ), 1 )`,
@@ -2150,7 +2150,7 @@ func TestParseCallArguments(t *testing.T) {
 		}
 
 		mockFn := &ast.CallExpression{
-			Function: &ast.Identifier{Value: "testFunction"},
+			Function: &ast.Identifier{Name: "testFunction"},
 		}
 		mockFn.Arguments = exp
 		if exp != nil && mockFn.String() != test.expected {
@@ -2404,7 +2404,7 @@ func TestParseAssignStatement(t *testing.T) {
 		{
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("ddd", &symbol.String{Name: &ast.Identifier{Value: "ddd"}})
+				scope.Set("ddd", &symbol.String{Name: &ast.Identifier{Name: "ddd"}})
 				return scope
 			},
 			&mockTokenBuffer{
@@ -2465,7 +2465,7 @@ func TestParseAssignStatement(t *testing.T) {
 		}
 
 		if err == nil && exp.Value.String() != tt.expectedVal {
-			t.Errorf("tests[%d] - Value is not %s but got %s",
+			t.Errorf("tests[%d] - Name is not %s but got %s",
 				i, tt.expectedVal, exp.Value.String())
 		}
 
@@ -2503,7 +2503,7 @@ func TestParseReassignStatement(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			expected:    "a = 1",
@@ -2529,7 +2529,7 @@ func TestParseReassignStatement(t *testing.T) {
 			},
 			setupScope: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			expected: "",
@@ -2580,8 +2580,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Name: "b"}})
 				return scope
 			},
 			"((-a) * b)",
@@ -2599,7 +2599,7 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Name: "b"}})
 				return scope
 			},
 			"(!(-b))",
@@ -2620,7 +2620,7 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			"(((-33) / 67) + a)",
@@ -2643,8 +2643,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Value: "c"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Name: "c"}})
 				return scope
 			},
 			"((33 % (-67)) + (a * c))",
@@ -2669,8 +2669,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Value: "c"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("c", &symbol.Integer{Name: &ast.Identifier{Name: "c"}})
 				return scope
 			},
 			"((33 % ((-67) + a)) * c)",
@@ -2692,7 +2692,7 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			"(((-33) / 67) < (a * 67))",
@@ -2717,8 +2717,8 @@ func TestParseExpression(t *testing.T) {
 			},
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("z", &symbol.Integer{Name: &ast.Identifier{Value: "z"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("z", &symbol.Integer{Name: &ast.Identifier{Name: "z"}})
 				return scope
 			},
 			"(((-33) / 67) >= (a + (67 % z)))",
@@ -2826,7 +2826,7 @@ func TestParseIfStatement(t *testing.T) {
 		{
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			&mockTokenBuffer{
@@ -3757,7 +3757,7 @@ func TestParseStatement(t *testing.T) {
 		{
 			setupScopeFn: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("asdf", &symbol.Integer{Name: &ast.Identifier{Value: "asdf"}})
+				scope.Set("asdf", &symbol.Integer{Name: &ast.Identifier{Name: "asdf"}})
 				return scope
 			},
 			buf: &mockTokenBuffer{
@@ -3956,7 +3956,7 @@ func TestParseExpressionStatement(t *testing.T) {
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
 				scope.Set("read", &symbol.Function{Name: "read"})
-				scope.Set("x", &symbol.Integer{Name: &ast.Identifier{Value: "x"}})
+				scope.Set("x", &symbol.Integer{Name: &ast.Identifier{Name: "x"}})
 				return scope
 			},
 			"function read( x )",
@@ -3978,8 +3978,8 @@ func TestParseExpressionStatement(t *testing.T) {
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
 				scope.Set("testFunction", &symbol.Function{Name: "testFunction"})
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Name: "b"}})
 				return scope
 			},
 			"function testFunction( a, b )",
@@ -4002,8 +4002,8 @@ func TestParseExpressionStatement(t *testing.T) {
 			func() *symbol.Scope {
 				scope := symbol.NewScope()
 				scope.Set("testFunction", &symbol.Function{Name: "testFunction"})
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
-				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Value: "b"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
+				scope.Set("b", &symbol.Integer{Name: &ast.Identifier{Name: "b"}})
 				return scope
 			},
 			"",
@@ -4071,11 +4071,11 @@ func TestParseExpressionStatement(t *testing.T) {
 func TestEnterLeaveScope(t *testing.T) {
 	// scope is global variable which defined in parser.go
 	scope = symbol.NewScope()
-	scope.Set("foo", &symbol.String{Name: &ast.Identifier{Value: "foo"}})
+	scope.Set("foo", &symbol.String{Name: &ast.Identifier{Name: "foo"}})
 
 	enterScope()
 
-	scope.Set("bar", &symbol.String{Name: &ast.Identifier{Value: "bar"}})
+	scope.Set("bar", &symbol.String{Name: &ast.Identifier{Name: "bar"}})
 
 	if scope.Get("foo") == nil {
 		t.Errorf("scope should have foo symbol, because we're in the inner scope")
@@ -4093,7 +4093,7 @@ func TestEnterLeaveScope(t *testing.T) {
 		t.Errorf("scope should have bar symbol, because we're in the inner scope")
 	}
 
-	scope.Set("baz", &symbol.String{Name: &ast.Identifier{Value: "baz"}})
+	scope.Set("baz", &symbol.String{Name: &ast.Identifier{Name: "baz"}})
 
 	if scope.Get("bar") != nil {
 		t.Errorf("scope should NOT have \"bar\" symbol, because we're in the outer scope")
@@ -4118,7 +4118,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 		{
 			setupScopeFn: func() *symbol.Scope {
 				scope := symbol.NewScope()
-				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Value: "a"}})
+				scope.Set("a", &symbol.Integer{Name: &ast.Identifier{Name: "a"}})
 				return scope
 			},
 			ident:       Token{Type: Ident, Val: "a"},

@@ -76,7 +76,7 @@ func TestCompileAssignStatement(t *testing.T) {
 					Value: true,
 				},
 				Variable: ast.Identifier{
-					Value: "a",
+					Name: "a",
 				},
 				Type: ast.BoolType,
 			},
@@ -120,7 +120,7 @@ func TestCompileAssignStatement(t *testing.T) {
 					Value: 5,
 				},
 				Variable: ast.Identifier{
-					Value: "sum",
+					Name: "sum",
 				},
 				Type: ast.IntType,
 			},
@@ -1699,7 +1699,7 @@ func TestCompileIdentifier(t *testing.T) {
 				return tracer
 			},
 			expression: &ast.Identifier{
-				Value: "a",
+				Name: "a",
 			},
 			expected: Asm{
 				AsmCodes: []AsmCode{
@@ -1729,7 +1729,7 @@ func TestCompileIdentifier(t *testing.T) {
 		{
 			setupTracer: defaultSetupTracer,
 			expression: &ast.Identifier{
-				Value: "a",
+				Name: "a",
 			},
 			expected: Asm{
 				AsmCodes: []AsmCode{},
