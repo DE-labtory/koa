@@ -25,12 +25,12 @@ type Method struct {
 // Signature returns function's signature according to the ABI spec.
 //
 // Example
-// function foo(uint32 a, int b) = "foo(uint32,int256)"
+// function foo(int64 a, int64 b) = "foo(int64,int64)"
 func (method Method) Signature() string {
-	return ""
+	return method.Name + "(" + method.Arguments.Pack() + ")"
 }
 
 // ID return function's id using function selector
 func (method Method) ID() []byte {
-	return nil
+	return Selector(method.Name + "(" + method.Arguments.Pack() + ")")
 }

@@ -25,6 +25,7 @@ import (
 
 	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/opcode"
+	"github.com/DE-labtory/koa/encoding"
 )
 
 func makeTestByteCode(slice ...interface{}) []byte {
@@ -41,6 +42,127 @@ func makeTestByteCode(slice ...interface{}) []byte {
 	}
 
 	return testByteCode
+}
+
+func TestExecute(t *testing.T) {
+	abiJSON := `
+[
+	{
+		"name" : "addVariable",
+		"arguments" : [],
+		"output" : {
+			"name" : "",
+			"type" : "int64"
+		}
+	},
+	{
+		"name" : "addNative",
+		"arguments" : [],
+		"output" : {
+			"name" : "",
+			"type" : "int64"
+		}
+	},
+	{
+		"name" : "addArgs",
+		"arguments" : [
+			{
+				"name" : "a",
+				"type" : "int64"
+			},
+			{
+				"name" : "b",
+				"type" : "int64"
+			}
+		],
+		"output" : {
+			"name" : "",
+			"type" : "int64"
+		}
+	}
+]
+`
+	ABI, err := abi.New(abiJSON)
+	if err != nil {
+		t.Error(err)
+	}
+
+	funcSel1, err := encoding.EncodeOperand(ABI.Methods[0].ID())
+	funcSel2, err := encoding.EncodeOperand(ABI.Methods[1].ID())
+	funcSel3, err := encoding.EncodeOperand(ABI.Methods[2].ID())
+
+	testByteCode := makeTestByteCode(
+		uint8(opcode.LoadFunc),
+		uint8(opcode.DUP),
+		uint8(opcode.Push), funcSel1,
+		uint8(opcode.EQ),
+		uint8(opcode.Push), int64ToBytes(49),
+		uint8(opcode.Jumpi),
+
+		uint8(opcode.DUP),
+		uint8(opcode.Push), funcSel2,
+		uint8(opcode.EQ),
+		uint8(opcode.Push), int64ToBytes(152),
+		uint8(opcode.Jumpi),
+
+		uint8(opcode.DUP),
+		uint8(opcode.Push), funcSel3,
+		uint8(opcode.EQ),
+		uint8(opcode.Push), int64ToBytes(180),
+		uint8(opcode.Jumpi),
+
+		uint8(opcode.Returning),
+
+		uint8(opcode.JumpDst),
+		uint8(opcode.Push), int64ToBytes(5),
+		uint8(opcode.Push), int64ToBytes(8),
+		uint8(opcode.Push), int64ToBytes(0),
+		uint8(opcode.Mstore),
+		uint8(opcode.Push), int64ToBytes(10),
+		uint8(opcode.Push), int64ToBytes(8),
+		uint8(opcode.Push), int64ToBytes(8),
+		uint8(opcode.Mstore),
+		uint8(opcode.Push), int64ToBytes(8),
+		uint8(opcode.Push), int64ToBytes(0),
+		uint8(opcode.Mload),
+		uint8(opcode.Push), int64ToBytes(8),
+		uint8(opcode.Push), int64ToBytes(8),
+		uint8(opcode.Mload),
+		uint8(opcode.Add),
+
+		uint8(opcode.JumpDst),
+		uint8(opcode.Push), int64ToBytes(5),
+		uint8(opcode.Push), int64ToBytes(10),
+		uint8(opcode.Add),
+
+		uint8(opcode.JumpDst),
+		uint8(opcode.Push), int64ToBytes(0),
+		uint8(opcode.Push), int64ToBytes(1),
+		uint8(opcode.LoadArgs),
+		uint8(opcode.Add),
+	)
+
+	memory := NewMemory()
+
+	encodedParams, err := abi.Encode(5, 10)
+	if err != nil {
+		t.Error(err)
+	}
+
+	callFunc := &CallFunc{
+		Func: abi.Selector("addArgs(int64,int64)"),
+		Args: encodedParams,
+	}
+
+	stack, err := Execute(testByteCode, memory, callFunc)
+	if err != nil {
+		t.Error(err)
+	}
+
+	result := stack.pop()
+	if int64(result) != 15 {
+		t.Error("Nooooooooooooooooooooooooooooo")
+	}
 }
 
 func TestAdd(t *testing.T) {
