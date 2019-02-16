@@ -1,6 +1,8 @@
 package ast
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestAssignStatement_String(t *testing.T) {
 	tests := []struct {
@@ -238,6 +240,47 @@ func TestReassignStatement_String(t *testing.T) {
 				},
 			},
 			expected: "foo = (hello + 2)",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.String()
+		testString(t, result, tt.expected)
+	}
+}
+
+func TestReturnStatement_String(t *testing.T) {
+	tests := []struct {
+		input    ReturnStatement
+		expected string
+	}{
+		{
+			input: ReturnStatement{
+				ReturnValue: &IntegerLiteral{Value: 1},
+			},
+			expected: "return 1",
+		},
+		{
+			input: ReturnStatement{
+				ReturnValue: &StringLiteral{Value: "\"hello, world\""},
+			},
+			expected: "return \"hello, world\"",
+		},
+		{
+			input: ReturnStatement{
+				ReturnValue: &StringLiteral{Value: "\"hello, world\""},
+			},
+			expected: "return \"hello, world\"",
+		},
+		{
+			input: ReturnStatement{
+				ReturnValue: &Identifier{Value: "a"},
+			},
+			expected: "return a",
+		},
+		{
+			input:    ReturnStatement{},
+			expected: "return",
 		},
 	}
 

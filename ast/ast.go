@@ -178,6 +178,9 @@ type ReturnStatement struct {
 func (rs *ReturnStatement) do() {}
 
 func (rs *ReturnStatement) String() string {
+	if rs.ReturnValue == nil {
+		return "return"
+	}
 	return fmt.Sprintf("return %s", rs.ReturnValue.String())
 }
 
@@ -274,10 +277,10 @@ type StringLiteral struct {
 	Value string
 }
 
-func (sl *StringLiteral) produce() {}
+func (s *StringLiteral) produce() {}
 
-func (sl *StringLiteral) String() string {
-	return sl.Value
+func (s *StringLiteral) String() string {
+	return s.Value
 }
 
 // Represent integer literal
@@ -285,10 +288,10 @@ type IntegerLiteral struct {
 	Value int64
 }
 
-func (il *IntegerLiteral) produce() {}
+func (i *IntegerLiteral) produce() {}
 
-func (il *IntegerLiteral) String() string {
-	return strconv.FormatInt(il.Value, 10)
+func (i *IntegerLiteral) String() string {
+	return strconv.FormatInt(i.Value, 10)
 }
 
 // Represent Boolean expression
@@ -296,10 +299,10 @@ type BooleanLiteral struct {
 	Value bool
 }
 
-func (bl *BooleanLiteral) produce() {}
+func (b *BooleanLiteral) produce() {}
 
-func (bl *BooleanLiteral) String() string {
-	return strconv.FormatBool(bl.Value)
+func (b *BooleanLiteral) String() string {
+	return strconv.FormatBool(b.Value)
 }
 
 // Represent Function Parameter expression
@@ -308,10 +311,10 @@ type ParameterLiteral struct {
 	Type       DataStructure
 }
 
-func (pl *ParameterLiteral) produce() {}
+func (p *ParameterLiteral) produce() {}
 
-func (pl *ParameterLiteral) String() string {
-	return fmt.Sprintf("Parameter : (Identifier: %s, Type: %s)", pl.Identifier.String(), pl.Type.String())
+func (p *ParameterLiteral) String() string {
+	return fmt.Sprintf("Parameter : (Identifier: %s, Type: %s)", p.Identifier.String(), p.Type.String())
 }
 
 // Represent prefix expression
@@ -320,10 +323,10 @@ type PrefixExpression struct {
 	Right Expression
 }
 
-func (pe *PrefixExpression) produce() {}
+func (p *PrefixExpression) produce() {}
 
-func (pe *PrefixExpression) String() string {
-	return fmt.Sprintf("(%s%s)", pe.Operator.String(), pe.Right.String())
+func (p *PrefixExpression) String() string {
+	return fmt.Sprintf("(%s%s)", p.Operator.String(), p.Right.String())
 }
 
 // Repersent Infix expression
@@ -333,10 +336,10 @@ type InfixExpression struct {
 	Right Expression
 }
 
-func (ie *InfixExpression) produce() {}
+func (i *InfixExpression) produce() {}
 
-func (ie *InfixExpression) String() string {
-	return fmt.Sprintf("(%s %s %s)", ie.Left.String(), ie.Operator.String(), ie.Right.String())
+func (i *InfixExpression) String() string {
+	return fmt.Sprintf("(%s %s %s)", i.Left.String(), i.Operator.String(), i.Right.String())
 }
 
 // Represent Call expression
@@ -345,12 +348,12 @@ type CallExpression struct {
 	Arguments []Expression
 }
 
-func (ce *CallExpression) produce() {}
+func (c *CallExpression) produce() {}
 
-func (ce *CallExpression) String() string {
+func (c *CallExpression) String() string {
 	strs := make([]string, 0)
-	for _, exps := range ce.Arguments {
+	for _, exps := range c.Arguments {
 		strs = append(strs, exps.String())
 	}
-	return fmt.Sprintf("function %s( %s )", ce.Function.String(), strings.Join(strs, ", "))
+	return fmt.Sprintf("function %s( %s )", c.Function.String(), strings.Join(strs, ", "))
 }

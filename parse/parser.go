@@ -692,6 +692,10 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 
 	stmt := &ast.ReturnStatement{}
 
+	if curTokenIs(buf, Semicolon) {
+		return stmt, nil
+	}
+
 	exp, err := parseExpression(buf, LOWEST)
 	if err != nil {
 		return nil, err
