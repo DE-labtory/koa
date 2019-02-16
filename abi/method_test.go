@@ -17,9 +17,10 @@
 package abi_test
 
 import (
-	"testing"
-	"github.com/DE-labtory/koa/abi"
 	"bytes"
+	"testing"
+
+	"github.com/DE-labtory/koa/abi"
 )
 
 func makeTestABI() abi.ABI {
@@ -82,7 +83,7 @@ func TestMethod_Signature(t *testing.T) {
 
 	testExpected := []struct {
 		signature string
-	} {
+	}{
 		{
 			signature: "foo(int64,string,bool)",
 		},
@@ -103,7 +104,7 @@ func TestMethod_ID(t *testing.T) {
 
 	testExpected := []struct {
 		id []byte
-	} {
+	}{
 		{
 			id: []byte{0x94, 0x1f, 0xe5, 0xf2},
 		},

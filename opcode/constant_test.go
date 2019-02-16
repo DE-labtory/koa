@@ -112,6 +112,10 @@ func TestType_String(t *testing.T) {
 			"Returning",
 		},
 		{
+			opcode.Revert,
+			"Returning",
+		},
+		{
 			opcode.Jump,
 			"Jump",
 		},

@@ -129,11 +129,12 @@ type mstore struct{}
 type loadfunc struct{}
 type loadargs struct{}
 type returning struct{}
+type revert struct{}
 type jump struct{}
 type jumpDst struct{}
-type jumpi struct{}
 
 // 0x30 range
+type jumpi struct{}
 type dup struct{}
 type swap struct{}
 
@@ -409,8 +410,15 @@ func (loadargs) hex() []uint8 {
 	return []uint8{uint8(opcode.LoadArgs)}
 }
 
-// TODO: Implements test case :-)
-func (returning) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+func (returning) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+	value, _, pos := stack.pop(), stack.pop(), stack.pop()
+
+	if !asm.validateJumpDst(uint64(pos)) {
+		return errors.New("invalid jump target")
+	}
+	asm.jump(uint64(pos))
+
+	stack.push(value)
 	return nil
 }
 
@@ -418,12 +426,22 @@ func (returning) hex() []uint8 {
 	return []uint8{uint8(opcode.Returning)}
 }
 
-func (jump) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
+func (revert) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+	for asm.next() != nil {
+	}
+	return nil
+}
+
+func (revert) hex() []uint8 {
+	return []uint8{uint8(opcode.Revert)}
+}
+
+func (jump) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	pos := stack.pop()
-	if !a.validateJumpDst(uint64(pos)) {
+	if !asm.validateJumpDst(uint64(pos)) {
 		return errors.New("invalid jump target")
 	}
-	a.jump(uint64(pos))
+	asm.jump(uint64(pos))
 	return nil
 }
 
@@ -431,7 +449,7 @@ func (jump) hex() []uint8 {
 	return []uint8{uint8(opcode.Jump)}
 }
 
-func (jumpDst) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
+func (jumpDst) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	return nil
 }
 
@@ -439,13 +457,13 @@ func (jumpDst) hex() []uint8 {
 	return []uint8{uint8(opcode.JumpDst)}
 }
 
-func (jumpi) Do(stack *stack, a asmReader, memory *Memory, _ *CallFunc) error {
+func (jumpi) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	pos, cond := stack.pop(), stack.pop()
-	if cond == item(0) { // cond == false
-		if !a.validateJumpDst(uint64(pos)) {
+	if cond != item(0) { // cond != false
+		if !asm.validateJumpDst(uint64(pos)) {
 			return errors.New("invalid jump target")
 		}
-		a.jump(uint64(pos))
+		asm.jump(uint64(pos))
 	}
 	return nil
 }
