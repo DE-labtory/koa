@@ -150,6 +150,94 @@ func TestCompileAssignStatement(t *testing.T) {
 				},
 			},
 		},
+		{
+			// string str = "str"
+			statement: &ast.AssignStatement{
+				Value: &ast.StringLiteral{
+					Value: "str",
+				},
+				Variable: ast.Identifier{
+					Value: "str",
+				},
+				Type: ast.StringType,
+			},
+			expected: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x73, 0x74, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "7374720000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
+				},
+			},
+		},
+		{
+			// string str = "abcdefgh"
+			statement: &ast.AssignStatement{
+				Value: &ast.StringLiteral{
+					Value: "abcdefgh",
+				},
+				Variable: ast.Identifier{
+					Value: "str",
+				},
+				Type: ast.StringType,
+			},
+			expected: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68},
+						Value:   "6162636465666768",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
+				},
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -166,7 +254,7 @@ func TestCompileAssignStatement(t *testing.T) {
 		}
 
 		if !a.Equal(*test.expected) {
-			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
+			t.Fatalf("test[%d] - result wrong. \nexpected %x, \ngot=%x",
 				i, test.expected, a)
 		}
 	}
