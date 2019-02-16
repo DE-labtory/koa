@@ -17,15 +17,26 @@
 package translate
 
 import (
+	"bytes"
+	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/opcode"
 )
 
+type setupTracer func() MemTracer
+
+func defaultSetupTracer() MemTracer {
+	return NewMemEntryTable()
+}
+
 type expressionCompileTestCase struct {
-	expression ast.Expression
-	expected   Asm
+	setupTracer
+	expression  ast.Expression
+	expected    Asm
+	expectedErr error
 }
 
 // TODO: implement test cases :-)
@@ -382,11 +393,13 @@ func TestCompileBlockStatement(t *testing.T) {
 
 func TestCompileExpressionStatement(t *testing.T) {
 	tests := []struct {
+		setupTracer
 		statement *ast.ExpressionStatement
 		expected  Asm
 		err       error
 	}{
 		{
+			setupTracer: defaultSetupTracer,
 			statement: &ast.ExpressionStatement{
 				Expr: &ast.IntegerLiteral{
 					Value: 12345678,
@@ -407,6 +420,7 @@ func TestCompileExpressionStatement(t *testing.T) {
 			err: nil,
 		},
 		{
+			setupTracer: defaultSetupTracer,
 			statement: &ast.ExpressionStatement{
 				Expr: &ast.BooleanLiteral{
 					Value: true,
@@ -433,8 +447,7 @@ func TestCompileExpressionStatement(t *testing.T) {
 			AsmCodes: make([]AsmCode, 0),
 		}
 
-		err := compileExpressionStatement(test.statement, a)
-
+		err := compileExpressionStatement(test.statement, b, test.setupTracer())
 		if err != nil && err != test.err {
 			t.Fatalf("test[%d] - TestCompileExpressionStatement() error wrong. expected=%v, got=%v", i, test.err, err)
 		}
@@ -1335,12 +1348,50 @@ func TestCompileIntegerLiteral_negative(t *testing.T) {
 	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileStringLiteral(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			expression: &ast.StringLiteral{
+				Value: "a",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "6100000000000000"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ab",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x61, 0x62, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "6162000000000000"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ab,c",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x61, 0x62, 0x2c, 0x63, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "61622c6300000000"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ababababababababababababababababab",
+			},
+			expected: Bytecode{
+				RawByte: []byte{},
+				AsmCode: []string{},
+			},
+			expectedErr: errors.New("Length of string must shorter than 8"),
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileBooleanLiteral(t *testing.T) {
 	tests := []expressionCompileTestCase{
 		{
@@ -1382,9 +1433,44 @@ func TestCompileBooleanLiteral(t *testing.T) {
 	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileIdentifier(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			setupTracer: func() MemTracer {
+				tracer := NewMemEntryTable()
+				tracer.Define("a")
+				return tracer
+			},
+			expression: &ast.Identifier{
+				Value: "a",
+			},
+			expected: Bytecode{
+				RawByte: []byte{
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
+					byte(opcode.Push), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					byte(opcode.Mload),
+				},
+				AsmCode: []string{
+					"Push", "0000000000000008",
+					"Push", "0000000000000000",
+					"Mload",
+				},
+			},
+		},
+		{
+			setupTracer: defaultSetupTracer,
+			expression: &ast.Identifier{
+				Value: "a",
+			},
+			expected: Bytecode{
+				RawByte: []byte{},
+				AsmCode: []string{},
+			},
+			expectedErr: EntryError{Id: "a"},
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
 // TODO: implement test cases :-)
@@ -1400,29 +1486,40 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 
 		var err error
 		var testFuncName string
+		var tracer MemTracer
+
+		if test.setupTracer != nil {
+			tracer = test.setupTracer()
+		}
 
 		// add your test expression here with its function name
 		switch expr := test.expression.(type) {
 		case *ast.BooleanLiteral:
 			testFuncName = "compileBooleanLiteral()"
-			err = compileBooleanLiteral(expr, asm)
+			err = compilePrimitive(expr.Value, bytecode)
 		case *ast.IntegerLiteral:
 			testFuncName = "compileIntegerLiteral()"
-			err = compileIntegerLiteral(expr, asm)
+			err = compilePrimitive(expr.Value, bytecode)
+		case *ast.StringLiteral:
+			testFuncName = "compileStringLiteral()"
+			err = compilePrimitive(expr.Value, bytecode)
 		case *ast.PrefixExpression:
 			testFuncName = "compilePrefixExpression()"
-			err = compilePrefixExpression(expr, asm)
+			err = compilePrefixExpression(expr, bytecode, tracer)
 		case *ast.InfixExpression:
 			testFuncName = "compileInfixExpression()"
-			err = compileInfixExpression(expr, asm)
+			err = compileInfixExpression(expr, bytecode, tracer)
+		case *ast.Identifier:
+			testFuncName = "compileIdentifier()"
+			err = compileIdentifier(expr, bytecode, tracer)
 		default:
 			t.Fatalf("%T type not support, abort.", expr)
 			t.FailNow()
 		}
 
-		if err != nil {
-			t.Fatalf("test[%d] - %s had error. err=%v",
-				i, testFuncName, err)
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - [%s] got unexpected error, expected=%s, got=%s",
+				i, testFuncName, test.expectedErr.Error(), err.Error())
 		}
 
 		if !asm.Equal(test.expected) {

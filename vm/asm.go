@@ -39,11 +39,16 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.NOT: not{},
 
 	// 0x20 range
-	opcode.Pop:     pop{},
-	opcode.Push:    push{},
-	opcode.Jump:    jump{},
-	opcode.JumpDst: jumpDst{},
-	opcode.Jumpi:   jumpi{},
+	opcode.Pop:       pop{},
+	opcode.Push:      push{},
+	opcode.Mload:     mload{},
+	opcode.Mstore:    mstore{},
+	opcode.LoadFunc:  loadfunc{},
+	opcode.LoadArgs:  loadargs{},
+	opcode.Returning: returning{},
+	opcode.Jump:      jump{},
+	opcode.JumpDst:   jumpDst{},
+	opcode.Jumpi:     jumpi{},
 
 	// 0x30 range
 	opcode.DUP:  dup{},
@@ -64,11 +69,11 @@ func disassemble(rawByteCode []byte) (*asm, error) {
 		switch op.hex()[0] {
 		case uint8(opcode.Push):
 			body := make([]uint8, 0)
-			body = append(body, rawByteCode[i+1:i+5]...)
+			body = append(body, rawByteCode[i+1:i+9]...)
 
 			asm.code = append(asm.code, op)
 			asm.code = append(asm.code, Data{Body: body})
-			i += 4
+			i += 8
 		default:
 			asm.code = append(asm.code, op)
 		}

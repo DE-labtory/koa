@@ -191,8 +191,8 @@ const (
 	// Ex)
 	// [offset]
 	// [size]         [memory[offset:offset+size]]
-	// [x]       ==>  [b]
-	// [y]            [x]
+	// [x]       ==>  [x]
+	// [y]            [y]
 	//
 	Mload Type = 0x22
 
@@ -227,12 +227,13 @@ const (
 	// [y]           [y]
 	LoadArgs Type = 0x25
 
-	// Push the data which stored in 'memory' to stack or remain in memory when return type is string
+	// Push the data which stored in 'memory' to stack
 	//
 	// Ex)
-	//           [offset]
-	//      ==>  [size]
-	// [y]       [y]
+	// [offset]
+	// [size]         [memory[offset:offset+size]]
+	// [x]       ==>  [x]
+	// [y]            [y]
 	Returning Type = 0x26
 
 	// pop the data which present specific pc to jump
