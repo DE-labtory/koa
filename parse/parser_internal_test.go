@@ -1696,6 +1696,19 @@ func TestParseReturnStatement(t *testing.T) {
 			expected:    "return (1 + (2 * 3))",
 			expectedErr: nil,
 		},
+		// test return void
+		{
+			buf: &mockTokenBuffer{
+				[]Token{
+					{Type: Return, Val: "return"},
+					{Type: Semicolon, Val: "\n"},
+					{Type: Eof, Val: "eof"},
+				},
+				0,
+			},
+			expected:    "return",
+			expectedErr: nil,
+		},
 		{
 			buf: &mockTokenBuffer{
 				[]Token{
@@ -1718,6 +1731,7 @@ func TestParseReturnStatement(t *testing.T) {
 
 	for i, test := range tests {
 		exp, err := parseReturnStatement(test.buf)
+
 		if err != nil && err.Error() != test.expectedErr.Error() {
 			t.Fatalf("test[%d] - TestParseReturnStatement() wrong error.\n"+
 				"expected=%s,\n"+
