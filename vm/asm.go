@@ -48,12 +48,12 @@ var opCodes = map[opcode.Type]opCode{
 	opcode.Returning: returning{},
 	opcode.Jump:      jump{},
 	opcode.JumpDst:   jumpDst{},
-	opcode.Revert:    revert{},
+	opcode.Jumpi:     jumpi{},
 
 	// 0x30 range
-	opcode.Jumpi: jumpi{},
-	opcode.DUP:   dup{},
-	opcode.SWAP:  swap{},
+	opcode.DUP:  dup{},
+	opcode.SWAP: swap{},
+	opcode.Exit: exit{},
 }
 
 // Converts rawByteCode to assembly code.

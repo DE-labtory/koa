@@ -129,14 +129,14 @@ type mstore struct{}
 type loadfunc struct{}
 type loadargs struct{}
 type returning struct{}
-type revert struct{}
 type jump struct{}
 type jumpDst struct{}
+type jumpi struct{}
 
 // 0x30 range
-type jumpi struct{}
 type dup struct{}
 type swap struct{}
+type exit struct{}
 
 func (add) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 	y := stack.pop()
@@ -321,7 +321,13 @@ func (eq) hex() []uint8 {
 func (not) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 	x := stack.pop()
 
-	stack.push(^x)
+	if x == 1 {
+		x = 0
+	} else {
+		x = 1
+	}
+
+	stack.push(x)
 	return nil
 }
 
@@ -413,10 +419,7 @@ func (loadargs) hex() []uint8 {
 func (returning) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	value, _, pos := stack.pop(), stack.pop(), stack.pop()
 
-	if !asm.validateJumpDst(uint64(pos)) {
-		return errors.New("invalid jump target")
-	}
-	asm.jump(uint64(pos))
+	asm.jump(uint64(pos - 1))
 
 	stack.push(value)
 	return nil
@@ -426,22 +429,9 @@ func (returning) hex() []uint8 {
 	return []uint8{uint8(opcode.Returning)}
 }
 
-func (revert) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
-	for asm.next() != nil {
-	}
-	return nil
-}
-
-func (revert) hex() []uint8 {
-	return []uint8{uint8(opcode.Revert)}
-}
-
 func (jump) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	pos := stack.pop()
-	if !asm.validateJumpDst(uint64(pos)) {
-		return errors.New("invalid jump target")
-	}
-	asm.jump(uint64(pos))
+	asm.jump(uint64(pos - 1))
 	return nil
 }
 
@@ -459,11 +449,8 @@ func (jumpDst) hex() []uint8 {
 
 func (jumpi) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	pos, cond := stack.pop(), stack.pop()
-	if cond != item(0) { // cond != false
-		if !asm.validateJumpDst(uint64(pos)) {
-			return errors.New("invalid jump target")
-		}
-		asm.jump(uint64(pos))
+	if cond == item(0) { // cond == false
+		asm.jump(uint64(pos - 1))
 	}
 	return nil
 }
@@ -488,6 +475,16 @@ func (swap) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
 
 func (swap) hex() []uint8 {
 	return []uint8{uint8(opcode.SWAP)}
+}
+
+func (exit) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+	for asm.next() != nil {
+	}
+	return nil
+}
+
+func (exit) hex() []uint8 {
+	return []uint8{uint8(opcode.Exit)}
 }
 
 func int64ToBytes(int64 int64) []byte {

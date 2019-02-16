@@ -17,13 +17,13 @@
 package vm
 
 import (
-	"testing"
-
 	"reflect"
 
 	"bytes"
+	"testing"
 
 	"github.com/DE-labtory/koa/abi"
+	"github.com/DE-labtory/koa/encoding"
 	"github.com/DE-labtory/koa/opcode"
 )
 
@@ -41,6 +41,179 @@ func makeTestByteCode(slice ...interface{}) []byte {
 	}
 
 	return testByteCode
+}
+
+/*
+Test code :
+contract {
+	func addVariable() int64{
+		int64 a = 5
+		int64 b = 10
+		return a + b
+	}
+
+	func addNative() int64{
+		return 5 + 10
+	}
+
+	func addArgs(int64 a, int64 b) int64{
+		return a + b
+	}
+}
+*/
+func TestExecute(t *testing.T) {
+	abiJSON := `
+[
+	{
+		"name" : "addVariable",
+		"arguments" : [],
+		"output" : {
+			"name" : "",
+			"type" : "int64"
+		}
+	},
+	{
+		"name" : "addNative",
+		"arguments" : [],
+		"output" : {
+			"name" : "",
+			"type" : "int64"
+		}
+	},
+	{
+		"name" : "addArgs",
+		"arguments" : [
+			{
+				"name" : "a",
+				"type" : "int64"
+			},
+			{
+				"name" : "b",
+				"type" : "int64"
+			}
+		],
+		"output" : {
+			"name" : "",
+			"type" : "int64"
+		}
+	}
+]
+`
+	ABI, err := abi.New(abiJSON)
+	if err != nil {
+		t.Error(err)
+	}
+
+	funcSel1, err := encoding.EncodeOperand(ABI.Methods[0].ID())
+	funcSel2, err := encoding.EncodeOperand(ABI.Methods[1].ID())
+	funcSel3, err := encoding.EncodeOperand(ABI.Methods[2].ID())
+
+	testByteCode := makeTestByteCode(
+		// Exit position
+		uint8(opcode.Push), int64ToBytes(27), // 0, 1
+
+		// Function Jumper
+		uint8(opcode.LoadFunc),       // 2
+		uint8(opcode.DUP),            // 3
+		uint8(opcode.Push), funcSel1, // 4, 5
+		uint8(opcode.EQ),                     // 6
+		uint8(opcode.NOT),                    // 7
+		uint8(opcode.Push), int64ToBytes(28), // 8, 9
+		uint8(opcode.Jumpi), // 10
+
+		uint8(opcode.DUP),            // 11
+		uint8(opcode.Push), funcSel2, // 12, 13
+		uint8(opcode.EQ),                     // 14
+		uint8(opcode.NOT),                    //15
+		uint8(opcode.Push), int64ToBytes(54), // 16, 17
+		uint8(opcode.Jumpi), // 18
+
+		uint8(opcode.DUP),            // 19
+		uint8(opcode.Push), funcSel3, // 20, 21
+		uint8(opcode.EQ),                     // 22
+		uint8(opcode.NOT),                    // 23
+		uint8(opcode.Push), int64ToBytes(60), // 24, 25
+		uint8(opcode.Jumpi), // 26
+
+		uint8(opcode.Exit), // 27
+
+		// Function 'addVariable'
+		uint8(opcode.Push), int64ToBytes(5), // 28, 29
+		uint8(opcode.Push), int64ToBytes(8), // 30, 31
+		uint8(opcode.Push), int64ToBytes(0), // 32, 33
+		uint8(opcode.Mstore),                 // 34
+		uint8(opcode.Push), int64ToBytes(10), // 35, 36
+		uint8(opcode.Push), int64ToBytes(8), // 37, 38
+		uint8(opcode.Push), int64ToBytes(8), // 39, 40
+		uint8(opcode.Mstore),                // 41
+		uint8(opcode.Push), int64ToBytes(8), // 42, 43
+		uint8(opcode.Push), int64ToBytes(0), // 44, 45
+		uint8(opcode.Mload),                 // 46
+		uint8(opcode.Push), int64ToBytes(8), // 47, 48
+		uint8(opcode.Push), int64ToBytes(8), // 49, 50
+		uint8(opcode.Mload),     // 51
+		uint8(opcode.Add),       // 52
+		uint8(opcode.Returning), // 53
+
+		// Function 'addNative'
+		uint8(opcode.Push), int64ToBytes(5), // 54, 55
+		uint8(opcode.Push), int64ToBytes(10), // 56, 57
+		uint8(opcode.Add),       // 58
+		uint8(opcode.Returning), // 59
+
+		// Function 'addArgs'
+		uint8(opcode.Push), int64ToBytes(0), // 60, 61
+		uint8(opcode.LoadArgs),              // 62
+		uint8(opcode.Push), int64ToBytes(1), // 63, 64
+		uint8(opcode.LoadArgs),  // 65
+		uint8(opcode.Add),       // 66
+		uint8(opcode.Returning), // 67
+	)
+
+	encodedParams, err := abi.Encode(5, 10)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tests := []struct {
+		callFunc *CallFunc
+		result   item
+	}{
+		{
+			callFunc: &CallFunc{
+				Func: abi.Selector("addVariable()"),
+				Args: nil,
+			},
+			result: 15,
+		},
+		{
+			callFunc: &CallFunc{
+				Func: abi.Selector("addNative()"),
+				Args: nil,
+			},
+			result: 15,
+		},
+		{
+			callFunc: &CallFunc{
+				Func: abi.Selector("addArgs(int64,int64)"),
+				Args: encodedParams,
+			},
+			result: 15,
+		},
+	}
+
+	for _, test := range tests {
+		memory := NewMemory()
+		stack, err := Execute(testByteCode, memory, test.callFunc)
+		if err != nil {
+			t.Error(err)
+		}
+
+		result := stack.pop()
+		if result != test.result {
+			t.Errorf("Invalid result - expected = %d, got = %d", test.result, result)
+		}
+	}
 }
 
 func TestAdd(t *testing.T) {
@@ -425,8 +598,8 @@ func TestNOT(t *testing.T) {
 		x      int64
 		answer int64
 	}{
-		{0, -1}, // ^x = -x-1  0x00000000 -> 0xFFFFFFFF
-		{3, -4},
+		{0, 1},
+		{1, 0},
 	}
 
 	for i, test := range tests {
@@ -682,24 +855,23 @@ func TestLoadArgs(t *testing.T) {
 
 func TestReturning(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
-		uint8(opcode.Push), int64ToBytes(13), // 0 , 1
+		uint8(opcode.Push), int64ToBytes(11), // 0 , 1
 		uint8(opcode.Push), int64ToBytes(1), // 2 , 3 -> function selector
 		uint8(opcode.Push), int64ToBytes(2), // 4 , 5
 		uint8(opcode.Returning),             // 6
 		uint8(opcode.Push), int64ToBytes(2), // 7 , 8
 		uint8(opcode.Push), int64ToBytes(3), // 9 , 10
-		uint8(opcode.Push), int64ToBytes(4), // 11 , 12
-		uint8(opcode.JumpDst), // 13 ( jump to here! )
+		uint8(opcode.Push), int64ToBytes(4), // 11 , 12 ( jump to here! )
 	)
 
-	testExpected := []item{1}
+	testExpected := []item{2, 4}
 
 	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(stack.items) != 1 {
+	if len(stack.items) != 2 {
 		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
 	}
 
@@ -710,15 +882,14 @@ func TestReturning(t *testing.T) {
 	}
 }
 
-func TestRevert(t *testing.T) {
+func TestExit(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
 		uint8(opcode.Push), int64ToBytes(1), // 0 , 1
 		uint8(opcode.Push), int64ToBytes(2), // 2 , 3
-		uint8(opcode.Revert),                // 4
+		uint8(opcode.Exit),                  // 4
 		uint8(opcode.Push), int64ToBytes(3), // 5 , 6
 		uint8(opcode.Push), int64ToBytes(4), // 7 , 8
-		uint8(opcode.Push), int64ToBytes(5), // 9 , 10
-		uint8(opcode.JumpDst), // 11 ( jump to here! )
+		uint8(opcode.Push), int64ToBytes(5), // 9 , 10 ( jump to here! )
 	)
 
 	testExpected := []item{1, 2}
@@ -755,8 +926,7 @@ func TestJumpOp(t *testing.T) {
 		uint8(opcode.Push), int64ToBytes(7), // 2 , 3
 		uint8(opcode.Jump),                  // 4
 		uint8(opcode.Push), int64ToBytes(2), // 5 , 6
-		uint8(opcode.JumpDst),               // 7 ( jump to here! )
-		uint8(opcode.Push), int64ToBytes(3), // 8 , 9
+		uint8(opcode.Push), int64ToBytes(3), // 7 , 8
 	)
 
 	testExpected := []item{1, 3}
@@ -780,12 +950,11 @@ func TestJumpOp(t *testing.T) {
 func TestJumpiJump(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
 		uint8(opcode.Push), int64ToBytes(1), // 0 , 1
-		uint8(opcode.Push), int64ToBytes(1), // 2 , 3(false)
+		uint8(opcode.Push), int64ToBytes(0), // 2 , 3 (false)
 		uint8(opcode.Push), int64ToBytes(9), // 4 , 5
 		uint8(opcode.Jumpi),                 // 6
 		uint8(opcode.Push), int64ToBytes(2), // 7 , 8
-		uint8(opcode.JumpDst),               // 9 ( jump to here! )
-		uint8(opcode.Push), int64ToBytes(3), // 10 , 11
+		uint8(opcode.Push), int64ToBytes(3), // 9 , 10
 	)
 
 	testExpected := []item{1, 3}
@@ -809,22 +978,22 @@ func TestJumpiJump(t *testing.T) {
 func TestJumpiNotJump(t *testing.T) {
 	testByteCode := makeTestByteCode( //  op code index
 		uint8(opcode.Push), int64ToBytes(1), // 0 , 1
-		uint8(opcode.Push), int64ToBytes(1), // 2 , 3(true)
+		uint8(opcode.Push), int64ToBytes(0), // 2 , 3(false)
 		uint8(opcode.Push), int64ToBytes(9), // 4 , 5
 		uint8(opcode.Jumpi),                 // 6
 		uint8(opcode.Push), int64ToBytes(2), // 7 , 8
-		uint8(opcode.JumpDst),               // 9 ( jump to here! )
-		uint8(opcode.Push), int64ToBytes(3), // 10 , 11
+		uint8(opcode.Push), int64ToBytes(3), // 9 , 10 ( jump to here! )
+		uint8(opcode.Add), // 11
 	)
 
-	testExpected := []item{1, 2, 3}
+	testExpected := []item{4} // 1 + 3
 
 	stack, err := Execute(testByteCode, nil, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(stack.items) != 3 {
+	if len(stack.items) != 1 {
 		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
 	}
 
