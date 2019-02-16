@@ -208,13 +208,13 @@ func compileExpression(e ast.Expression, bytecode *Bytecode, tracer MemTracer) e
 		return compilePrefixExpression(expr, bytecode, tracer)
 
 	case *ast.IntegerLiteral:
-		return compileIntegerLiteral(expr, bytecode)
+		return compilePrimitive(expr.Value, bytecode)
 
 	case *ast.StringLiteral:
-		return compileStringLiteral(expr, bytecode)
+		return compilePrimitive(expr.Value, bytecode)
 
 	case *ast.BooleanLiteral:
-		return compileBooleanLiteral(expr, bytecode)
+		return compilePrimitive(expr.Value, bytecode)
 
 	case *ast.Identifier:
 		return compileIdentifier(expr, bytecode, tracer)
@@ -293,24 +293,8 @@ func compilePrefixExpression(e *ast.PrefixExpression, bytecode *Bytecode, tracer
 	return nil
 }
 
-func compileIntegerLiteral(e *ast.IntegerLiteral, bytecode *Bytecode) error {
-	operand, err := encoding.EncodeOperand(e.Value)
-	if err != nil {
-		return err
-	}
-
-	bytecode.Emerge(opcode.Push, operand)
-	return nil
-}
-
-// TODO: implement me w/ test cases :-)
-func compileStringLiteral(e *ast.StringLiteral, bytecode *Bytecode) error {
-	return nil
-
-}
-
-func compileBooleanLiteral(e *ast.BooleanLiteral, bytecode *Bytecode) error {
-	operand, err := encoding.EncodeOperand(e.Value)
+func compilePrimitive(value interface{}, bytecode *Bytecode) error {
+	operand, err := encoding.EncodeOperand(value)
 	if err != nil {
 		return err
 	}

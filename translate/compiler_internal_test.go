@@ -18,6 +18,7 @@ package translate
 
 import (
 	"bytes"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -900,12 +901,50 @@ func TestCompileIntegerLiteral_negative(t *testing.T) {
 	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileStringLiteral(t *testing.T) {
+	tests := []expressionCompileTestCase{
+		{
+			expression: &ast.StringLiteral{
+				Value: "a",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "6100000000000000"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ab",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x61, 0x62, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "6162000000000000"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ab,c",
+			},
+			expected: Bytecode{
+				RawByte: []byte{0x21, 0x61, 0x62, 0x2c, 0x63, 0x00, 0x00, 0x00, 0x00},
+				AsmCode: []string{"Push", "61622c6300000000"},
+			},
+		},
+		{
+			expression: &ast.StringLiteral{
+				Value: "ababababababababababababababababab",
+			},
+			expected: Bytecode{
+				RawByte: []byte{},
+				AsmCode: []string{},
+			},
+			expectedErr: errors.New("Length of string must shorter than 8"),
+		},
+	}
 
+	runExpressionCompileTests(t, tests)
 }
 
-// TODO: implement test cases :-)
 func TestCompileBooleanLiteral(t *testing.T) {
 	tests := []expressionCompileTestCase{
 		{
@@ -995,10 +1034,13 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 		switch expr := test.expression.(type) {
 		case *ast.BooleanLiteral:
 			testFuncName = "compileBooleanLiteral()"
-			err = compileBooleanLiteral(expr, bytecode)
+			err = compilePrimitive(expr.Value, bytecode)
 		case *ast.IntegerLiteral:
 			testFuncName = "compileIntegerLiteral()"
-			err = compileIntegerLiteral(expr, bytecode)
+			err = compilePrimitive(expr.Value, bytecode)
+		case *ast.StringLiteral:
+			testFuncName = "compileStringLiteral()"
+			err = compilePrimitive(expr.Value, bytecode)
 		case *ast.PrefixExpression:
 			testFuncName = "compilePrefixExpression()"
 			err = compilePrefixExpression(expr, bytecode, tracer)
