@@ -163,7 +163,7 @@ func TestReturnStatement(t *testing.T) {
 			},
 			expected: []ast.ReturnStatement{
 				{
-					ReturnValue: &ast.Identifier{Value: "a"},
+					ReturnValue: &ast.Identifier{Name: "a"},
 				},
 			},
 			expectedErr: nil,
@@ -199,9 +199,9 @@ func TestReturnStatement(t *testing.T) {
 				{
 					ReturnValue: &ast.InfixExpression{
 						Left: &ast.InfixExpression{
-							Left:     &ast.Identifier{Value: "a"},
+							Left:     &ast.Identifier{Name: "a"},
 							Operator: ast.Plus,
-							Right:    &ast.Identifier{Value: "b"},
+							Right:    &ast.Identifier{Name: "b"},
 						},
 						Operator: ast.Plus,
 						Right:    &ast.IntegerLiteral{Value: 1},
@@ -240,7 +240,7 @@ func TestReturnStatement(t *testing.T) {
 			},
 			expected: []ast.ReturnStatement{
 				{
-					ReturnValue: &ast.Identifier{Value: "a"},
+					ReturnValue: &ast.Identifier{Name: "a"},
 				},
 			},
 			expectedErr: nil,
@@ -294,10 +294,10 @@ func TestReturnStatement(t *testing.T) {
 			},
 			expected: []ast.ReturnStatement{
 				{
-					ReturnValue: &ast.Identifier{Value: "a"},
+					ReturnValue: &ast.Identifier{Name: "a"},
 				},
 				{
-					ReturnValue: &ast.Identifier{Value: "b"},
+					ReturnValue: &ast.Identifier{Name: "b"},
 				},
 			},
 			expectedErr: nil,
@@ -413,7 +413,6 @@ func TestReturnStatement(t *testing.T) {
 		for i, fn := range contract.Functions {
 			runReturnStatementTestCases(t, fn, tt.expectedFnHeaders[i], tt.expected[i])
 		}
-	}
 }
 
 func runReturnStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efhs expectedFnHeader, tt ast.ReturnStatement) {
@@ -438,166 +437,166 @@ func TestAssignStatement(t *testing.T) {
 		expected          []ast.AssignStatement
 		expectedErr       error
 	}{
-		///*
-		//	func assignStatement1() {
-		//		int a = 1
-		//	}
-		//*/
-		//{
-		//	contractTmpl: contractTmplData{
-		//		Fns: []fnTmplData{
-		//			{
-		//				FuncName: "assignStatement1",
-		//				Args:     "",
-		//				RetType:  "",
-		//				Stmts: []string{
-		//					"int a = 1",
-		//				},
-		//			},
-		//		},
-		//	},
-		//	expectedFnHeaders: []expectedFnHeader{
-		//		{
-		//			retType: ast.VoidType,
-		//			args:    []expectedFnArg{},
-		//		},
-		//	},
-		//	expected: []ast.AssignStatement{
-		//		{
-		//			Type:     ast.IntType,
-		//			Variable: ast.Identifier{Value: "a"},
-		//			Value:    &ast.IntegerLiteral{Value: 1},
-		//		},
-		//	},
-		//	expectedErr: nil,
-		//},
-		///*
-		//	func assignStatement2() {
-		//		int a = 1 + 2 * 3
-		//	}
-		//*/
-		//{
-		//	contractTmpl: contractTmplData{
-		//		Fns: []fnTmplData{
-		//			{
-		//				FuncName: "assignStatement2",
-		//				Args:     "",
-		//				RetType:  "",
-		//				Stmts: []string{
-		//					"int a = 1 + 2 * 3",
-		//				},
-		//			},
-		//		},
-		//	},
-		//	expectedFnHeaders: []expectedFnHeader{
-		//		{
-		//			retType: ast.VoidType,
-		//			args:    []expectedFnArg{},
-		//		},
-		//	},
-		//	expected: []ast.AssignStatement{
-		//		{
-		//			Type:     ast.IntType,
-		//			Variable: ast.Identifier{Value: "a"},
-		//			Value: &ast.InfixExpression{
-		//				Left:     &ast.IntegerLiteral{Value: 1},
-		//				Operator: ast.Plus,
-		//				Right: &ast.InfixExpression{
-		//					Left:     &ast.IntegerLiteral{Value: 2},
-		//					Operator: ast.Asterisk,
-		//					Right:    &ast.IntegerLiteral{Value: 3},
-		//				},
-		//			},
-		//		},
-		//	},
-		//	expectedErr: nil,
-		//},
-		///*
-		//	func assignStatement3() {
-		//		int a =
-		//				1 + 2 * 3
-		//	}
-		//*/
-		//{
-		//	contractTmpl: contractTmplData{
-		//		Fns: []fnTmplData{
-		//			{
-		//				FuncName: "assignStatement3",
-		//				Args:     "",
-		//				RetType:  "",
-		//				Stmts: []string{
-		//					"int a = ",
-		//					"		1 + 2 * 3",
-		//				},
-		//			},
-		//		},
-		//	},
-		//	expectedFnHeaders: []expectedFnHeader{
-		//		{
-		//			retType: ast.VoidType,
-		//			args:    []expectedFnArg{},
-		//		},
-		//	},
-		//	expected: []ast.AssignStatement{
-		//		{
-		//			Type:     ast.IntType,
-		//			Variable: ast.Identifier{Value: "a"},
-		//			Value: &ast.InfixExpression{
-		//				Left:     &ast.IntegerLiteral{Value: 1},
-		//				Operator: ast.Plus,
-		//				Right: &ast.InfixExpression{
-		//					Left:     &ast.IntegerLiteral{Value: 2},
-		//					Operator: ast.Asterisk,
-		//					Right:    &ast.IntegerLiteral{Value: 3},
-		//				},
-		//			},
-		//		},
-		//	},
-		//	expectedErr: nil,
-		//},
-		///*
-		//	func assignStatement4(foo int) {
-		//		int a = (foo + 2) * 3
-		//	}
-		//*/
-		//{
-		//	contractTmpl: contractTmplData{
-		//		Fns: []fnTmplData{
-		//			{
-		//				FuncName: "assignStatement4",
-		//				Args:     "foo int",
-		//				RetType:  "",
-		//				Stmts: []string{
-		//					"int a = ((foo + 2) * 3)",
-		//				},
-		//			},
-		//		},
-		//	},
-		//	expectedFnHeaders: []expectedFnHeader{
-		//		{
-		//			retType: ast.VoidType,
-		//			args: []expectedFnArg{
-		//				{argIdent: "foo", argType: ast.IntType},
-		//			},
-		//		},
-		//	},
-		//	expected: []ast.AssignStatement{
-		//		{
-		//			Type:     ast.IntType,
-		//			Variable: ast.Identifier{Value: "a"},
-		//			Value: &ast.InfixExpression{
-		//				Left: &ast.InfixExpression{
-		//					Left:     &ast.Identifier{Value: "foo"},
-		//					Operator: ast.Plus,
-		//					Right:    &ast.IntegerLiteral{Value: 2},
-		//				},
-		//				Operator: ast.Asterisk,
-		//				Right:    &ast.IntegerLiteral{Value: 3},
-		//			},
-		//		},
-		//	},
-		//	expectedErr: nil,
-		//},
+		/*
+			func assignStatement1() {
+				int a = 1
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "assignStatement1",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"int a = 1",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.AssignStatement{
+				{
+					Type:     ast.IntType,
+					Variable: ast.Identifier{Name: "a"},
+					Value:    &ast.IntegerLiteral{Value: 1},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func assignStatement2() {
+				int a = 1 + 2 * 3
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "assignStatement2",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"int a = 1 + 2 * 3",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.AssignStatement{
+				{
+					Type:     ast.IntType,
+					Variable: ast.Identifier{Name: "a"},
+					Value: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.Plus,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 2},
+							Operator: ast.Asterisk,
+							Right:    &ast.IntegerLiteral{Value: 3},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func assignStatement3() {
+				int a =
+						1 + 2 * 3
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "assignStatement3",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"int a = ",
+							"		1 + 2 * 3",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.AssignStatement{
+				{
+					Type:     ast.IntType,
+					Variable: ast.Identifier{Name: "a"},
+					Value: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.Plus,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 2},
+							Operator: ast.Asterisk,
+							Right:    &ast.IntegerLiteral{Value: 3},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func assignStatement4(foo int) {
+				int a = (foo + 2) * 3
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "assignStatement4",
+						Args:     "foo int",
+						RetType:  "",
+						Stmts: []string{
+							"int a = ((foo + 2) * 3)",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{argIdent: "foo", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.AssignStatement{
+				{
+					Type:     ast.IntType,
+					Variable: ast.Identifier{Name: "a"},
+					Value: &ast.InfixExpression{
+						Left: &ast.InfixExpression{
+							Left:     &ast.Identifier{Name: "foo"},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+						Operator: ast.Asterisk,
+						Right:    &ast.IntegerLiteral{Value: 3},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
 		/*
 			func add(aa int, b int) int {
 			}
@@ -1580,7 +1579,7 @@ func TestReassignStatement(t *testing.T) {
 			},
 			expected: []ast.ReassignStatement{
 				{
-					Variable: &ast.Identifier{Value: "a"},
+					Variable: &ast.Identifier{Name: "a"},
 					Value:    &ast.StringLiteral{Value: "\"hello, world\""},
 				},
 			},
@@ -1611,7 +1610,7 @@ func TestReassignStatement(t *testing.T) {
 			},
 			expected: []ast.ReassignStatement{
 				{
-					Variable: &ast.Identifier{Value: "a"},
+					Variable: &ast.Identifier{Name: "a"},
 					Value:    &ast.StringLiteral{Value: "\"hello, world\""},
 				},
 			},
@@ -1670,9 +1669,9 @@ func testFnParameters(t *testing.T, p *ast.ParameterLiteral, ds ast.DataStructur
 		t.Errorf("wrong parameter type Expected=%s, got=%s",
 			p.Type.String(), ds.String())
 	}
-	if p.Identifier.Value != id {
-		t.Errorf("wrong parameter identifier Expected=%s, got=%s",
-			p.Type.String(), ds.String())
+	if p.Identifier.Name != id {
+		t.Errorf("wrong parameter identifier expected=%T, got=%T",
+			p.Type, ds)
 	}
 }
 

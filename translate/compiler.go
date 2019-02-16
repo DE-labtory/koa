@@ -146,7 +146,7 @@ func compileAssignStatement(s *ast.AssignStatement, asm *Asm, tracer MemTracer) 
 		return err
 	}
 
-	memEntry := tracer.Define(s.Variable.Value)
+	memEntry := tracer.Define(s.Variable.Name)
 	size, err := encoding.EncodeOperand(memEntry.Size)
 	if err != nil {
 		return err
@@ -381,7 +381,7 @@ func compilePrimitive(value interface{}, asm *Asm) error {
 }
 
 func compileIdentifier(e *ast.Identifier, asm *Asm, tracer MemTracer) error {
-	memEntry, err := tracer.GetEntry(e.Value)
+	memEntry, err := tracer.GetEntry(e.Name)
 	if err != nil {
 		return err
 	}
