@@ -446,7 +446,14 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Asm, tracer MemTrace
 }
 
 func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Asm, tracer MemTracer) error {
-	return compileExpression(s.Expr, bytecode, tracer)
+	if err := compileExpression(s.Expr, bytecode, tracer); err != nil {
+		return err
+	}
+
+	// Clear the stack.
+	bytecode.Emerge(opcode.Pop)
+
+	return nil
 }
 
 // TODO: implement me w/ test cases :-)

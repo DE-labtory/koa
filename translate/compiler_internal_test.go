@@ -1140,8 +1140,8 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
-						Value:   "000000000000000a",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b},
+						Value:   "000000000000000b",
 					},
 					{
 						RawByte: []byte{byte(opcode.Jumpi)},
@@ -1156,12 +1156,16 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "0000000000bc614e",
 					},
 					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
+					},
+					{
 						RawByte: []byte{byte(opcode.Push)},
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
-						Value:   "000000000000000c",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0e},
+						Value:   "000000000000000e",
 					},
 					{
 						RawByte: []byte{byte(opcode.Jump)},
@@ -1174,6 +1178,10 @@ func TestCompileIfStatement(t *testing.T) {
 					{
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
 						Value:   "0000000000bc614e",
+					},
+					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
 					},
 				},
 			},
@@ -1209,8 +1217,8 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07},
-						Value:   "0000000000000007",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
 					},
 					{
 						RawByte: []byte{byte(opcode.Jumpi)},
@@ -1223,6 +1231,10 @@ func TestCompileIfStatement(t *testing.T) {
 					{
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
 						Value:   "0000000000bc614e",
+					},
+					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
 					},
 				},
 			},
@@ -1267,8 +1279,8 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
-						Value:   "000000000000000c",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0d},
+						Value:   "000000000000000d",
 					},
 					{
 						RawByte: []byte{byte(opcode.Jumpi)},
@@ -1287,8 +1299,8 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
-						Value:   "000000000000000c",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0d},
+						Value:   "000000000000000d",
 					},
 					{
 						RawByte: []byte{byte(opcode.Jumpi)},
@@ -1301,6 +1313,10 @@ func TestCompileIfStatement(t *testing.T) {
 					{
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
 						Value:   "0000000000bc614e",
+					},
+					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
 					},
 				},
 			},
@@ -1320,8 +1336,8 @@ func TestCompileIfStatement(t *testing.T) {
 		}
 
 		if !asm.Equal(test.expected) {
-			t.Fatalf("test[%d] - result wrong. \n expected %x, \n got=%x",
-				i, test.expected, asm)
+			t.Fatalf("test[%d] - result wrong. \n expected=%x, \n got=%x",
+				i, test.expected, *asm)
 		}
 	}
 }
@@ -1349,12 +1365,20 @@ func TestCompileBlockStatement(t *testing.T) {
 						Value:   "00000000000004d2",
 					},
 					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
+					},
+					{
 						RawByte: []byte{byte(opcode.Push)},
 						Value:   "Push",
 					},
 					{
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
 					},
 				},
 			},
@@ -1376,7 +1400,7 @@ func TestCompileBlockStatement(t *testing.T) {
 		}
 
 		if !a.Equal(test.expected) {
-			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
+			t.Fatalf("test[%d] - result wrong. \nexpected %x,\ngot=%x",
 				i, test.expected, a)
 		}
 	}
@@ -1406,6 +1430,10 @@ func TestCompileExpressionStatement(t *testing.T) {
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
 						Value:   "0000000000bc614e",
 					},
+					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
+					},
 				},
 			},
 			err: nil,
@@ -1426,6 +1454,10 @@ func TestCompileExpressionStatement(t *testing.T) {
 					{
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{0x20},
+						Value:   "Pop",
 					},
 				},
 			},
@@ -2534,7 +2566,7 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 		}
 
 		if err != nil && err.Error() != test.expectedErr.Error() {
-			t.Fatalf("test[%d] - [%s] got unexpected error, expected=%s, got=%s",
+			t.Fatalf("test[%d] - [%s] got unexpected error. \nexpected=%s,\ngot=%s",
 				i, testFuncName, test.expectedErr.Error(), err.Error())
 		}
 
