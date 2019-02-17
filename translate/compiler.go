@@ -82,11 +82,12 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 	return methods, nil
 }
 
-// TODO: implement me w/ test cases :-)
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
 func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) error {
-	// TODO: generate function identifier with Keccak256()
+	for _, p := range f.Parameters {
+		tracer.Define(p.Identifier.Value)
+	}
 
 	statements := f.Body.Statements
 	for _, s := range statements {

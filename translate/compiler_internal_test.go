@@ -47,9 +47,160 @@ func TestCompileAbi(t *testing.T) {
 
 }
 
-// TODO: implement test cases :-)
 func TestCompileFunction(t *testing.T) {
+	tests := []struct {
+		setupTracer
+		literal  ast.FunctionLiteral
+		expected Asm
+		err      error
+	}{
+		{
+			// function fun(int a) {}
+			setupTracer: defaultSetupTracer,
+			literal: ast.FunctionLiteral{
+				Name: &ast.Identifier{Value: "fun"},
+				Parameters: []*ast.ParameterLiteral{
+					{
+						Identifier: &ast.Identifier{Value: "a"},
+						Type:       ast.IntType,
+					},
+				},
+				Body: &ast.BlockStatement{},
+			},
+			expected: Asm{},
+			err:      nil,
+		},
+		{
+			// function onePlusTwo() { int a = 1 + 2 }
+			setupTracer: defaultSetupTracer,
+			literal: ast.FunctionLiteral{
+				Name:       &ast.Identifier{Value: "onePlusTwo"},
+				Parameters: nil,
+				Body: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.AssignStatement{
+							Type:     ast.IntType,
+							Variable: ast.Identifier{Value: "a"},
+							Value: &ast.InfixExpression{
+								Left:     &ast.IntegerLiteral{Value: 1},
+								Operator: ast.Plus,
+								Right:    &ast.IntegerLiteral{Value: 2},
+							},
+						},
+					},
+				},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+					{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			// function getOnePlusTwo() { return 1 + 2 }
+			setupTracer: defaultSetupTracer,
+			literal: ast.FunctionLiteral{
+				Name:       &ast.Identifier{Value: "getOnePlusTwo"},
+				Parameters: nil,
+				Body: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.ReturnStatement{
+							ReturnValue: &ast.InfixExpression{
+								Left:     &ast.IntegerLiteral{Value: 1},
+								Operator: ast.Plus,
+								Right:    &ast.IntegerLiteral{Value: 2},
+							},
+						},
+					},
+				},
+				ReturnType: ast.IntType,
+			},
+			// TODO : after implements compileReturnStatement()
+			expected: Asm{},
+			err:      nil,
+		},
+		{
+			// function getA(int a) { return a }
+			setupTracer: defaultSetupTracer,
+			literal: ast.FunctionLiteral{
+				Name: &ast.Identifier{Value: "getA"},
+				Parameters: []*ast.ParameterLiteral{
+					{
+						Identifier: &ast.Identifier{Value: "a"},
+						Type:       ast.IntType,
+					},
+				},
+				Body: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.ReturnStatement{
+							ReturnValue: &ast.Identifier{Value: "a"},
+						},
+					},
+				},
+				ReturnType: ast.IntType,
+			},
+			// TODO : after implements compileReturnStatement()
+			expected: Asm{},
+			err:      nil,
+		},
+	}
 
+	for i, test := range tests {
+		a := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+
+		err := compileFunction(test.literal, a, test.setupTracer())
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - TestCompileFunction() wrong error.\nexpected=%v\ngot=%v", i, test.err, err)
+		}
+
+		if !a.Equal(test.expected) {
+			t.Fatalf("test[%d] - TestCompileFunction() wrong result.\nexpected=%x\ngot=%x", i, test.expected, a)
+		}
+
+	}
 }
 
 // TODO: implement test cases :-)
@@ -535,7 +686,7 @@ func TestCompileExpressionStatement(t *testing.T) {
 
 		err := compileExpressionStatement(test.statement, a, test.setupTracer())
 		if err != nil && err != test.err {
-			t.Fatalf("test[%d] - TestCompileExpressionStatement() error wrong. expected=%v, got=%v", i, test.err, err)
+			t.Fatalf("test[%d] - TestCompileExpressionStatement() error wrong. \nexpected=%v, \ngot=%v", i, test.err, err)
 		}
 
 		if !a.Equal(test.expected) {
@@ -545,10 +696,8 @@ func TestCompileExpressionStatement(t *testing.T) {
 	}
 }
 
-//
 //// TODO: implement test cases :-)
 //func TestCompileFunctionLiteral(t *testing.T) {
-//
 //}
 //
 //// TODO: implement test cases :-)
