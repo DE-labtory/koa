@@ -42,9 +42,14 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		AsmCodes: make([]AsmCode, 0),
 	}
 
-	memTracer := NewMemEntryTable()
-
+	// Keep the size of the jumper with expectFuncJmpr.
 	funcMap := FuncMap{}
+	if err := expectFuncJmpr(c, asm, funcMap); err != nil {
+		return *asm, err
+	}
+
+	// Compile the functions in contract.
+	memTracer := NewMemEntryTable()
 	for _, f := range c.Functions {
 		funcMap.Declare(f.Signature(), *asm)
 
@@ -53,7 +58,9 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		}
 	}
 
-	if err := generateFuncJmpr(asm); err != nil {
+	// Compile Function jumper with updated FuncMap.
+	// And replace expected function jumper with new function jumper
+	if err := generateFuncJmpr(c, asm, funcMap); err != nil {
 		return *asm, err
 	}
 
@@ -101,9 +108,52 @@ func compileRevert(asm *Asm) {
 	asm.Emerge(opcode.Returning)
 }
 
-// TODO: implement me w/ test cases :-)
 // Generates a bytecode of function jumper.
-func generateFuncJmpr(bytecode *Asm) error {
+func generateFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
+	funcJmpr := &Asm{
+		AsmCodes: []AsmCode{},
+	}
+
+	// Pushes the location of revert.
+	revertDst := funcMap[string(abi.Selector("Revert"))]
+	if err := compileProgramEndPoint(asm, revertDst); err != nil {
+		return err
+	}
+
+	// Loads the function selector of call function.
+	funcJmpr.Emerge(opcode.LoadFunc)
+
+	// Adds the logic to compare and find the corresponding function selector.
+	for _, f := range c.Functions {
+		selector := string(abi.Selector(f.Signature()))
+		funcDst := funcMap[selector]
+
+		if err := compileFuncSel(funcJmpr, selector, funcDst); err != nil {
+			return err
+		}
+	}
+
+	// No match to any function selector, Revert!
+	compileRevert(funcJmpr)
+
+	// Replace expected function jumper with new function jumper.
+	if err := relocateFuncJmpr(asm, funcJmpr); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Relocate the function jumper of bytecode with new function jumper.
+func relocateFuncJmpr(asm *Asm, funcJmpr *Asm) error {
+	if len(asm.AsmCodes) < len(funcJmpr.AsmCodes) {
+		return fmt.Errorf("Can't relocate the function jumper. Bytecode=%x, FuncJmpr=%x", asm.AsmCodes, funcJmpr.AsmCodes)
+	}
+
+	for i, asmCode := range funcJmpr.AsmCodes {
+		asm.AsmCodes[i] = asmCode
+	}
+
 	return nil
 }
 
