@@ -53,11 +53,64 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		}
 	}
 
-	if err := generateFuncJumper(asm); err != nil {
+	if err := generateFuncJmpr(asm); err != nil {
 		return *asm, err
 	}
 
 	return *asm, nil
+}
+
+// Expects a size of the function jumper and emerges with the unmeaningful value.
+func expectFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
+	// Pushes the location of revert with the unmeaningful value.
+	if err := compileProgramEndPoint(asm, 0); err != nil {
+		return err
+	}
+
+	// Loads the function selector of call function.
+	asm.Emerge(opcode.LoadFunc)
+
+	// Adds the logic to compare and find the corresponding function selector with the unmeaningful value.
+	funcMap.Declare("FuncJmpr", *asm)
+	for range c.Functions {
+		if err := compileFuncSel(asm, string(abi.Selector("")), 0); err != nil {
+			return err
+		}
+	}
+
+	// No match to any function selector, Revert!
+	funcMap.Declare("Revert", *asm)
+	compileRevert(asm)
+
+	return nil
+}
+
+// Pushed the location of revert to exit the program.
+func compileProgramEndPoint(asm *Asm, revertDst int) error {
+	operand, err := encoding.EncodeOperand(revertDst)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, operand)
+
+	return nil
+}
+
+// If jumps to here, revert the program.
+func compileRevert(asm *Asm) {
+	asm.Emerge(opcode.Returning)
+}
+
+// TODO: implement me w/ test cases :-)
+// Generates a bytecode of function jumper.
+func generateFuncJmpr(bytecode *Asm) error {
+	return nil
+}
+
+// TODO: implement me w/ test cases :-)
+// Compiles function jumper logic to find a function with its function selector
+func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
+	return nil
 }
 
 func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
@@ -69,12 +122,6 @@ func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
 	return &abi.ABI{
 		Methods: abiMethods,
 	}, nil
-}
-
-// TODO: implement me w/ test cases :-)
-// Generates a bytecode of function jumper.
-func generateFuncJumper(bytecode *Asm) error {
-	return nil
 }
 
 // Generates the ABI of functions in contract.
@@ -128,9 +175,6 @@ func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
 
 	case *ast.ExpressionStatement:
 		return compileExpressionStatement(statement, bytecode, tracer)
-
-	case *ast.FunctionLiteral:
-		return compileFunctionLiteral(statement, bytecode)
 
 	default:
 		return nil
@@ -274,11 +318,6 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Asm, tracer MemTrace
 
 func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Asm, tracer MemTracer) error {
 	return compileExpression(s.Expr, bytecode, tracer)
-}
-
-// TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Asm) error {
-	return nil
 }
 
 // TODO: implement me w/ test cases :-)
