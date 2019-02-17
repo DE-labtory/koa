@@ -17,7 +17,6 @@
 package translate
 
 import (
-	"bytes"
 	"errors"
 	"testing"
 
@@ -39,7 +38,7 @@ type expressionCompileTestCase struct {
 	expectedErr error
 }
 
-func TestExpectFuncJmpr(t *testing.T) {
+func TestCreateFuncJmprPlaceholder(t *testing.T) {
 	tests := []struct {
 		contract      ast.Contract
 		expectAsm     *Asm
@@ -83,7 +82,7 @@ func TestExpectFuncJmpr(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x001},
+						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
 						Value:   "c5d2460100000000",
 					},
 					// EQ
@@ -126,18 +125,18 @@ func TestExpectFuncJmpr(t *testing.T) {
 		}
 		funcMap := FuncMap{}
 
-		err := expectFuncJmpr(test.contract, asm, funcMap)
+		err := createFuncJmprPlaceholder(test.contract, asm, funcMap)
 
-		if !compareAsm(*asm, *test.expectAsm) {
-			t.Fatalf("test[%d] - expectFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, asm)
+		if !asm.Equal(*test.expectAsm) {
+			t.Fatalf("test[%d] - createFuncJmprPlaceholder() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, asm)
 		}
 
 		if !compareFuncMap(funcMap, test.expectFuncMap) {
-			t.Fatalf("test[%d] - expectFuncJmpr() FuncMap result wrong.\nexpected=%v,\ngot=%v", i, test.expectFuncMap, funcMap)
+			t.Fatalf("test[%d] - createFuncJmprPlaceholder() FuncMap result wrong.\nexpected=%v,\ngot=%v", i, test.expectFuncMap, funcMap)
 		}
 
 		if err != nil && err != test.err {
-			t.Fatalf("test[%d] - expectFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+			t.Fatalf("test[%d] - createFuncJmprPlaceholder() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
 		}
 	}
 }
@@ -189,7 +188,7 @@ func TestCompileProgramEndPoint(t *testing.T) {
 
 		err := compileProgramEndPoint(asm, test.revertDst)
 
-		if !compareAsm(*asm, test.expect) {
+		if !asm.Equal(test.expect) {
 			t.Fatalf("test[%d] - compileProgramEndPoint() result wrong. expected=%v, got=%v", i, test.expect, asm)
 		}
 
@@ -222,7 +221,7 @@ func TestCompileRevert(t *testing.T) {
 	for i, test := range tests {
 		compileRevert(asm)
 
-		if !compareAsm(*asm, test.expect) {
+		if !asm.Equal(test.expect) {
 			t.Fatalf("test[%d] - compileRevert() result wrong. expected=%v, got=%v", i, test.expect, asm)
 		}
 	}
@@ -231,6 +230,7 @@ func TestCompileRevert(t *testing.T) {
 func TestGenerateFuncJmpr(t *testing.T) {
 	tests := []struct {
 		contract  ast.Contract
+		asm       *Asm
 		expectAsm *Asm
 		funcMap   FuncMap
 		err       error
@@ -242,7 +242,6 @@ func TestGenerateFuncJmpr(t *testing.T) {
 						Name: &ast.Identifier{
 							Value: "foo",
 						},
-						Parameters: []*ast.ParameterLiteral{},
 					},
 					{
 						Name: &ast.Identifier{
@@ -252,9 +251,98 @@ func TestGenerateFuncJmpr(t *testing.T) {
 					},
 				},
 			},
-			expectAsm: &Asm{
+			asm: &Asm{
 				AsmCodes: []AsmCode{
 					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push c5d2460100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
+						Value:   "c5d2460100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push c5d2460100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
+						Value:   "c5d2460100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+				},
+			},
+			expectAsm: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 000000000000000a
 					{
 						RawByte: []byte{0x21},
 						Value:   "Push",
@@ -279,7 +367,7 @@ func TestGenerateFuncJmpr(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x1b, 0x24, 0xaa, 0xbc, 0x00, 0x00, 0x00, 0x001},
+						RawByte: []byte{0x1b, 0x24, 0xaa, 0xbc, 0x00, 0x00, 0x00, 0x00},
 						Value:   "1b24aabc00000000",
 					},
 					// EQ
@@ -352,18 +440,10 @@ func TestGenerateFuncJmpr(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		asm := &Asm{
-			AsmCodes: []AsmCode{},
-		}
+		err := generateFuncJmpr(test.contract, test.asm, test.funcMap)
 
-		if err := expectFuncJmpr(test.contract, asm, test.funcMap); err != nil {
-			t.Fatalf("test[%d] - generateFuncJmpr() error - expectFuncJmpr result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, asm)
-		}
-
-		err := generateFuncJmpr(test.contract, asm, test.funcMap)
-
-		if !compareAsm(*asm, *test.expectAsm) {
-			t.Fatalf("test[%d] - generateFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, asm)
+		if !test.asm.Equal(*test.expectAsm) {
+			t.Fatalf("test[%d] - generateFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, test.asm)
 		}
 
 		if err != nil && err != test.err {
@@ -372,7 +452,7 @@ func TestGenerateFuncJmpr(t *testing.T) {
 	}
 }
 
-func TestRelocateFuncJmpr(t *testing.T) {
+func TestFillFuncJmpr(t *testing.T) {
 	tests := []struct {
 		asm      *Asm
 		funcJmpr *Asm
@@ -589,21 +669,84 @@ func TestRelocateFuncJmpr(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		err := relocateFuncJmpr(test.asm, test.funcJmpr)
+		err := fillFuncJmpr(test.asm, *test.funcJmpr)
 
-		if !compareAsm(*test.asm, *test.expect) {
-			t.Fatalf("test[%d] - relocateFuncJmpr() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, test.asm)
+		if !test.asm.Equal(*test.expect) {
+			t.Fatalf("test[%d] - fillFuncJmpr() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, test.asm)
 		}
 
 		if err != nil && err != test.err {
-			t.Fatalf("test[%d] - relocateFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+			t.Fatalf("test[%d] - fillFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
 		}
 	}
 }
 
-// TODO: implement test cases :-)
 func TestCompileFuncSel(t *testing.T) {
+	tests := []struct {
+		funcSel string
+		funcDst int
+		expect  *Asm
+		err     error
+	}{
+		{
+			funcSel: string(abi.Selector("func Foo()")),
+			funcDst: 15,
+			expect: &Asm{
+				AsmCodes: []AsmCode{
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push e3170de100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xe3, 0x17, 0x0d, 0xe1, 0x00, 0x00, 0x00, 0x00},
+						Value:   "e3170de100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 000000000000000f
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
+						Value:   "000000000000000f",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+				},
+			},
+			err: nil,
+		},
+	}
 
+	for i, test := range tests {
+		asm := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+		err := compileFuncSel(asm, test.funcSel, test.funcDst)
+
+		if !asm.Equal(*test.expect) {
+			t.Fatalf("test[%d] - compileFuncSel() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, asm)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - compileFuncSel() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+
+	}
 }
 
 // TODO: implement test cases :-)
@@ -2139,20 +2282,6 @@ func makeTempStatements() []ast.Statement {
 	})
 
 	return statements
-}
-
-func compareAsm(asm1 Asm, asm2 Asm) bool {
-	for i, asmCode := range asm1.AsmCodes {
-		if !bytes.Equal(asmCode.RawByte, asm2.AsmCodes[i].RawByte) {
-			return false
-		}
-
-		if asmCode.Value != asm2.AsmCodes[i].Value {
-			return false
-		}
-	}
-
-	return true
 }
 
 func compareFuncMap(funcMap1 FuncMap, funcMap2 FuncMap) bool {

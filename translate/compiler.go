@@ -42,9 +42,9 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		AsmCodes: make([]AsmCode, 0),
 	}
 
-	// Keep the size of the jumper with expectFuncJmpr.
+	// Keep the size of the jumper with createFuncJmprPlaceholder.
 	funcMap := FuncMap{}
-	if err := expectFuncJmpr(c, asm, funcMap); err != nil {
+	if err := createFuncJmprPlaceholder(c, asm, funcMap); err != nil {
 		return *asm, err
 	}
 
@@ -67,8 +67,9 @@ func CompileContract(c ast.Contract) (Asm, error) {
 	return *asm, nil
 }
 
-// Expects a size of the function jumper and emerges with the unmeaningful value.
-func expectFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
+// Create a placeholder to calculate a size of the function jumper.
+// It emerges with the unmeaningful value.
+func createFuncJmprPlaceholder(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 	// Pushes the location of revert with the unmeaningful value.
 	if err := compileProgramEndPoint(asm, 0); err != nil {
 		return err
@@ -103,7 +104,8 @@ func compileProgramEndPoint(asm *Asm, revertDst int) error {
 	return nil
 }
 
-// If jumps to here, revert the program.
+// compileRevert compiles exiting the program.
+// If jumps to here, exit the program.
 func compileRevert(asm *Asm) {
 	asm.Emerge(opcode.Returning)
 }
@@ -111,12 +113,12 @@ func compileRevert(asm *Asm) {
 // Generates a bytecode of function jumper.
 func generateFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 	funcJmpr := &Asm{
-		AsmCodes: []AsmCode{},
+		AsmCodes: make([]AsmCode, 0),
 	}
 
 	// Pushes the location of revert.
 	revertDst := funcMap[string(abi.Selector("Revert"))]
-	if err := compileProgramEndPoint(asm, revertDst); err != nil {
+	if err := compileProgramEndPoint(funcJmpr, revertDst); err != nil {
 		return err
 	}
 
@@ -137,17 +139,17 @@ func generateFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 	compileRevert(funcJmpr)
 
 	// Replace expected function jumper with new function jumper.
-	if err := relocateFuncJmpr(asm, funcJmpr); err != nil {
+	if err := fillFuncJmpr(asm, *funcJmpr); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Relocate the function jumper of bytecode with new function jumper.
-func relocateFuncJmpr(asm *Asm, funcJmpr *Asm) error {
+// Fill the function jumper in the location of function jumper placeholder.
+func fillFuncJmpr(asm *Asm, funcJmpr Asm) error {
 	if len(asm.AsmCodes) < len(funcJmpr.AsmCodes) {
-		return fmt.Errorf("Can't relocate the function jumper. Bytecode=%x, FuncJmpr=%x", asm.AsmCodes, funcJmpr.AsmCodes)
+		return fmt.Errorf("Can't fill the function jumper. Bytecode=%x, FuncJmpr=%x", asm.AsmCodes, funcJmpr.AsmCodes)
 	}
 
 	for i, asmCode := range funcJmpr.AsmCodes {
@@ -157,9 +159,25 @@ func relocateFuncJmpr(asm *Asm, funcJmpr *Asm) error {
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 // Compiles function jumper logic to find a function with its function selector
 func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
+	// Duplicates the function selector to find.
+	asm.Emerge(opcode.DUP)
+	// Pushes the function selector of this function literal.
+	selector, err := encoding.EncodeOperand(funcSel)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, selector)
+	asm.Emerge(opcode.EQ)
+	// If the result is equal, pushed the destination to jump.
+	dst, err := encoding.EncodeOperand(funcDst)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, dst)
+	asm.Emerge(opcode.Jumpi)
+
 	return nil
 }
 
