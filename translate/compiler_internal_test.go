@@ -45,6 +45,195 @@ type statementCompileTestCase struct {
 	expectedErr error
 }
 
+func TestCreateFuncJmprPlaceholder(t *testing.T) {
+	tests := []struct {
+		contract      ast.Contract
+		expectAsm     *Asm
+		expectFuncMap FuncMap
+		err           error
+	}{
+		{
+			contract: ast.Contract{
+				Functions: []*ast.FunctionLiteral{
+					{
+						Name: &ast.Identifier{
+							Value: "foo",
+						},
+					},
+				},
+			},
+			expectAsm: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push c5d2460100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
+						Value:   "c5d2460100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+				},
+			},
+			expectFuncMap: FuncMap{
+				string(abi.Selector("FuncJmpr")): 3,
+				string(abi.Selector("Revert")):   10,
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		asm := &Asm{
+			AsmCodes: []AsmCode{},
+		}
+		funcMap := FuncMap{}
+
+		err := createFuncJmprPlaceholder(test.contract, asm, funcMap)
+
+		if !asm.Equal(*test.expectAsm) {
+			t.Fatalf("test[%d] - createFuncJmprPlaceholder() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, asm)
+		}
+
+		if !compareFuncMap(funcMap, test.expectFuncMap) {
+			t.Fatalf("test[%d] - createFuncJmprPlaceholder() FuncMap result wrong.\nexpected=%v,\ngot=%v", i, test.expectFuncMap, funcMap)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - createFuncJmprPlaceholder() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
+}
+
+func TestCompileProgramEndPoint(t *testing.T) {
+	tests := []struct {
+		revertDst int
+		expect    Asm
+		err       error
+	}{
+		{
+			revertDst: 0,
+			expect: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			revertDst: 1234,
+			expect: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2},
+						Value:   "00000000000004d2",
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		asm := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+
+		err := compileProgramEndPoint(asm, test.revertDst)
+
+		if !asm.Equal(test.expect) {
+			t.Fatalf("test[%d] - compileProgramEndPoint() result wrong. expected=%v, got=%v", i, test.expect, asm)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - compileProgramEndPoint() error wrong. expected=%v, got=%v", i, test.err, err)
+		}
+	}
+}
+
+func TestCompileRevert(t *testing.T) {
+	tests := []struct {
+		expect Asm
+	}{
+		{
+			expect: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+				},
+			},
+		},
+	}
+
+	asm := &Asm{
+		AsmCodes: make([]AsmCode, 0),
+	}
+
+	for i, test := range tests {
+		compileRevert(asm)
+
+		if !asm.Equal(test.expect) {
+			t.Fatalf("test[%d] - compileRevert() result wrong. expected=%v, got=%v", i, test.expect, asm)
+		}
+	}
+}
+
 func TestCompileFuncSel(t *testing.T) {
 	tests := []struct {
 		funcSel string
@@ -1908,4 +2097,18 @@ func makeTempStatements() []ast.Statement {
 	})
 
 	return statements
+}
+
+func compareFuncMap(funcMap1 FuncMap, funcMap2 FuncMap) bool {
+	if len(funcMap1) != len(funcMap2) {
+		return false
+	}
+
+	for funcSel, item := range funcMap1 {
+		if item != funcMap2[funcSel] {
+			return false
+		}
+	}
+
+	return true
 }
