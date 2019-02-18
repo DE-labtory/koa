@@ -26,7 +26,6 @@ import (
 	"github.com/DE-labtory/koa/opcode"
 )
 
-// TODO: implement me w/ test cases :-)
 // CompileContract() compiles a smart contract.
 // returns bytecode and error.
 func CompileContract(c ast.Contract) (Asm, error) {
@@ -82,7 +81,6 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 	return methods, nil
 }
 
-// TODO: implement me w/ test cases :-)
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
 func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) error {
@@ -98,7 +96,6 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) err
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
 // compileStatement() compiles a statement in function.
 // Generates and adds output to bytecode.
 func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
@@ -183,6 +180,7 @@ func compileReturnStatement(s *ast.ReturnStatement, asm *Asm, tracer MemTracer) 
 	}
 
 	asm.Emerge(opcode.Returning)
+
 	return nil
 }
 

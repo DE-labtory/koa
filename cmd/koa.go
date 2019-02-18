@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/DE-labtory/koa/cmd/compile"
+
 	"github.com/DE-labtory/koa/cmd/lex"
 	"github.com/DE-labtory/koa/cmd/parse"
 	"github.com/DE-labtory/koa/cmd/repl"
@@ -59,7 +61,7 @@ func main() {
 	app.Version = "0.0.1"
 	app.Compiled = time.Now()
 	app.Authors = []cli.Author{
-		cli.Author{
+		{
 			Name:  "koa",
 			Email: "koa@Delabtory.io",
 		},
@@ -78,6 +80,7 @@ func main() {
 	app.Commands = []cli.Command{}
 	app.Commands = append(app.Commands, lex.Cmd())
 	app.Commands = append(app.Commands, parse.Cmd())
+	app.Commands = append(app.Commands, compile.Cmd())
 	app.Action = func(c *cli.Context) error {
 		repl.Run()
 		return nil

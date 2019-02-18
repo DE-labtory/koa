@@ -336,7 +336,6 @@ func TestCompileReturnStatement(t *testing.T) {
 	runStatementCompileTests(t, tests)
 }
 
-//// TODO: implement test cases :-)
 func TestCompileIfStatement(t *testing.T) {
 	tests := []struct {
 		statement *ast.IfStatement

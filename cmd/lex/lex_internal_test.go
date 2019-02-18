@@ -33,7 +33,7 @@ func Test_lex(t *testing.T) {
 [STRING_TYPE, string]
 [LBRACE, {]
 [RETURN, return]
-[STRING, "hello world!"]
+[STRING, "hello!"]
 [SEMICOLON, \n]
 [RBRACE, }]
 [SEMICOLON, \n]
