@@ -157,7 +157,7 @@ func TestCompileAssignStatement(t *testing.T) {
 					Value: "str",
 				},
 				Variable: ast.Identifier{
-					Value: "str",
+					Name: "str",
 				},
 				Type: ast.StringType,
 			},
@@ -201,7 +201,7 @@ func TestCompileAssignStatement(t *testing.T) {
 					Value: "abcdefgh",
 				},
 				Variable: ast.Identifier{
-					Value: "str",
+					Name: "str",
 				},
 				Type: ast.StringType,
 			},

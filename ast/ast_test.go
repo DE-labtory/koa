@@ -290,6 +290,53 @@ func TestReturnStatement_String(t *testing.T) {
 	}
 }
 
+func TestFunctionLiteral_Signature(t *testing.T) {
+	tests := []struct {
+		input    FunctionLiteral
+		expected string
+	}{
+		{
+			input: FunctionLiteral{
+				Name: &Identifier{Name: "foo"},
+			},
+			expected: "func foo()",
+		},
+		{
+			input: FunctionLiteral{
+				Name: &Identifier{Name: "foo"},
+				Parameters: []*ParameterLiteral{
+					{
+						Identifier: &Identifier{Name: "a"},
+						Type:       IntType,
+					},
+				},
+			},
+			expected: "func foo(Parameter : (Identifier: a, Type: int))",
+		},
+		{
+			input: FunctionLiteral{
+				Name: &Identifier{Name: "foo"},
+				Parameters: []*ParameterLiteral{
+					{
+						Identifier: &Identifier{Name: "a"},
+						Type:       IntType,
+					},
+					{
+						Identifier: &Identifier{Name: "b"},
+						Type:       StringType,
+					},
+				},
+			},
+			expected: "func foo(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string))",
+		},
+	}
+
+	for _, tt := range tests {
+		result := tt.input.Signature()
+		testString(t, result, tt.expected)
+	}
+}
+
 func testString(t *testing.T, got, expected string) {
 	t.Helper()
 	if got != expected {
