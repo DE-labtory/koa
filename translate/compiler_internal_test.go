@@ -234,6 +234,235 @@ func TestCompileRevert(t *testing.T) {
 	}
 }
 
+func TestFillFuncJmpr(t *testing.T) {
+	tests := []struct {
+		asm      *Asm
+		funcJmpr *Asm
+		expect   *Asm
+		err      error
+	}{
+		{
+			asm: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+				},
+			},
+			funcJmpr: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push 0000000012345678
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78},
+						Value:   "0000000012345678",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 0000000000001234
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34},
+						Value:   "0000000000001234",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+				},
+			},
+			expect: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push 0000000012345678
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78},
+						Value:   "0000000012345678",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 0000000000001234
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34},
+						Value:   "0000000000001234",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+				},
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		err := fillFuncJmpr(test.asm, *test.funcJmpr)
+
+		if !test.asm.Equal(*test.expect) {
+			t.Fatalf("test[%d] - fillFuncJmpr() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, test.asm)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - fillFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
+}
+
 func TestCompileFuncSel(t *testing.T) {
 	tests := []struct {
 		funcSel string
