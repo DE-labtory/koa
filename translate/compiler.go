@@ -42,12 +42,27 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		AsmCodes: make([]AsmCode, 0),
 	}
 
+	// Keep the size of the jumper with createFuncJmprPlaceholder.
+	funcMap := FuncMap{}
+	if err := createFuncJmprPlaceholder(c, asm, funcMap); err != nil {
+		return *asm, err
+	}
+
+	// Compile the functions in contract.
 	memTracer := NewMemEntryTable()
 
 	for _, f := range c.Functions {
+		funcMap.Declare(f.Signature(), *asm)
+
 		if err := compileFunction(*f, asm, memTracer); err != nil {
 			return *asm, err
 		}
+	}
+
+	// Compile Function jumper with updated FuncMap.
+	// And replace expected function jumper with new function jumper
+	if err := generateFuncJmpr(c, asm, funcMap); err != nil {
+		return *asm, err
 	}
 
 	return *asm, nil
@@ -96,6 +111,42 @@ func compileRevert(asm *Asm) {
 	asm.Emerge(opcode.Returning)
 }
 
+// Generates a bytecode of function jumper.
+func generateFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
+	funcJmpr := &Asm{
+		AsmCodes: make([]AsmCode, 0),
+	}
+
+	// Pushes the location of revert.
+	revertDst := funcMap[string(abi.Selector("Revert"))]
+	if err := compileProgramEndPoint(funcJmpr, revertDst); err != nil {
+		return err
+	}
+
+	// Loads the function selector of call function.
+	funcJmpr.Emerge(opcode.LoadFunc)
+
+	// Adds the logic to compare and find the corresponding function selector.
+	for _, f := range c.Functions {
+		selector := string(abi.Selector(f.Signature()))
+		funcDst := funcMap[selector]
+
+		if err := compileFuncSel(funcJmpr, selector, funcDst); err != nil {
+			return err
+		}
+	}
+
+	// No match to any function selector, Revert!
+	compileRevert(funcJmpr)
+
+	// Replace expected function jumper with new function jumper.
+	if err := fillFuncJmpr(asm, *funcJmpr); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Fill the function jumper in the location of function jumper placeholder.
 func fillFuncJmpr(asm *Asm, funcJmpr Asm) error {
 	if len(asm.AsmCodes) < len(funcJmpr.AsmCodes) {
@@ -120,7 +171,8 @@ func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
 	}
 	asm.Emerge(opcode.Push, selector)
 	asm.Emerge(opcode.EQ)
-	// If the result is equal, pushed the destination to jump.
+	asm.Emerge(opcode.NOT)
+	// If the result is false (the condition is true), jump to the destination of function.
 	dst, err := encoding.EncodeOperand(funcDst)
 	if err != nil {
 		return err

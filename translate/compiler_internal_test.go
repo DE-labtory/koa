@@ -57,7 +57,7 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 				Functions: []*ast.FunctionLiteral{
 					{
 						Name: &ast.Identifier{
-							Value: "foo",
+							Name: "foo",
 						},
 					},
 				},
@@ -97,6 +97,11 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 						RawByte: []byte{0x14},
 						Value:   "EQ",
 					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
+					},
 					// Push 0000000000000000
 					{
 						RawByte: []byte{0x21},
@@ -120,7 +125,7 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 			},
 			expectFuncMap: FuncMap{
 				string(abi.Selector("FuncJmpr")): 3,
-				string(abi.Selector("Revert")):   10,
+				string(abi.Selector("Revert")):   11,
 			},
 			err: nil,
 		},
@@ -234,6 +239,251 @@ func TestCompileRevert(t *testing.T) {
 	}
 }
 
+func TestGenerateFuncJmpr(t *testing.T) {
+	tests := []struct {
+		contract  ast.Contract
+		asm       *Asm
+		expectAsm *Asm
+		funcMap   FuncMap
+		err       error
+	}{
+		{
+			contract: ast.Contract{
+				Functions: []*ast.FunctionLiteral{
+					{
+						Name: &ast.Identifier{
+							Name: "foo",
+						},
+					},
+					{
+						Name: &ast.Identifier{
+							Name: "sam",
+						},
+						Parameters: nil,
+					},
+				},
+			},
+			asm: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push c5d2460100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
+						Value:   "c5d2460100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push c5d2460100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
+						Value:   "c5d2460100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
+					},
+					// Push 0000000000000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+				},
+			},
+			expectAsm: &Asm{
+				AsmCodes: []AsmCode{
+					// Push 000000000000000a
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						Value:   "000000000000000a",
+					},
+					// LoadFunc
+					{
+						RawByte: []byte{0x24},
+						Value:   "LoadFunc",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push 1b24aabc00000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x1b, 0x24, 0xaa, 0xbc, 0x00, 0x00, 0x00, 0x00},
+						Value:   "1b24aabc00000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
+					},
+					// Push 0000000000000013
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13},
+						Value:   "0000000000000013",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push 9f24b46700000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x9f, 0x24, 0xb4, 0x67, 0x00, 0x00, 0x00, 0x00},
+						Value:   "9f24b46700000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
+					},
+					// Push 0000000000000018
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18},
+						Value:   "0000000000000018",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+					// Returning
+					{
+						RawByte: []byte{0x26},
+						Value:   "Returning",
+					},
+				},
+			},
+			funcMap: FuncMap{
+				string(abi.Selector("FuncJmpr")):   3,
+				string(abi.Selector("Revert")):     10,
+				string(abi.Selector("func foo()")): 19,
+				string(abi.Selector("func sam()")): 24,
+			},
+			err: nil,
+		},
+	}
+
+	for i, test := range tests {
+		err := generateFuncJmpr(test.contract, test.asm, test.funcMap)
+
+		if !test.asm.Equal(*test.expectAsm) {
+			t.Fatalf("test[%d] - generateFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, test.asm)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - generateFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
+}
+
 func TestFillFuncJmpr(t *testing.T) {
 	tests := []struct {
 		asm      *Asm
@@ -276,6 +526,11 @@ func TestFillFuncJmpr(t *testing.T) {
 					{
 						RawByte: []byte{0x14},
 						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
 					},
 					// Push 0000000000000000
 					{
@@ -351,6 +606,11 @@ func TestFillFuncJmpr(t *testing.T) {
 						RawByte: []byte{0x14},
 						Value:   "EQ",
 					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
+					},
 					// Push 0000000000001234
 					{
 						RawByte: []byte{0x21},
@@ -406,6 +666,11 @@ func TestFillFuncJmpr(t *testing.T) {
 					{
 						RawByte: []byte{0x14},
 						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
 					},
 					// Push 0000000000001234
 					{
@@ -493,6 +758,11 @@ func TestCompileFuncSel(t *testing.T) {
 					{
 						RawByte: []byte{0x14},
 						Value:   "EQ",
+					},
+					// NOT
+					{
+						RawByte: []byte{0x15},
+						Value:   "NOT",
 					},
 					// Push 000000000000000f
 					{
