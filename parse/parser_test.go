@@ -18,7 +18,6 @@ package parse_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 	"text/template"
 
@@ -929,10 +928,8 @@ func TestAssignStatement(t *testing.T) {
 
 	for _, tt := range tests {
 		input := createTestContractCode(tt.contractTmpl)
-		fmt.Println("input", input)
 
 		contract, err := parseTestContract(input)
-		fmt.Println("err", err)
 
 		if err != nil && err == tt.expectedErr {
 			continue
