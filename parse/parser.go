@@ -512,10 +512,6 @@ func parseIdentifier(buf TokenBuffer) (ast.Expression, error) {
 		return nil, ExpectError{token, Ident}
 	}
 
-	if exist := scope.Get(token.Val); exist == nil {
-		return nil, NotExistSymError{token}
-	}
-
 	return &ast.Identifier{Value: token.Val}, nil
 }
 
@@ -699,6 +695,7 @@ func parseReturnStatement(buf TokenBuffer) (ast.Statement, error) {
 	stmt := &ast.ReturnStatement{}
 
 	if curTokenIs(buf, Semicolon) {
+		buf.Read()
 		return stmt, nil
 	}
 
