@@ -453,12 +453,90 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
-						Value:   "0000000000000005",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07},
+						Value:   "0000000000000007",
 					},
 					{
-						RawByte: []byte{byte(opcode.Jump)},
-						Value:   "Jump",
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+						Value:   "0000000000bc614e",
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			statement: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.IfStatement{
+							Condition: &ast.BooleanLiteral{
+								Value: true,
+							},
+							Consequence: &ast.BlockStatement{
+								Statements: []ast.Statement{
+									&ast.ExpressionStatement{
+										Expr: &ast.IntegerLiteral{
+											Value: 12345678,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
+						Value:   "000000000000000c",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
+						Value:   "000000000000000c",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
 					},
 					{
 						RawByte: []byte{byte(opcode.Push)},
