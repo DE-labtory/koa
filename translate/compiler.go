@@ -53,6 +53,49 @@ func CompileContract(c ast.Contract) (Asm, error) {
 	return *asm, nil
 }
 
+// Create a placeholder to calculate a size of the function jumper.
+// It emerges with the unmeaningful value.
+func createFuncJmprPlaceholder(c ast.Contract, asm *Asm, funcMap FuncMap) error {
+	// Pushes the location of revert with the unmeaningful value.
+	if err := compileProgramEndPoint(asm, 0); err != nil {
+		return err
+	}
+
+	// Loads the function selector of call function.
+	asm.Emerge(opcode.LoadFunc)
+
+	// Adds the logic to compare and find the corresponding function selector with the unmeaningful value.
+	funcMap.Declare("FuncJmpr", *asm)
+	for range c.Functions {
+		if err := compileFuncSel(asm, string(abi.Selector("")), 0); err != nil {
+			return err
+		}
+	}
+
+	// No match to any function selector, Revert!
+	funcMap.Declare("Revert", *asm)
+	compileRevert(asm)
+
+	return nil
+}
+
+// Pushed the location of revert to exit the program.
+func compileProgramEndPoint(asm *Asm, revertDst int) error {
+	operand, err := encoding.EncodeOperand(revertDst)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, operand)
+
+	return nil
+}
+
+// compileRevert compiles exiting the program.
+// If jumps to here, exit the program.
+func compileRevert(asm *Asm) {
+	asm.Emerge(opcode.Returning)
+}
+
 // Compiles function jumper logic to find a function with its function selector
 func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
 	// Duplicates the function selector to find.
