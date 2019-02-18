@@ -38,6 +38,13 @@ type expressionCompileTestCase struct {
 	expectedErr error
 }
 
+type statementCompileTestCase struct {
+	setupTracer
+	statement   ast.Statement
+	expected    Asm
+	expectedErr error
+}
+
 func TestCreateFuncJmprPlaceholder(t *testing.T) {
 	tests := []struct {
 		contract      ast.Contract
@@ -857,6 +864,94 @@ func TestCompileAssignStatement(t *testing.T) {
 				},
 			},
 		},
+		{
+			// string str = "str"
+			statement: &ast.AssignStatement{
+				Value: &ast.StringLiteral{
+					Value: "str",
+				},
+				Variable: ast.Identifier{
+					Value: "str",
+				},
+				Type: ast.StringType,
+			},
+			expected: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x73, 0x74, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "7374720000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
+				},
+			},
+		},
+		{
+			// string str = "abcdefgh"
+			statement: &ast.AssignStatement{
+				Value: &ast.StringLiteral{
+					Value: "abcdefgh",
+				},
+				Variable: ast.Identifier{
+					Value: "str",
+				},
+				Type: ast.StringType,
+			},
+			expected: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68},
+						Value:   "6162636465666768",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mstore)},
+						Value:   "Mstore",
+					},
+				},
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -873,15 +968,79 @@ func TestCompileAssignStatement(t *testing.T) {
 		}
 
 		if !a.Equal(*test.expected) {
-			t.Fatalf("test[%d] - result wrong. expected %x, got=%x",
+			t.Fatalf("test[%d] - result wrong. \nexpected %x, \ngot=%x",
 				i, test.expected, a)
 		}
 	}
 }
 
-// TODO: implement test cases :-)
 func TestCompileReturnStatement(t *testing.T) {
+	tests := []statementCompileTestCase{
+		{
+			statement: &ast.ReturnStatement{
+				ReturnValue: &ast.IntegerLiteral{Value: 1},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Returning)},
+						Value:   "Returning",
+					},
+				},
+			},
+		},
+		{
+			statement: &ast.ReturnStatement{
+				ReturnValue: &ast.StringLiteral{Value: "abc"},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x61, 0x62, 0x63, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "6162630000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Returning)},
+						Value:   "Returning",
+					},
+				},
+			},
+		},
+		// test return void
+		{
+			statement: &ast.ReturnStatement{},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{byte(opcode.Returning)},
+						Value:   "Returning",
+					},
+				},
+			},
+		},
+	}
 
+	runStatementCompileTests(t, tests)
 }
 
 //// TODO: implement test cases :-)
@@ -1001,12 +1160,90 @@ func TestCompileIfStatement(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
-						Value:   "0000000000000005",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07},
+						Value:   "0000000000000007",
 					},
 					{
-						RawByte: []byte{byte(opcode.Jump)},
-						Value:   "Jump",
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0x61, 0x4e},
+						Value:   "0000000000bc614e",
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			statement: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.IfStatement{
+							Condition: &ast.BooleanLiteral{
+								Value: true,
+							},
+							Consequence: &ast.BlockStatement{
+								Statements: []ast.Statement{
+									&ast.ExpressionStatement{
+										Expr: &ast.IntegerLiteral{
+											Value: 12345678,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
+						Value:   "000000000000000c",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
+						Value:   "000000000000000c",
+					},
+					{
+						RawByte: []byte{byte(opcode.Jumpi)},
+						Value:   "Jumpi",
 					},
 					{
 						RawByte: []byte{byte(opcode.Push)},
@@ -1164,25 +1401,24 @@ func TestCompileExpressionStatement(t *testing.T) {
 	}
 }
 
+// TODO: implement test cases :-)
+func TestCompileFunctionLiteral(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileExpression(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileCallExpression(t *testing.T) {
+
+}
+
+// TODO: after implement compileIdentifier, add test cases for compiling
+// TODO: identifier contained infix expression
 //
-//// TODO: implement test cases :-)
-//func TestCompileFunctionLiteral(t *testing.T) {
-//
-//}
-//
-//// TODO: implement test cases :-)
-//func TestCompileExpression(t *testing.T) {
-//
-//}
-//
-//// TODO: implement test cases :-)
-//func TestCompileCallExpression(t *testing.T) {
-//
-//}
-//
-//// TODO: after implement compileIdentifier, add test cases for compiling
-//// TODO: identifier contained infix expression
-////
 // TestCompileInfixExpression tests compileInfixExpression and test cases
 // consists of three parts
 //
@@ -2218,6 +2454,8 @@ func TestCompileParameterLiteral(t *testing.T) {
 }
 
 func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) {
+	t.Helper()
+
 	for i, test := range tests {
 		asm := &Asm{
 			AsmCodes: make([]AsmCode, 0),
@@ -2263,6 +2501,43 @@ func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) 
 
 		if !asm.Equal(test.expected) {
 			t.Fatalf("test[%d] - %s result wrong. \n expected %x, \n got=%x",
+				i, testFuncName, test.expected, asm)
+		}
+	}
+}
+
+func runStatementCompileTests(t *testing.T, tests []statementCompileTestCase) {
+	t.Helper()
+
+	for i, test := range tests {
+		asm := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+
+		var err error
+		var testFuncName string
+		var tracer MemTracer
+
+		if test.setupTracer != nil {
+			tracer = test.setupTracer()
+		}
+
+		switch stmt := test.statement.(type) {
+		case *ast.ReturnStatement:
+			testFuncName = "compileReturnStatement()"
+			err = compileReturnStatement(stmt, asm, tracer)
+		default:
+			t.Fatalf("%T type not support, abort.", stmt)
+			t.FailNow()
+		}
+
+		if err != nil && err.Error() != test.expectedErr.Error() {
+			t.Fatalf("test[%d] - [%s] got unexpected error, expected=%s, got=%s",
+				i, testFuncName, test.expectedErr.Error(), err.Error())
+		}
+
+		if !asm.Equal(test.expected) {
+			t.Fatalf("test[%d] - %s result wrong. expected %x, got=%x",
 				i, testFuncName, test.expected, asm)
 		}
 	}

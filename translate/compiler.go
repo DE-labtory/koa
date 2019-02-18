@@ -233,7 +233,7 @@ func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
 		return compileAssignStatement(statement, bytecode, tracer)
 
 	case *ast.ReturnStatement:
-		return compileReturnStatement(statement, bytecode)
+		return compileReturnStatement(statement, bytecode, tracer)
 
 	case *ast.IfStatement:
 		return compileIfStatement(statement, bytecode, tracer)
@@ -286,8 +286,26 @@ func compileAssignStatement(s *ast.AssignStatement, asm *Asm, tracer MemTracer) 
 	return nil
 }
 
-// TODO: implement me w/ test cases :-)
-func compileReturnStatement(s *ast.ReturnStatement, bytecode *Asm) error {
+// compileReturnStatement compiles 'return' keyword
+//
+// PROTOCOL:
+//   if return value of return statement is nil, then
+//   return value zero
+func compileReturnStatement(s *ast.ReturnStatement, asm *Asm, tracer MemTracer) error {
+
+	var retVal ast.Expression
+
+	if s.ReturnValue == nil {
+		retVal = &ast.IntegerLiteral{Value: 0}
+	} else {
+		retVal = s.ReturnValue
+	}
+
+	if err := compileExpression(retVal, asm, tracer); err != nil {
+		return err
+	}
+
+	asm.Emerge(opcode.Returning)
 	return nil
 }
 
@@ -318,58 +336,68 @@ func compileIfStatement(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
 }
 
 func compileIfElse(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+	// 'push <expression>
+
+	asm.Emerge(opcode.Push, []byte(fmt.Sprintf("%d", -1)))
+	// 'push <expression> push <-1(will be replaced)>'
 
 	l1 := len(asm.AsmCodes)
+	asm.Emerge(opcode.Jumpi)
+	// 'push <expression> push <-1(will be replaced)> jumpi'
 	if err := compileBlockStatement(s.Consequence, asm, tracer); err != nil {
 		return err
 	}
-	// 'push <expression> <Consequence...>'
-
+	// 'push <expression> push <-1(will be replaced)> jumpi <Consequence...>'
+	asm.Emerge(opcode.Push, []byte(fmt.Sprintf("%d", -1)))
 	l2 := len(asm.AsmCodes)
+	// 'push <expression> push <-1(will be replaced)> jumpi <Consequence...> push <pc-to-end-of-Alternative>'
+	asm.Emerge(opcode.Jump)
+	// 'push <expression> push <-1(will be replaced)> jumpi <Consequence...> push <pc-to-end-of-Alternative> jump'
+
 	if err := compileBlockStatement(s.Alternative, asm, tracer); err != nil {
 		return err
 	}
-	// 'push <Consequence...> <Alternative...>'
 
-	l3 := len(asm.AsmCodes)
-	pc2al, err := encoding.EncodeOperand(l2 + 6)
-	if err != nil {
-		return err
-	}
-
-	asm.EmergeAt(l1, opcode.Jumpi)
-	asm.EmergeAt(l1, opcode.Push, pc2al)
-	// 'push <expression> push <pc-to-Alternative> jumpi <Consequence...> <Alternative...>'
-
-	pc2EndOfAlter, err := encoding.EncodeOperand(l3 + 6)
-	if err != nil {
-		return err
-	}
-
-	asm.EmergeAt(l2+3, opcode.Jump)
-	asm.EmergeAt(l2+3, opcode.Push, pc2EndOfAlter)
 	// 'push <expression> push <pc-to-Alternative> jumpi <Consequence...> push <pc-to-end-of-Alternative> jump <Alternative...>'
+	l3 := len(asm.AsmCodes)
+	pc2al, err := encoding.EncodeOperand(l2 + 1)
+	if err != nil {
+		return err
+	}
+	asm.ReplaceOperandAt(l1-1, pc2al)
+
+	pc2EndOfAlter, err := encoding.EncodeOperand(l3)
+	if err != nil {
+		return err
+	}
+
+	asm.ReplaceOperandAt(l2-1, pc2EndOfAlter)
 
 	return nil
 }
 
 func compileIf(s *ast.IfStatement, asm *Asm, tracer MemTracer) error {
+	// 'push <expression>
+
+	asm.Emerge(opcode.Push, []byte(fmt.Sprintf("%d", -1)))
+	// 'push <expression> push <-1(will be replaced)>'
 
 	l1 := len(asm.AsmCodes)
+	asm.Emerge(opcode.Jumpi)
+	// 'push <expression> push <-1(will be replaced)> jumpi'
 	if err := compileBlockStatement(s.Consequence, asm, tracer); err != nil {
 		return err
 	}
-	l2 := len(asm.AsmCodes)
-	// 'push <expression> <Consequence...>'
+	// 'push <expression> push <-1(will be replaced)> jumpi <Consequence...>'
 
-	pc2al, err := encoding.EncodeOperand(l2 + 1)
+	l2 := len(asm.AsmCodes)
+	pc2al, err := encoding.EncodeOperand(l2)
 	if err != nil {
 		return err
 	}
 
-	asm.EmergeAt(l1, opcode.Jump)
-	asm.EmergeAt(l1, opcode.Push, pc2al)
-	// 'push <expression> push <pc-to-end-of-Consequence> jump <Consequence...>'
+	asm.ReplaceOperandAt(l1-1, pc2al)
+	// 'push <expression> push <pc-to-end-of-Consequence> jumpi <Consequence...>'
 
 	return nil
 }

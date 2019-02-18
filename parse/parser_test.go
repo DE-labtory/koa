@@ -17,557 +17,1716 @@
 package parse_test
 
 import (
+	"bytes"
 	"testing"
+	"text/template"
 
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/parse"
 )
 
-type parserTestCase struct {
-	returnTestCase []struct {
-		returnValue string
-	}
-	assignTestCase []struct {
-		ds    ast.DataStructure
-		ident string
-		value string
-	}
-	conditionTestCase []struct {
-		condition   string
-		consequence []string
-		alternative []string
-	}
-	expressionStmtTestCase []struct {
-		expression string
-	}
-	inlineReturnStmtTestCase struct {
-		returnValue string
-	}
-	inlineAssignStmtTestCase struct {
-		ds    ast.DataStructure
-		ident string
-		value string
-	}
-	inlineConditionTestCase struct {
-		condition   string
-		consequence []string
-		alternative []string
-	}
-	inlineExpressionStmtTestCase struct {
-		expression string
-	}
+// expectedFnArg is used to verifing parsed function args data
+type expectedFnArg struct {
+	argIdent string
+	argType  ast.DataStructure
 }
 
-func TestParse(t *testing.T) {
-	input := `
-	contract {
-		//// testReturn must have return statements, this function is for 
-		//// testing return statements.
-		//func testReturnStatement() {
-		//	return 1
-		//	return a
-		//	return a * b + 1
-		//	return a * (b + 1)
-		//	return (
-		//		a)
-		//	return add(1, 2)
-		//	return add(
-		//		1,
-		//		2)
-		//	return add(
-		//		1,
-		//		2 /* at this point there's SEMICOLON, should consume */
-		//	)
-		//}
-		//
-		///* testIntType  
-		//is for testing int assign statements */
-		//func testAssignStatement(foo int) string {
-		//	int a = 1
-		//	int a = 1 + 2
-		//	int a =
-		//		1 + 2
-		//	int a = (foo + 1) * 2
-		//	int a = add(1 + 2, 3) + 4
-		//	int a = add(1 % 2, 3) / 4
-		//	
-		//	// This is not working code according to go-spec
-		//	//
-		//	// int a = add(1 + 2, 3) 
-		//	//	 + 4
-		//	
-		//	string a = "hello"
-		//	string a = 
-		//		"hello"
-		//	string tabbed_string = "hello, \t world"
-		//
-		//	bool a = true
-		//	bool b= false
-		//}
-		//
-		//// testIfElse is for testing if-else statements and should only contain
-		//// if-else statements
-		//func testIfStatement(foo int, bar string, baz string) int {
-		//	if (true) {}
-		//
-		//	if (1 != 1 + 2) {
-		//		int a = 1
-		//		string a = "hello"
-		//	}
-		//
-		//	if (foo) {} else {}
-		//	
-		//	if (foo) {
-		//		int a = 1
-		//		string a = "hello"
-		//	} else {
-		//		int a = 1
-		//		string a = "hello"
-		//	}
-		//}
-		//
-		//// testExpressionStatement is for testing expression statement and should
-		//// only contain expression statement
-		//func testExpressionStatement(foo bool) bool {
-		//	add(1, 2)
-		//	add(add(1, 2), 3)
-		//	add(add(1,
-		//		2), 3)
-		//	add(add(1, 2),
-		//		3)
-		//	add(
-		//		add(
-		//			1, 
-		//			2
-		//		),
-		//		3
-		//	)
-		//}
-		//
-		//// testInlineReturnStatement is for testing inline-function, in the case when
-		//// return statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineReturnStatement() string { return "hello" }
-		//
-		//// testInlineAssignStatement is for testing inline-function, in the case when
-		//// assign statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineAssignStatement() { int a = 1 }
-		//
-		//// testInlineConditionStatement is for testing inline-function, in the case when
-		//// condition statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineConditionStatement() { if(true) {} else {} }
-		//
-		//// testInlineExpressionStatement is for testing inline-function, in the case when
-		//// expression statement does not change the line, then do not insert semicolon
-		//// related with issue #228
-		//func testInlineExpressionStatement() { add(1, 2) }
-	}	
-`
-	tcs := parserTestCase{
-		returnTestCase: []struct {
-			returnValue string
-		}{
-			{"1"},
-			{"a"},
-			{"((a * b) + 1)"},
-			{"(a * (b + 1))"},
-			{"a"},
-			{"function add( 1, 2 )"},
-			{"function add( 1, 2 )"},
-			{"function add( 1, 2 )"},
-		},
-		assignTestCase: []struct {
-			ds    ast.DataStructure
-			ident string
-			value string
-		}{
-			{ast.IntType, "a", "1"},
-			{ast.IntType, "a", "(1 + 2)"},
-			{ast.IntType, "a", "(1 + 2)"},
-			{ast.IntType, "a", "((foo + 1) * 2)"},
-			{ast.IntType, "a", "(function add( (1 + 2), 3 ) + 4)"},
-			{ast.IntType, "a", "(function add( (1 % 2), 3 ) / 4)"},
-			{ast.StringType, "a", "\"hello\""},
-			{ast.StringType, "a", "\"hello\""},
-			{ast.StringType, "tabbed_string", "\"hello, \\t world\""},
-			{ast.BoolType, "a", "true"},
-			{ast.BoolType, "b", "false"},
-		},
-		conditionTestCase: []struct {
-			condition   string
-			consequence []string
-			alternative []string
-		}{
-			{
-				condition: "true",
-			},
-			{
-				condition: "(1 != (1 + 2))",
-				consequence: []string{
-					"int a = 1",
-					"string a = \"hello\"",
-				},
-			},
-			{
-				condition: "foo",
-			},
-			{
-				condition: "foo",
-				consequence: []string{
-					"int a = 1",
-					"string a = \"hello\"",
-				},
-				alternative: []string{
-					"int a = 1",
-					"string a = \"hello\"",
-				},
-			},
-		},
-		expressionStmtTestCase: []struct {
-			expression string
-		}{
-			{"function add( 1, 2 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-			{"function add( function add( 1, 2 ), 3 )"},
-		},
-		inlineReturnStmtTestCase: struct {
-			returnValue string
-		}{"\"hello\""},
-		inlineAssignStmtTestCase: struct {
-			ds    ast.DataStructure
-			ident string
-			value string
-		}{ast.IntType, "a", "1"},
-		inlineConditionTestCase: struct {
-			condition   string
-			consequence []string
-			alternative []string
-		}{
-			condition:   "true",
-			consequence: []string{},
-			alternative: []string{},
-		},
-		inlineExpressionStmtTestCase: struct {
-			expression string
-		}{"function add( 1, 2 )"},
-	}
+// expectedFnArg is used to verifing parsed function header data
+type expectedFnHeader struct {
+	retType ast.DataStructure
+	args    []expectedFnArg
+}
 
+// fnTmplData represents smart contract function which is going to
+// be injected into contractTmpl
+type fnTmplData struct {
+	FuncName string
+	Args     string
+	RetType  string
+	Stmts    []string
+}
+
+// contractTmplData represents smart contract which is going to
+// be injected into contractTmpl
+type contractTmplData struct {
+	Fns []fnTmplData
+}
+
+// contractTmpl is template for creating smart contract code
+// contractTmplData injects data to this template
+const contractTmpl = `
+contract {
+	{{range .Fns -}}
+		func {{.FuncName}}({{.Args}}) {{.RetType}} {
+        {{range .Stmts -}}
+			{{.}}
+        {{end}}
+    }
+	{{end}}
+}
+`
+
+// createTestContractCode creates and returns string code, which is made by
+// contractTmpl and contractTmplData
+func createTestContractCode(c contractTmplData) string {
+	out := bytes.NewBufferString("")
+	instance, _ := template.New("ContractTemplate").Parse(contractTmpl)
+	instance.Execute(out, c)
+
+	return out.String()
+}
+
+func parseTestContract(input string) (*ast.Contract, error) {
 	l := parse.NewLexer(input)
 	buf := parse.NewTokenBuffer(l)
-	contract, err := parse.Parse(buf)
-
-	if err != nil {
-		t.Errorf("parser error: %q", err)
-		t.FailNow()
-	}
-	for _, fn := range contract.Functions {
-		testFunctionLiteral(t, fn, tcs)
-	}
+	return parse.Parse(buf)
 }
 
-func testFunctionLiteral(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Helper()
-	switch fn.Name.Value {
-	case "testReturnStatement":
-		testReturnStatementFunc(t, fn, tt)
-	case "testAssignStatement":
-		testAssignStatementFunc(t, fn, tt)
-	case "testIfStatement":
-		testIfElseStatementFunc(t, fn, tt)
-	case "testExpressionStatement":
-		testExpressionStatementFunc(t, fn, tt)
-	case "testInlineReturnStatement":
-		testInlineReturnStatementFunc(t, fn, tt)
-	case "testInlineAssignStatement":
-		testInlineAssignStatementFunc(t, fn, tt)
-	case "testInlineConditionStatement":
-		testInlineConditionStatement(t, fn, tt)
-	case "testInlineExpressionStatement":
-		testInlineExpressionStatement(t, fn, tt)
-	}
-}
-
-func testReturnStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test return statement")
-
-	// test testReturn() function body, parameters, return type
-	if fn.ReturnType != ast.VoidType {
-		t.Errorf("testReturn() has wrong return type expected=%v, got=%v",
+// chkFnHeader verify smart contract's function header
+func chkFnHeader(t *testing.T, fn *ast.FunctionLiteral, efh expectedFnHeader) {
+	if fn.ReturnType != efh.retType {
+		t.Errorf("function has wrong return type Expected=%v, got=%v",
 			ast.VoidType.String(), fn.ReturnType.String())
 	}
 
-	if len(fn.Parameters) != 0 {
-		t.Errorf("testReturn() has wrong parameters length got=%v",
+	if len(fn.Parameters) != len(efh.args) {
+		t.Errorf("function has wrong parameters length got=%v",
 			len(fn.Parameters))
 	}
 
-	// test testReturn's return statements
-	for i, stmt := range fn.Body.Statements {
+	for i, a := range fn.Parameters {
+		testFnParameters(t, a, efh.args[i].argType, efh.args[i].argIdent)
+	}
+}
+
+func TestReturnStatement(t *testing.T) {
+	tests := []struct {
+		contractTmpl      contractTmplData
+		expectedFnHeaders []expectedFnHeader
+		expected          []ast.ReturnStatement
+		expectedErr       error
+	}{
+		/*
+			func returnStatement1() int {
+				return 1
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement1",
+						Args:     "",
+						RetType:  "int",
+						Stmts: []string{
+							"return 1",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{ReturnValue: &ast.IntegerLiteral{Value: 1}},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func returnStatement2(a int) {
+				return a
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement2",
+						Args:     "a int",
+						RetType:  "int",
+						Stmts: []string{
+							"return a",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{"a", ast.IntType},
+					},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.Identifier{Value: "a"},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func returnStatement3(a int, b int) int {
+				return a + b + 1
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement3",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"return a + b + 1",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{"a", ast.IntType},
+						{"b", ast.IntType},
+					},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.InfixExpression{
+						Left: &ast.InfixExpression{
+							Left:     &ast.Identifier{Value: "a"},
+							Operator: ast.Plus,
+							Right:    &ast.Identifier{Value: "b"},
+						},
+						Operator: ast.Plus,
+						Right:    &ast.IntegerLiteral{Value: 1},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func returnStatement4(a int) int {
+				return (
+					a)
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement4",
+						Args:     "a int",
+						RetType:  "int",
+						Stmts: []string{
+							"return (",
+							"a)",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{"a", ast.IntType},
+					},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.Identifier{Value: "a"},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func returnStatement5(a int) int {
+				return (
+					a)
+			}
+			func returnStatement5_1(b int) int {
+				return (
+					b)
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement5",
+						Args:     "a int",
+						RetType:  "int",
+						Stmts: []string{
+							"return (",
+							"a)",
+						},
+					},
+					{
+						FuncName: "returnStatement5_1",
+						Args:     "b int",
+						RetType:  "int",
+						Stmts: []string{
+							"return (",
+							"b)",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{"a", ast.IntType},
+					},
+				},
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{"b", ast.IntType},
+					},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.Identifier{Value: "a"},
+				},
+				{
+					ReturnValue: &ast.Identifier{Value: "b"},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			// type mismatch - invalid return type
+			func returnStatement6() string {
+				return 1
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement6",
+						Args:     "",
+						RetType:  "string",
+						Stmts: []string{
+							"return 1",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.StringType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.IntegerLiteral{Value: 1},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			// symbol resolution - return undefined variable
+			func returnStatement7() string {
+				return a
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement7",
+						Args:     "",
+						RetType:  "string",
+						Stmts: []string{
+							"return a",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.StringType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{
+					ReturnValue: &ast.Identifier{Value: "a"},
+				},
+			},
+			expectedErr: parse.NotExistSymError{Source: parse.Token{Type: parse.Ident, Val: "a", Line: 3, Column: 17}},
+		},
+		/*
+			// void return
+			func returnStatement7() string {
+				return
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "returnStatement7",
+						Args:     "",
+						RetType:  "string",
+						Stmts: []string{
+							"return",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.StringType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReturnStatement{
+				{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		input := createTestContractCode(tt.contractTmpl)
+		contract, err := parseTestContract(input)
+
+		if err != nil && err == tt.expectedErr {
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("parser error: %q", err)
+			t.FailNow()
+		}
+
+		for i, fn := range contract.Functions {
+			runReturnStatementTestCases(t, fn, tt.expectedFnHeaders[i], tt.expected[i])
+		}
+	}
+}
+
+func runReturnStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efhs expectedFnHeader, tt ast.ReturnStatement) {
+	t.Logf("test ReturnStatement - [%s]", fn.Name)
+
+	chkFnHeader(t, fn, efhs)
+
+	for _, stmt := range fn.Body.Statements {
 		returnStmt, ok := stmt.(*ast.ReturnStatement)
 		if !ok {
 			t.Errorf("function body stmt is not *ast.ReturnStatement. got=%T", stmt)
 		}
 
-		tc := tt.returnTestCase[i]
-		testExpression(t, returnStmt.ReturnValue, tc.returnValue)
+		testExpression(t, returnStmt.ReturnValue, tt.ReturnValue)
 	}
 }
 
-func testAssignStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test assign statement")
-
-	// test testAssign() function body, parameters, return type
-	if fn.ReturnType != ast.StringType {
-		t.Errorf("testAssign() has wrong return type expected=%v, got=%v",
-			ast.StringType.String(), fn.ReturnType.String())
+func TestAssignStatement(t *testing.T) {
+	tests := []struct {
+		contractTmpl      contractTmplData
+		expectedFnHeaders []expectedFnHeader
+		expected          []ast.AssignStatement
+		expectedErr       error
+	}{
+		///*
+		//	func assignStatement1() {
+		//		int a = 1
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement1",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = 1",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value:    &ast.IntegerLiteral{Value: 1},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+		///*
+		//	func assignStatement2() {
+		//		int a = 1 + 2 * 3
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement2",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = 1 + 2 * 3",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value: &ast.InfixExpression{
+		//				Left:     &ast.IntegerLiteral{Value: 1},
+		//				Operator: ast.Plus,
+		//				Right: &ast.InfixExpression{
+		//					Left:     &ast.IntegerLiteral{Value: 2},
+		//					Operator: ast.Asterisk,
+		//					Right:    &ast.IntegerLiteral{Value: 3},
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+		///*
+		//	func assignStatement3() {
+		//		int a =
+		//				1 + 2 * 3
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement3",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = ",
+		//					"		1 + 2 * 3",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value: &ast.InfixExpression{
+		//				Left:     &ast.IntegerLiteral{Value: 1},
+		//				Operator: ast.Plus,
+		//				Right: &ast.InfixExpression{
+		//					Left:     &ast.IntegerLiteral{Value: 2},
+		//					Operator: ast.Asterisk,
+		//					Right:    &ast.IntegerLiteral{Value: 3},
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+		///*
+		//	func assignStatement4(foo int) {
+		//		int a = (foo + 2) * 3
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement4",
+		//				Args:     "foo int",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = ((foo + 2) * 3)",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args: []expectedFnArg{
+		//				{argIdent: "foo", argType: ast.IntType},
+		//			},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value: &ast.InfixExpression{
+		//				Left: &ast.InfixExpression{
+		//					Left:     &ast.Identifier{Value: "foo"},
+		//					Operator: ast.Plus,
+		//					Right:    &ast.IntegerLiteral{Value: 2},
+		//				},
+		//				Operator: ast.Asterisk,
+		//				Right:    &ast.IntegerLiteral{Value: 3},
+		//			},
+		//		},
+		//	},
+		//	expectedErr: nil,
+		//},
+		/*
+			func add(aa int, b int) int {
+			}
+			func assignStatement5(foo int) {
+				int a = add(foo, 1)
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "add",
+						Args:     "aa int, b int",
+						RetType:  "int",
+						Stmts:    []string{},
+					},
+					{
+						FuncName: "assignStatement5",
+						Args:     "foo int",
+						RetType:  "",
+						Stmts: []string{
+							"int a = add(foo, 1)",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "aa", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{argIdent: "foo", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.AssignStatement{
+				{},
+				{
+					Type:     ast.IntType,
+					Variable: ast.Identifier{Value: "a"},
+					Value: &ast.CallExpression{
+						Function: &ast.Identifier{Value: "add"},
+						Arguments: []ast.Expression{
+							&ast.Identifier{Value: "foo"},
+							&ast.IntegerLiteral{Value: 1},
+						},
+					},
+				},
+			},
+		},
+		///*
+		//	// as in 0.1.0 version, add symbol in order
+		//	// so by the time parser parsing "int a = add(foo, 1)",
+		//	// foo function still not defined
+		//	//
+		//	func assignStatement6(foo int) {
+		//		int a = add(foo, 1)
+		//	}
+		//	func add(aa int, b int) int {
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement6",
+		//				Args:     "foo int",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = add(foo, 1)",
+		//				},
+		//			},
+		//			{
+		//				FuncName: "add",
+		//				Args:     "aa int, b int",
+		//				RetType:  "int",
+		//				Stmts:    []string{},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args: []expectedFnArg{
+		//				{argIdent: "foo", argType: ast.IntType},
+		//			},
+		//		},
+		//		{
+		//			retType: ast.IntType,
+		//			args: []expectedFnArg{
+		//				{argIdent: "aa", argType: ast.IntType},
+		//				{argIdent: "b", argType: ast.IntType},
+		//			},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value: &ast.CallExpression{
+		//				Function: &ast.Identifier{Value: "add"},
+		//				Arguments: []ast.Expression{
+		//					&ast.Identifier{Value: "foo"},
+		//					&ast.IntegerLiteral{Value: 1},
+		//				},
+		//			},
+		//		},
+		//		{},
+		//	},
+		//	expectedErr: parse.NotExistSymError{
+		//		Source: parse.Token{Type: parse.Ident, Val: "add", Line: 3, Column: 19}},
+		//},
+		///*
+		//	// type mismatch - missing return type
+		//	func add(aa int, b int) {
+		//	}
+		//	func assignStatement7(foo int) {
+		//		int a = add(foo, 1)
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "add",
+		//				Args:     "aa int, b int",
+		//				RetType:  "",
+		//				Stmts:    []string{},
+		//			},
+		//			{
+		//				FuncName: "assignStatement7",
+		//				Args:     "foo int",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = add(foo, 1)",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args: []expectedFnArg{
+		//				{argIdent: "aa", argType: ast.IntType},
+		//				{argIdent: "b", argType: ast.IntType},
+		//			},
+		//		},
+		//		{
+		//			retType: ast.VoidType,
+		//			args: []expectedFnArg{
+		//				{argIdent: "foo", argType: ast.IntType},
+		//			},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{},
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value: &ast.CallExpression{
+		//				Function: &ast.Identifier{Value: "add"},
+		//				Arguments: []ast.Expression{
+		//					&ast.Identifier{Value: "foo"},
+		//					&ast.IntegerLiteral{Value: 1},
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
+		///*
+		//	// type mismatch - missing parameters
+		//	func add() {
+		//	}
+		//	func assignStatement8(foo int) {
+		//		int a = add(foo, 1)
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "add",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts:    []string{},
+		//			},
+		//			{
+		//				FuncName: "assignStatement8",
+		//				Args:     "foo int",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					"int a = add(foo, 1)",
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//		{
+		//			retType: ast.VoidType,
+		//			args: []expectedFnArg{
+		//				{argIdent: "foo", argType: ast.IntType},
+		//			},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{},
+		//		{
+		//			Type:     ast.IntType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value: &ast.CallExpression{
+		//				Function: &ast.Identifier{Value: "add"},
+		//				Arguments: []ast.Expression{
+		//					&ast.Identifier{Value: "foo"},
+		//					&ast.IntegerLiteral{Value: 1},
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
+		///*
+		//	func assignStatement9() {
+		//		string a = "hello, world"
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement9",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					`string a = "hello, world"`,
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.StringType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value:    &ast.StringLiteral{Value: "\"hello, world\""},
+		//		},
+		//	},
+		//},
+		///*
+		//	func assignStatement10() {
+		//		string a =
+		//				"hello, world"
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement10",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					`string a = `,
+		//					`			"hello, world"`,
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.StringType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value:    &ast.StringLiteral{Value: "\"hello, world\""},
+		//		},
+		//	},
+		//},
+		///*
+		//	func assignStatement11() {
+		//		bool a = true
+		//	}
+		//*/
+		//{
+		//	contractTmpl: contractTmplData{
+		//		Fns: []fnTmplData{
+		//			{
+		//				FuncName: "assignStatement11",
+		//				Args:     "",
+		//				RetType:  "",
+		//				Stmts: []string{
+		//					`bool a = true`,
+		//				},
+		//			},
+		//		},
+		//	},
+		//	expectedFnHeaders: []expectedFnHeader{
+		//		{
+		//			retType: ast.VoidType,
+		//			args:    []expectedFnArg{},
+		//		},
+		//	},
+		//	expected: []ast.AssignStatement{
+		//		{
+		//			Type:     ast.BoolType,
+		//			Variable: ast.Identifier{Value: "a"},
+		//			Value:    &ast.BooleanLiteral{Value: true},
+		//		},
+		//	},
+		//},
 	}
 
-	if len(fn.Parameters) != 1 {
-		t.Errorf("testAssign() has wrong parameters length got=%v",
-			len(fn.Parameters))
+	for _, tt := range tests {
+		input := createTestContractCode(tt.contractTmpl)
+
+		contract, err := parseTestContract(input)
+
+		if err != nil && err == tt.expectedErr {
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("parser error: %q", err)
+			t.FailNow()
+		}
+
+		for i, fn := range contract.Functions {
+			runAssignStatementTestCases(t, fn, tt.expectedFnHeaders[i], tt.expected[i])
+		}
+
 	}
+}
 
-	testFnParameters(t, fn.Parameters[0], ast.IntType, "foo")
+func runAssignStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efh expectedFnHeader, tt ast.AssignStatement) {
+	t.Logf("test AssignStatement - [%s]", fn.Name)
 
-	// test testAssign()'s assign statements
-	for i, stmt := range fn.Body.Statements {
+	chkFnHeader(t, fn, efh)
+
+	for _, stmt := range fn.Body.Statements {
 		assignStmt, ok := stmt.(*ast.AssignStatement)
 		if !ok {
-			t.Errorf("function body stmt is not *ast.AssignStatement. got=%T", stmt)
+			t.Errorf("function body stmt is not *ast.ReturnStatement. got=%T", stmt)
 		}
-		tc := tt.assignTestCase[i]
-		testAssignStatement(t, assignStmt, tc.ds, tc.ident, tc.value)
+
+		testAssignStatement(t, assignStmt, tt.Type, tt.Variable, tt.Value)
 	}
 }
 
-func testIfElseStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test if-else statement")
-
-	// test testIfElse() function body, parameters, return type
-	if fn.ReturnType != ast.IntType {
-		t.Errorf("testIfElse() has wrong return type expected=%v, got=%v",
-			ast.StringType.String(), fn.ReturnType.String())
+func TestIfElseStatement(t *testing.T) {
+	tests := []struct {
+		contractTmpl      contractTmplData
+		expectedFnHeaders []expectedFnHeader
+		expected          []ast.IfStatement
+		expectedErr       error
+	}{
+		/*
+			func ifStatement1() {
+				if (true) {}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement1",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"if (true) {}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition:   &ast.BooleanLiteral{Value: true},
+					Consequence: &ast.BlockStatement{},
+					Alternative: &ast.BlockStatement{},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement2(a int, b int) int {
+				if (1 != 1 + 2) {
+					return a
+				} else {
+					return b
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement2",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"if (1 != 1 + 2) {",
+							"	return a",
+							"} else {",
+							"	return b",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "a", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.NOT_EQ,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 1},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+					},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "a"},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "b"},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement3(a int, b int) int {
+				if (1 < 1 + 2) {
+					return a
+				} else {
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement3",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"if (1 < 1 + 2) {",
+							"	return a",
+							"} else {",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "a", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.LT,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 1},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+					},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "a"},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement4(a int, b int) int {
+				if (1 != 1 + 2) {
+				} else {
+					return b
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement4",
+						Args:     "a int, b int",
+						RetType:  "int",
+						Stmts: []string{
+							"if (1 != 1 + 2) {",
+							"} else {",
+							"	return b",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.IntType,
+					args: []expectedFnArg{
+						{argIdent: "a", argType: ast.IntType},
+						{argIdent: "b", argType: ast.IntType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.InfixExpression{
+						Left:     &ast.IntegerLiteral{Value: 1},
+						Operator: ast.NOT_EQ,
+						Right: &ast.InfixExpression{
+							Left:     &ast.IntegerLiteral{Value: 1},
+							Operator: ast.Plus,
+							Right:    &ast.IntegerLiteral{Value: 2},
+						},
+					},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.ReturnStatement{
+								ReturnValue: &ast.Identifier{Value: "b"},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement5(foo bool) {
+				if (foo) {
+					int a = 1
+				} else {
+					int a = 2
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement5",
+						Args:     "foo bool",
+						RetType:  "",
+						Stmts: []string{
+							"if (foo) {",
+							"	int a = 1",
+							"} else {",
+							"	int a = 2",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{argIdent: "foo", argType: ast.BoolType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.Identifier{Value: "foo"},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.AssignStatement{
+								Type:     ast.IntType,
+								Variable: ast.Identifier{Value: "a"},
+								Value:    &ast.IntegerLiteral{Value: 1},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.AssignStatement{
+								Type:     ast.IntType,
+								Variable: ast.Identifier{Value: "a"},
+								Value:    &ast.IntegerLiteral{Value: 2},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func ifStatement5(foo bool) {
+				if (foo) {
+					bool a = true
+					if (a) {
+						int a = 1
+					}
+				} else {
+					int a = 2
+				}
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "ifStatement5",
+						Args:     "foo bool",
+						RetType:  "",
+						Stmts: []string{
+							"if (foo) {",
+							"	bool a = true",
+							"	if (a) {",
+							"		int a = 1",
+							"	}",
+							"} else {",
+							"	int a = 2",
+							"}",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{argIdent: "foo", argType: ast.BoolType},
+					},
+				},
+			},
+			expected: []ast.IfStatement{
+				{
+					Condition: &ast.Identifier{Value: "foo"},
+					Consequence: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.IfStatement{
+								Condition: &ast.Identifier{Value: "a"},
+								Consequence: &ast.BlockStatement{
+									Statements: []ast.Statement{
+										&ast.AssignStatement{
+											Type:     ast.IntType,
+											Variable: ast.Identifier{Value: "a"},
+											Value:    &ast.IntegerLiteral{Value: 1},
+										},
+									},
+								},
+							},
+						},
+					},
+					Alternative: &ast.BlockStatement{
+						Statements: []ast.Statement{
+							&ast.AssignStatement{
+								Type:     ast.IntType,
+								Variable: ast.Identifier{Value: "a"},
+								Value:    &ast.IntegerLiteral{Value: 2},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: parse.DupSymError{
+				Source: parse.Token{Type: parse.Ident, Val: "a", Line: 6, Column: 15}},
+		},
 	}
 
-	if len(fn.Parameters) != 3 {
-		t.Errorf("testIfElse() has wrong parameters length got=%v",
-			len(fn.Parameters))
+	for _, tt := range tests {
+		input := createTestContractCode(tt.contractTmpl)
+		contract, err := parseTestContract(input)
+
+		if err != nil && err == tt.expectedErr {
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("parser error: %q", err)
+			t.FailNow()
+		}
+
+		for i, fn := range contract.Functions {
+			runIfStatementTestCases(t, fn, tt.expectedFnHeaders[i], tt.expected[i])
+		}
 	}
+}
 
-	testFnParameters(t, fn.Parameters[0], ast.IntType, "foo")
-	testFnParameters(t, fn.Parameters[1], ast.StringType, "bar")
-	testFnParameters(t, fn.Parameters[2], ast.StringType, "baz")
+func runIfStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efh expectedFnHeader, tt ast.IfStatement) {
+	t.Logf("test IfStatement - [%s]", fn.Name)
 
-	// test testIfElse()'s assign statements
-	for i, stmt := range fn.Body.Statements {
+	chkFnHeader(t, fn, efh)
+
+	for _, stmt := range fn.Body.Statements {
 		ifStmt, ok := stmt.(*ast.IfStatement)
 		if !ok {
 			t.Errorf("function body stmt is not *ast.IfStatement. got=%T", stmt)
 		}
-		tc := tt.conditionTestCase[i]
-		testIfStatement(t, ifStmt, tc.condition, tc.consequence, tc.alternative)
+		testIfStatement(t, ifStmt, tt.Condition, tt.Consequence, tt.Alternative)
 	}
 }
 
-func testExpressionStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test expression-statement statement")
-
-	// test testExpressionStatement() function body, parameters, return type
-	if fn.ReturnType != ast.BoolType {
-		t.Errorf("testExpressionS	tatement() has wrong return type expected=%v, got=%v",
-			ast.BoolType.String(), fn.ReturnType.String())
+func TestExpressionStatement(t *testing.T) {
+	tests := []struct {
+		contractTmpl      contractTmplData
+		expectedFnHeaders []expectedFnHeader
+		expected          []ast.ExpressionStatement
+		expectedErr       error
+	}{
+		/*
+			func add() {
+			}
+			func expressionStatement1() {
+				add()
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "add",
+						Args:     "",
+						RetType:  "",
+						Stmts:    []string{},
+					},
+					{
+						FuncName: "expressionStatement",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"add()",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ExpressionStatement{
+				{},
+				{
+					Expr: &ast.CallExpression{
+						Function:  &ast.Identifier{Value: "add"},
+						Arguments: []ast.Expression{},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func add() {
+			}
+			func expressionStatement1() {
+				add(1, 2)
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "add",
+						Args:     "",
+						RetType:  "",
+						Stmts:    []string{},
+					},
+					{
+						FuncName: "expressionStatement",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							"add(1, 2)",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ExpressionStatement{
+				{},
+				{
+					Expr: &ast.CallExpression{
+						Function: &ast.Identifier{Value: "add"},
+						Arguments: []ast.Expression{
+							&ast.IntegerLiteral{Value: 1},
+							&ast.IntegerLiteral{Value: 2},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		/*
+			func add() {
+			}
+			func expressionStatement1(foo int) {
+				add(foo, 2)
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "add",
+						Args:     "",
+						RetType:  "",
+						Stmts:    []string{},
+					},
+					{
+						FuncName: "expressionStatement",
+						Args:     "foo int",
+						RetType:  "",
+						Stmts: []string{
+							"add(foo, 2)",
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{
+							argIdent: "foo",
+							argType:  ast.IntType,
+						},
+					},
+				},
+			},
+			expected: []ast.ExpressionStatement{
+				{},
+				{
+					Expr: &ast.CallExpression{
+						Function: &ast.Identifier{Value: "add"},
+						Arguments: []ast.Expression{
+							&ast.Identifier{Value: "foo"},
+							&ast.IntegerLiteral{Value: 2},
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+		},
 	}
 
-	if len(fn.Parameters) != 1 {
-		t.Errorf("testExpressionStatement() has wrong parameters length got=%v",
-			len(fn.Parameters))
-	}
+	for _, tt := range tests {
+		input := createTestContractCode(tt.contractTmpl)
+		contract, err := parseTestContract(input)
 
-	testFnParameters(t, fn.Parameters[0], ast.BoolType, "foo")
-
-	// test testExpressionStatement()'s return statements
-	for i, stmt := range fn.Body.Statements {
-		expStmt, ok := stmt.(*ast.ExpressionStatement)
-		if !ok {
-			t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", expStmt)
+		if err != nil {
+			t.Errorf("parser error: %q", err)
+			t.FailNow()
 		}
 
-		tc := tt.expressionStmtTestCase[i]
-		testExpression(t, expStmt.Expr, tc.expression)
+		for i, fn := range contract.Functions {
+			runExpressionStatementTestCases(t, fn, tt.expectedFnHeaders[i], tt.expected[i])
+		}
 	}
 }
 
-func testInlineReturnStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test inline-function with return statement")
+func runExpressionStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efh expectedFnHeader, tt ast.ExpressionStatement) {
+	t.Logf("test ExpressionStatement - [%s]", fn.Name)
 
-	if fn.ReturnType != ast.StringType {
-		t.Errorf("testInlineReturnStatement() has wrong return type expected=%v, got=%v",
-			ast.StringType.String(), fn.ReturnType.String())
+	chkFnHeader(t, fn, efh)
+
+	for _, stmt := range fn.Body.Statements {
+		exprStmt, ok := stmt.(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", stmt)
+		}
+		testExpression(t, exprStmt.Expr, tt.Expr)
 	}
-
-	if len(fn.Parameters) != 0 {
-		t.Errorf("testInlineReturnStatement() has wrong parameters length got=%v",
-			len(fn.Parameters))
-	}
-
-	if len(fn.Body.Statements) != 1 {
-		t.Errorf("testInlineReturnStatement() has wrong body statements length got=%v",
-			len(fn.Parameters))
-	}
-
-	returnStmt, ok := fn.Body.Statements[0].(*ast.ReturnStatement)
-	if !ok {
-		t.Errorf("function body stmt is not *ast.ReturnStatement. got=%T", fn.Body.Statements[0])
-	}
-
-	testExpression(t, returnStmt.ReturnValue, tt.inlineReturnStmtTestCase.returnValue)
 }
 
-func testInlineAssignStatementFunc(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test inline-function with assign statement")
-
-	if fn.ReturnType != ast.VoidType {
-		t.Errorf("testInlineAssignStatement() has wrong return type expected=%v, got=%v",
-			ast.StringType.String(), fn.ReturnType.String())
+func TestReassignStatement(t *testing.T) {
+	tests := []struct {
+		contractTmpl      contractTmplData
+		expectedFnHeaders []expectedFnHeader
+		expected          []ast.ReassignStatement
+		expectedErr       error
+	}{
+		/*
+			func reassignStatement1(a string) {
+				a = "hello, world"
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "reassignStatement1",
+						Args:     "a string",
+						RetType:  "",
+						Stmts: []string{
+							`a = "hello, world"`,
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args: []expectedFnArg{
+						{
+							argIdent: "a",
+							argType:  ast.StringType,
+						},
+					},
+				},
+			},
+			expected: []ast.ReassignStatement{
+				{
+					Variable: &ast.Identifier{Value: "a"},
+					Value:    &ast.StringLiteral{Value: "\"hello, world\""},
+				},
+			},
+		},
+		/*
+			func reassignStatement2() {
+				a = "hello, world"
+			}
+		*/
+		{
+			contractTmpl: contractTmplData{
+				Fns: []fnTmplData{
+					{
+						FuncName: "reassignStatement2",
+						Args:     "",
+						RetType:  "",
+						Stmts: []string{
+							`a = "hello, world"`,
+						},
+					},
+				},
+			},
+			expectedFnHeaders: []expectedFnHeader{
+				{
+					retType: ast.VoidType,
+					args:    []expectedFnArg{},
+				},
+			},
+			expected: []ast.ReassignStatement{
+				{
+					Variable: &ast.Identifier{Value: "a"},
+					Value:    &ast.StringLiteral{Value: "\"hello, world\""},
+				},
+			},
+			expectedErr: parse.NotExistSymError{
+				Source: parse.Token{Type: parse.Ident, Val: "a", Line: 3, Column: 9},
+			},
+		},
 	}
 
-	if len(fn.Parameters) != 0 {
-		t.Errorf("testInlineAssignStatement() has wrong parameters length got=%v",
-			len(fn.Parameters))
-	}
+	for i, tt := range tests {
+		input := createTestContractCode(tt.contractTmpl)
+		contract, err := parseTestContract(input)
 
-	if len(fn.Body.Statements) != 1 {
-		t.Errorf("testInlineAssignStatement() has wrong body statements length got=%v",
-			len(fn.Parameters))
-	}
+		if err != nil && err.Error() == tt.expectedErr.Error() {
+			continue
+		}
 
-	stmt, ok := fn.Body.Statements[0].(*ast.AssignStatement)
-	if !ok {
-		t.Errorf("function body stmt is not *ast.AssignStatement. got=%T", fn.Body.Statements[0])
-	}
+		if err != nil && err.Error() != tt.expectedErr.Error() {
+			t.Errorf("test[%d] - unexpected parser error expected=%s, got=%s",
+				i, err.Error(), tt.expectedErr.Error())
+			t.FailNow()
+		}
 
-	tc := tt.inlineAssignStmtTestCase
-	testAssignStatement(t, stmt, tc.ds, tc.ident, tc.value)
+		for i, fn := range contract.Functions {
+			runReassignStatementTestCases(t, fn, tt.expectedFnHeaders[i], tt.expected[i])
+		}
+	}
 }
 
-func testInlineConditionStatement(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test inline-function with condition statement")
+func runReassignStatementTestCases(t *testing.T, fn *ast.FunctionLiteral, efh expectedFnHeader, tt ast.ReassignStatement) {
+	t.Logf("test ExpressionStatement - [%s]", fn.Name)
 
-	if fn.ReturnType != ast.VoidType {
-		t.Errorf("testInlineConditionStatement() has wrong return type expected=%v, got=%v",
-			ast.StringType.String(), fn.ReturnType.String())
+	chkFnHeader(t, fn, efh)
+
+	for _, stmt := range fn.Body.Statements {
+		reasnStmt, ok := stmt.(*ast.ReassignStatement)
+		if !ok {
+			t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", stmt)
+		}
+		testReassignStatement(t, reasnStmt, *tt.Variable, tt.Value)
 	}
-
-	if len(fn.Parameters) != 0 {
-		t.Errorf("testInlineConditionStatement() has wrong parameters length got=%v",
-			len(fn.Parameters))
-	}
-
-	if len(fn.Body.Statements) != 1 {
-		t.Errorf("testInlineConditionStatement() has wrong body statements length got=%v",
-			len(fn.Parameters))
-	}
-
-	stmt, ok := fn.Body.Statements[0].(*ast.IfStatement)
-	if !ok {
-		t.Errorf("function body stmt is not *ast.IfStatement. got=%T", fn.Body.Statements[0])
-	}
-
-	tc := tt.inlineConditionTestCase
-	testIfStatement(t, stmt, tc.condition, tc.consequence, tc.alternative)
 }
 
-func testInlineExpressionStatement(t *testing.T, fn *ast.FunctionLiteral, tt parserTestCase) {
-	t.Log("test inline-function with expression statement")
-
-	if fn.ReturnType != ast.VoidType {
-		t.Errorf("testInlineExpressionStatement() has wrong return type expected=%v, got=%v",
-			ast.StringType.String(), fn.ReturnType.String())
+func testExpression(t *testing.T, exp ast.Expression, expected ast.Expression) {
+	if exp == nil && expected == nil {
+		return
 	}
 
-	if len(fn.Parameters) != 0 {
-		t.Errorf("testInlineExpressionStatement() has wrong parameters length got=%v",
-			len(fn.Parameters))
-	}
-
-	if len(fn.Body.Statements) != 1 {
-		t.Errorf("testInlineExpressionStatement() has wrong body statements length got=%v",
-			len(fn.Parameters))
-	}
-
-	stmt, ok := fn.Body.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Errorf("function body stmt is not *ast.ExpressionStatement. got=%T", stmt)
-	}
-
-	tc := tt.inlineExpressionStmtTestCase
-	testExpression(t, stmt.Expr, tc.expression)
-}
-
-func testExpression(t *testing.T, exp ast.Expression, expected string) {
-	if exp.String() != expected {
-		t.Errorf(`expression is not "%s", bot got "%s"`, exp.String(), expected)
+	if exp.String() != expected.String() {
+		t.Errorf(`expression is not "%s", bot got "%s"`, exp.String(), expected.String())
 	}
 }
 
 func testFnParameters(t *testing.T, p *ast.ParameterLiteral, ds ast.DataStructure, id string) {
 	if p.Type != ds {
-		t.Errorf("wrong parameter type expected=%s, got=%s",
+		t.Errorf("wrong parameter type Expected=%s, got=%s",
 			p.Type.String(), ds.String())
 	}
 	if p.Identifier.Value != id {
-		t.Errorf("wrong parameter identifier expected=%T, got=%T",
-			p.Type, ds)
+		t.Errorf("wrong parameter identifier Expected=%s, got=%s",
+			p.Type.String(), ds.String())
 	}
 }
 
-func testAssignStatement(t *testing.T, stmt *ast.AssignStatement, ds ast.DataStructure, ident string, value string) {
+func testAssignStatement(t *testing.T, stmt *ast.AssignStatement, ds ast.DataStructure, ident ast.Identifier, value ast.Expression) {
 	if stmt.Type != ds {
-		t.Errorf("wrong assign statement type expected=%T, got=%T",
-			ds, stmt.Type)
+		t.Errorf("wrong assign statement type Expected=%s, got=%s",
+			ds.String(), stmt.Type.String())
 	}
-	if stmt.Variable.Value != ident {
-		t.Errorf("wrong assign statement variable expected=%s, got=%s",
-			ident, stmt.Variable.Value)
+	if stmt.Variable.String() != ident.String() {
+		t.Errorf("wrong assign statement variable Expected=%s, got=%s",
+			ident.String(), stmt.Variable.String())
 	}
-	if stmt.Value.String() != value {
-		t.Errorf("wrong assign statement value expected=%s, got=%s",
-			value, stmt.Value.String())
+	if stmt.Value.String() != value.String() {
+		t.Errorf("wrong assign statement value Expected=%s, got=%s",
+			value.String(), stmt.Value.String())
 	}
 }
 
-func testIfStatement(t *testing.T, stmt *ast.IfStatement, condition string, consequences []string, alternatives []string) {
-	if stmt.Condition.String() != condition {
-		t.Errorf("wrong condition statement type expected=%s, got=%s",
+func testIfStatement(t *testing.T, stmt *ast.IfStatement, condition ast.Expression, consequences *ast.BlockStatement, alternatives *ast.BlockStatement) {
+	if stmt.Condition.String() != condition.String() {
+		t.Errorf("wrong condition statement type Expected=%s, got=%s",
 			condition, stmt.Condition.String())
 	}
 
-	if len(stmt.Consequence.Statements) != len(consequences) {
-		t.Errorf("wrong condition statement consequences length expected=%d, got=%d",
-			len(consequences), len(stmt.Consequence.Statements))
+	if len(stmt.Consequence.Statements) != len(consequences.Statements) {
+		t.Errorf("wrong condition statement consequences length Expected=%d, got=%d",
+			len(consequences.Statements), len(stmt.Consequence.Statements))
 	}
 	for i, csq := range stmt.Consequence.Statements {
-		if csq.String() != consequences[i] {
-			t.Errorf("wrong condition statement consequences literal expected=%s, got=%s",
-				csq.String(), consequences[i])
+		if csq.String() != consequences.Statements[i].String() {
+			t.Errorf("wrong condition statement consequences literal Expected=%s, got=%s",
+				csq.String(), consequences.Statements[i].String())
 		}
 	}
 
 	if stmt.Alternative == nil {
 		return
 	}
-	if len(stmt.Alternative.Statements) != len(alternatives) {
-		t.Errorf("wrong condition statement alternatives length expected=%d, got=%d",
-			len(alternatives), len(stmt.Alternative.Statements))
+	if len(stmt.Alternative.Statements) != len(alternatives.Statements) {
+		t.Errorf("wrong condition statement alternatives length Expected=%d, got=%d",
+			len(alternatives.Statements), len(stmt.Alternative.Statements))
 	}
 	for i, alt := range stmt.Alternative.Statements {
-		if alt.String() != alternatives[i] {
-			t.Errorf("wrong condition statement alternative literal expected=%s, got=%s",
-				alt.String(), alternatives[i])
+		if alt.String() != alternatives.Statements[i].String() {
+			t.Errorf("wrong condition statement alternative literal Expected=%s, got=%s",
+				alt.String(), alternatives.Statements[i].String())
 		}
+	}
+}
+
+func testReassignStatement(t *testing.T, stmt *ast.ReassignStatement, ident ast.Identifier, value ast.Expression) {
+	if stmt.Variable.String() != ident.String() {
+		t.Errorf("wrong re-assign statement variable Expected=%s, got=%s",
+			ident.String(), stmt.Variable.String())
+	}
+	if stmt.Value.String() != value.String() {
+		t.Errorf("wrong re-assign statement value Expected=%s, got=%s",
+			value.String(), stmt.Value.String())
 	}
 }
