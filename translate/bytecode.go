@@ -60,6 +60,27 @@ func (a *Asm) EmergeAt(index int, operator opcode.Type, operands ...[]byte) int 
 	return len(a.AsmCodes)
 }
 
+func (a *Asm) ReplaceOperandAt(index int, operands []byte) error {
+	a.AsmCodes[index] = AsmCode{
+		Value:   fmt.Sprintf("%x", operands),
+		RawByte: operands,
+	}
+	return nil
+}
+
+func (a *Asm) ReplaceOperatorAt(index int, operator opcode.Type) error {
+	opStr, err := operator.String()
+	if err != nil {
+		return err
+	}
+
+	a.AsmCodes[index] = AsmCode{
+		Value:   opStr,
+		RawByte: []byte{byte(operator)},
+	}
+	return nil
+}
+
 func (a *Asm) Equal(a1 Asm) bool {
 	if len(a.AsmCodes) != len(a1.AsmCodes) {
 		return false
