@@ -1,0 +1,9 @@
+contract{
+    func add() int {
+        int a = 1 + 2
+        int b = 3 + 4
+        int c = 5 * 6
+        int d = 8 / 4
+        return a + (b - c) * d
+    }
+}
