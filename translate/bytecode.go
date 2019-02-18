@@ -100,7 +100,11 @@ func (a *Asm) Equal(a1 Asm) bool {
 }
 
 func (a *Asm) ToRawByteCode() []byte {
-	return []byte{}
+	result := make([]byte, 0)
+	for _, code := range a.AsmCodes {
+		result = append(result, code.RawByte...)
+	}
+	return result
 }
 
 func (a *Asm) toString() string {
