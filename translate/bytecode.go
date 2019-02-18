@@ -107,7 +107,7 @@ func (a *Asm) ToRawByteCode() []byte {
 	return result
 }
 
-func (a *Asm) toString() string {
+func (a *Asm) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("[")
