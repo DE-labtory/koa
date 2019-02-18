@@ -78,6 +78,10 @@ func (a *Asm) Equal(a1 Asm) bool {
 	return true
 }
 
+func (a *Asm) ToRawByteCode() []byte {
+	return []byte{}
+}
+
 func (a *Asm) toString() string {
 	var out bytes.Buffer
 
