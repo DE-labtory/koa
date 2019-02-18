@@ -244,3 +244,111 @@ func TestBytecodeEmerge(t *testing.T) {
 		}
 	}
 }
+
+func TestAsm_ToRawByteCode(t *testing.T) {
+	tests := []struct {
+		asm    translate.Asm
+		expect []byte
+	}{
+		{
+			asm: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Add)},
+						Value:   "Add",
+					},
+					{
+						RawByte: []byte{0x01},
+						Value:   "01",
+					},
+					{
+						RawByte: []byte{0x02},
+						Value:   "02",
+					},
+				},
+			},
+			expect: []byte{byte(opcode.Add), 0x01, 0x02},
+		},
+		{
+			asm: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Mul)},
+						Value:   "Mul",
+					},
+					{
+						RawByte: []byte{0x11},
+						Value:   "11",
+					},
+					{
+						RawByte: []byte{0x22},
+						Value:   "22",
+					},
+				},
+			},
+			expect: []byte{byte(opcode.Mul), 0x11, 0x22},
+		},
+		{
+			asm: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0xff, 0xff},
+						Value:   "ffff",
+					},
+					{
+						RawByte: []byte{0xff, 0xff},
+						Value:   "ffff",
+					},
+				},
+			},
+			expect: []byte{byte(opcode.LoadFunc), 0xff, 0xff, 0xff, 0xff},
+		},
+		{
+			asm: translate.Asm{
+				AsmCodes: []translate.AsmCode{
+					{
+						RawByte: []byte{byte(opcode.LoadFunc)},
+						Value:   "LoadFunc",
+					},
+					{
+						RawByte: []byte{0x12, 0x34, 0x56, 0x78, 0x9a},
+						Value:   "123456789a",
+					},
+					{
+						RawByte: []byte{0xab, 0xcd, 0xef},
+						Value:   "abcdef",
+					},
+					{
+						RawByte: []byte{byte(opcode.Mul)},
+						Value:   "Mul",
+					},
+					{
+						RawByte: []byte{0x11},
+						Value:   "11",
+					},
+					{
+						RawByte: []byte{0x22},
+						Value:   "22",
+					},
+				},
+			},
+			expect: []byte{
+				byte(opcode.LoadFunc), 0x12, 0x34, 0x56, 0x78, 0x9a, 0xab, 0xcd, 0xef,
+				byte(opcode.Mul), 0x11, 0x22,
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		result := tt.asm.ToRawByteCode()
+
+		if !bytes.Equal(result, tt.expect) {
+			t.Errorf("test[%d] - got unexpected result from ToRawByteCode(), expected=%v, got=%v",
+				i, tt.expect, result)
+		}
+	}
+}
