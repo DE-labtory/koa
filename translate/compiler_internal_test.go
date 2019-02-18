@@ -20,6 +20,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/ast"
 	"github.com/DE-labtory/koa/opcode"
 )
@@ -44,18 +45,76 @@ type statementCompileTestCase struct {
 	expectedErr error
 }
 
-// TODO: implement test cases :-)
-func TestGenerateFuncJumper(t *testing.T) {
+func TestCompileFuncSel(t *testing.T) {
+	tests := []struct {
+		funcSel string
+		funcDst int
+		expect  *Asm
+		err     error
+	}{
+		{
+			funcSel: string(abi.Selector("func Foo()")),
+			funcDst: 15,
+			expect: &Asm{
+				AsmCodes: []AsmCode{
+					// DUP
+					{
+						RawByte: []byte{0x30},
+						Value:   "DUP",
+					},
+					// Push e3170de100000000
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0xe3, 0x17, 0x0d, 0xe1, 0x00, 0x00, 0x00, 0x00},
+						Value:   "e3170de100000000",
+					},
+					// EQ
+					{
+						RawByte: []byte{0x14},
+						Value:   "EQ",
+					},
+					// Push 000000000000000f
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
+						Value:   "000000000000000f",
+					},
+					// Jumpi
+					{
+						RawByte: []byte{0x29},
+						Value:   "Jumpi",
+					},
+				},
+			},
+			err: nil,
+		},
+	}
 
+	for i, test := range tests {
+		asm := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+		err := compileFuncSel(asm, test.funcSel, test.funcDst)
+
+		if !asm.Equal(*test.expect) {
+			t.Fatalf("test[%d] - compileFuncSel() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, asm)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - compileFuncSel() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+
+	}
 }
 
 // TODO: implement test cases :-)
 func TestCompileAbi(t *testing.T) {
-
-}
-
-// TODO: implement test cases :-)
-func TestCompileFunction(t *testing.T) {
 
 }
 

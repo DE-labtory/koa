@@ -50,11 +50,29 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		}
 	}
 
-	if err := generateFuncJumper(asm); err != nil {
-		return *asm, err
-	}
-
 	return *asm, nil
+}
+
+// Compiles function jumper logic to find a function with its function selector
+func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
+	// Duplicates the function selector to find.
+	asm.Emerge(opcode.DUP)
+	// Pushes the function selector of this function literal.
+	selector, err := encoding.EncodeOperand(funcSel)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, selector)
+	asm.Emerge(opcode.EQ)
+	// If the result is equal, pushed the destination to jump.
+	dst, err := encoding.EncodeOperand(funcDst)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, dst)
+	asm.Emerge(opcode.Jumpi)
+
+	return nil
 }
 
 func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
@@ -66,12 +84,6 @@ func ExtractAbi(c ast.Contract) (*abi.ABI, error) {
 	return &abi.ABI{
 		Methods: abiMethods,
 	}, nil
-}
-
-// TODO: implement me w/ test cases :-)
-// Generates a bytecode of function jumper.
-func generateFuncJumper(bytecode *Asm) error {
-	return nil
 }
 
 // Generates the ABI of functions in contract.
@@ -123,9 +135,6 @@ func compileStatement(s ast.Statement, bytecode *Asm, tracer MemTracer) error {
 
 	case *ast.ExpressionStatement:
 		return compileExpressionStatement(statement, bytecode, tracer)
-
-	case *ast.FunctionLiteral:
-		return compileFunctionLiteral(statement, bytecode)
 
 	default:
 		return nil
@@ -298,11 +307,6 @@ func compileBlockStatement(s *ast.BlockStatement, bytecode *Asm, tracer MemTrace
 
 func compileExpressionStatement(s *ast.ExpressionStatement, bytecode *Asm, tracer MemTracer) error {
 	return compileExpression(s.Expr, bytecode, tracer)
-}
-
-// TODO: implement me w/ test cases :-)
-func compileFunctionLiteral(s *ast.FunctionLiteral, bytecode *Asm) error {
-	return nil
 }
 
 // TODO: implement me w/ test cases :-)
