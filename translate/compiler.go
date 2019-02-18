@@ -96,6 +96,19 @@ func compileRevert(asm *Asm) {
 	asm.Emerge(opcode.Returning)
 }
 
+// Fill the function jumper in the location of function jumper placeholder.
+func fillFuncJmpr(asm *Asm, funcJmpr Asm) error {
+	if len(asm.AsmCodes) < len(funcJmpr.AsmCodes) {
+		return fmt.Errorf("Can't fill the function jumper. Bytecode=%x, FuncJmpr=%x", asm.AsmCodes, funcJmpr.AsmCodes)
+	}
+
+	for i, asmCode := range funcJmpr.AsmCodes {
+		asm.AsmCodes[i] = asmCode
+	}
+
+	return nil
+}
+
 // Compiles function jumper logic to find a function with its function selector
 func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
 	// Duplicates the function selector to find.
