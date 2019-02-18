@@ -26,6 +26,15 @@ import (
 	"github.com/DE-labtory/koa/opcode"
 )
 
+type FuncMap map[string]int
+
+// Declare() saves the start point of function.
+func (m FuncMap) Declare(signature string, asm Asm) {
+	funcSig := abi.Selector(signature)
+	m[string(funcSig)] = len(asm.AsmCodes)
+}
+
+// TODO: implement me w/ test cases :-)
 // CompileContract() compiles a smart contract.
 // returns bytecode and error.
 func CompileContract(c ast.Contract) (Asm, error) {
