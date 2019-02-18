@@ -144,13 +144,13 @@ type AssignStatement struct {
 	Value    Expression
 }
 
-func (as *AssignStatement) do() {}
+func (a *AssignStatement) do() {}
 
-func (as *AssignStatement) String() string {
+func (a *AssignStatement) String() string {
 	var out bytes.Buffer
-	out.WriteString(as.Type.String() + " ")
-	out.WriteString(as.Variable.Name + " = ")
-	out.WriteString(as.Value.String())
+	out.WriteString(a.Type.String() + " ")
+	out.WriteString(a.Variable.Name + " = ")
+	out.WriteString(a.Value.String())
 	return out.String()
 }
 
@@ -160,12 +160,12 @@ type ReassignStatement struct {
 	Value    Expression
 }
 
-func (rs *ReassignStatement) do() {}
-func (rs *ReassignStatement) String() string {
+func (r *ReassignStatement) do() {}
+func (r *ReassignStatement) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(rs.Variable.String() + " = ")
-	out.WriteString(rs.Value.String())
+	out.WriteString(r.Variable.String() + " = ")
+	out.WriteString(r.Value.String())
 
 	return out.String()
 }
@@ -175,13 +175,13 @@ type ReturnStatement struct {
 	ReturnValue Expression
 }
 
-func (rs *ReturnStatement) do() {}
+func (r *ReturnStatement) do() {}
 
-func (rs *ReturnStatement) String() string {
-	if rs.ReturnValue == nil {
+func (r *ReturnStatement) String() string {
+	if r.ReturnValue == nil {
 		return "return"
 	}
-	return fmt.Sprintf("return %s", rs.ReturnValue.String())
+	return fmt.Sprintf("return %s", r.ReturnValue.String())
 }
 
 // Represent if statement
@@ -191,14 +191,14 @@ type IfStatement struct {
 	Alternative *BlockStatement
 }
 
-func (is *IfStatement) do() {}
+func (i *IfStatement) do() {}
 
-func (is *IfStatement) String() string {
-	if is.Alternative == nil {
-		return fmt.Sprintf("if ( %s ) { %s }", is.Condition.String(), is.Consequence.String())
+func (i *IfStatement) String() string {
+	if i.Alternative == nil {
+		return fmt.Sprintf("if ( %s ) { %s }", i.Condition.String(), i.Consequence.String())
 	}
-	return fmt.Sprintf("if ( %s ) { %s } else { %s }", is.Condition.String(), is.Consequence.String(),
-		is.Alternative.String())
+	return fmt.Sprintf("if ( %s ) { %s } else { %s }", i.Condition.String(), i.Consequence.String(),
+		i.Alternative.String())
 }
 
 // FunctionLiteral represents function definition
@@ -210,23 +210,22 @@ type FunctionLiteral struct {
 	ReturnType DataStructure
 }
 
-func (fl *FunctionLiteral) do() {}
+func (f *FunctionLiteral) do() {}
 
-// TODO: Add test cases when Type field is added to Identifier
-func (fl *FunctionLiteral) String() string {
+func (f *FunctionLiteral) String() string {
 	var out bytes.Buffer
 
 	params := []string{}
-	for _, p := range fl.Parameters {
+	for _, p := range f.Parameters {
 		params = append(params, p.String())
 	}
 
-	out.WriteString("func " + fl.Name.String() + "(")
+	out.WriteString("func " + f.Name.String() + "(")
 
 	out.WriteString(strings.Join(params, ", "))
 	out.WriteString(") ")
-	out.WriteString(fl.ReturnType.String() + " {\n")
-	out.WriteString(fl.Body.String() + "\n")
+	out.WriteString(f.ReturnType.String() + " {\n")
+	out.WriteString(f.Body.String() + "\n")
 	out.WriteString("}")
 
 	return out.String()
@@ -247,15 +246,15 @@ type BlockStatement struct {
 	Statements []Statement
 }
 
-func (bs *BlockStatement) do() {}
+func (b *BlockStatement) do() {}
 
-func (bs *BlockStatement) String() string {
-	if bs.Statements == nil {
+func (b *BlockStatement) String() string {
+	if b.Statements == nil {
 		return ""
 	}
 
 	str := make([]string, 0)
-	for _, s := range bs.Statements {
+	for _, s := range b.Statements {
 		str = append(str, s.String())
 	}
 	return strings.Join(str, "\n")
@@ -266,10 +265,10 @@ type ExpressionStatement struct {
 	Expr Expression
 }
 
-func (es *ExpressionStatement) do() {}
+func (e *ExpressionStatement) do() {}
 
-func (es *ExpressionStatement) String() string {
-	return es.Expr.String()
+func (e *ExpressionStatement) String() string {
+	return e.Expr.String()
 }
 
 // Represent string literal
