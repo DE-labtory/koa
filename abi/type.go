@@ -23,6 +23,7 @@ import (
 type ParamType string
 
 const (
+	Integer   ParamType = "int"
 	Integer64 ParamType = "int64"
 	Boolean   ParamType = "bool"
 	String    ParamType = "string"
@@ -36,6 +37,8 @@ func NewType(paramType string) (Type, error) {
 	typ := Type{}
 
 	switch paramType {
+	case "int":
+		typ.Type = Integer
 	case "int64":
 		typ.Type = Integer64
 	case "bool":

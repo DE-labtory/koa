@@ -17,9 +17,11 @@
 package abi_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/DE-labtory/koa/abi"
+	"github.com/DE-labtory/koa/ast"
 )
 
 func TestNew(t *testing.T) {
@@ -79,7 +81,69 @@ func TestNew(t *testing.T) {
 	}
 }
 
-// TODO: implement test cases :-)
 func TestExtractAbiFromFunction(t *testing.T) {
+	tests := []struct {
+		f      ast.FunctionLiteral
+		expect abi.Method
+		err    error
+	}{
+		{
+			f: ast.FunctionLiteral{
+				Name: &ast.Identifier{
+					Name: "add",
+				},
+				Parameters: []*ast.ParameterLiteral{
+					{
+						Identifier: &ast.Identifier{
+							Name: "a",
+						},
+						Type: ast.IntType,
+					},
+					{
+						Identifier: &ast.Identifier{
+							Name: "b",
+						},
+						Type: ast.IntType,
+					},
+				},
+				ReturnType: ast.IntType,
+			},
+			expect: abi.Method{
+				Name: "add",
+				Arguments: []abi.Argument{
+					{
+						Name: "a",
+						Type: abi.Type{
+							Type: "int",
+						},
+					},
+					{
+						Name: "b",
+						Type: abi.Type{
+							Type: "int",
+						},
+					},
+				},
+				Output: abi.Argument{
+					Name: "",
+					Type: abi.Type{
+						Type: "int",
+					},
+				},
+			},
+			err: nil,
+		},
+	}
 
+	for i, test := range tests {
+		m, err := abi.ExtractAbiFromFunction(test.f)
+
+		if !reflect.DeepEqual(m, test.expect) {
+			t.Fatalf("test[%d] - TestExtractAbiFromFunction() result wrong.\nexpected=%v,\ngot=%v", i, test.expect, m)
+		}
+
+		if err != nil && err != test.err {
+			t.Fatalf("test[%d] - TestExtractAbiFromFunction() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+		}
+	}
 }
