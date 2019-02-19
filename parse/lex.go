@@ -486,7 +486,7 @@ func identifierStateFn(s *state, e emitter) stateFn {
 // After ignoring all spaces, it returns DefaultStateFn.
 //
 func spaceStateFn(s *state, e emitter) stateFn {
-	const spaceChars = " \t"
+	const spaceChars = " \t\r"
 
 	if !s.accept(spaceChars) {
 		errToken := Token{Illegal, "Invalid function call: spaceStateFn", s.end, s.line}
