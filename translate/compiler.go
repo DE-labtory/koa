@@ -89,7 +89,7 @@ func createFuncJmprPlaceholder(c ast.Contract, asm *Asm, funcMap FuncMap) error 
 
 	// No match to any function selector, Revert!
 	funcMap.Declare("Revert", *asm)
-	compileRevert(asm)
+	compileExit(asm)
 
 	return nil
 }
@@ -105,10 +105,10 @@ func compileProgramEndPoint(asm *Asm, revertDst int) error {
 	return nil
 }
 
-// compileRevert compiles exiting the program.
+// compileExit compiles exiting the program.
 // If jumps to here, exit the program.
-func compileRevert(asm *Asm) {
-	asm.Emerge(opcode.Returning)
+func compileExit(asm *Asm) {
+	asm.Emerge(opcode.Exit)
 }
 
 // Generates a bytecode of function jumper.
@@ -137,7 +137,7 @@ func compileFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 	}
 
 	// No match to any function selector, Revert!
-	compileRevert(funcJmpr)
+	compileExit(funcJmpr)
 
 	// Replace expected function jumper with new function jumper.
 	if err := fillFuncJmpr(asm, *funcJmpr); err != nil {
