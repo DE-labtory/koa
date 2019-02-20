@@ -358,7 +358,7 @@ func TestCompile(t *testing.T) {
 			continue
 		}
 
-		asm, err := Compile(str)
+		asm, _, err := Compile(str)
 
 		// TODO : after implements all functions in compile
 		if err != nil && err.Error() != test.err.Error() {
