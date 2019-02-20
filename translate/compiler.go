@@ -61,7 +61,7 @@ func CompileContract(c ast.Contract) (Asm, error) {
 
 	// Compile Function jumper with updated FuncMap.
 	// And replace expected function jumper with new function jumper
-	if err := generateFuncJmpr(c, asm, funcMap); err != nil {
+	if err := compileFuncJmpr(c, asm, funcMap); err != nil {
 		return *asm, err
 	}
 
@@ -112,7 +112,7 @@ func compileRevert(asm *Asm) {
 }
 
 // Generates a bytecode of function jumper.
-func generateFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
+func compileFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 	funcJmpr := &Asm{
 		AsmCodes: make([]AsmCode, 0),
 	}
@@ -213,7 +213,11 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
 func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) error {
-	// TODO: generate function identifier with Keccak256()
+	for i, param := range f.Parameters {
+		if err := compileParameter(*param, i, bytecode, tracer); err != nil {
+			return err
+		}
+	}
 
 	statements := f.Body.Statements
 	for _, s := range statements {
@@ -221,6 +225,20 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) err
 			return err
 		}
 	}
+
+	return nil
+}
+
+// compileParameter() compiles parameters in a function.
+func compileParameter(p ast.ParameterLiteral, argNum int, bytecode *Asm, tracer MemTracer) error {
+	tracer.Define(p.Identifier.String())
+
+	operand, err := encoding.EncodeOperand(argNum)
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, operand)
+	bytecode.Emerge(opcode.LoadArgs)
 
 	return nil
 }
@@ -443,9 +461,6 @@ func compileExpression(e ast.Expression, asm *Asm, tracer MemTracer) error {
 	case *ast.Identifier:
 		return compileIdentifier(expr, asm, tracer)
 
-	case *ast.ParameterLiteral:
-		return compileParameterLiteral(expr, asm)
-
 	default:
 		return errors.New("compileExpression() error")
 	}
@@ -547,10 +562,5 @@ func compileIdentifier(e *ast.Identifier, asm *Asm, tracer MemTracer) error {
 	asm.Emerge(opcode.Push, offset)
 	asm.Emerge(opcode.Mload)
 
-	return nil
-}
-
-// TODO: implement me w/ test cases :-)
-func compileParameterLiteral(e *ast.ParameterLiteral, bytecode *Asm) error {
 	return nil
 }
