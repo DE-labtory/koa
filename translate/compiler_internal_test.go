@@ -116,10 +116,10 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 						RawByte: []byte{0x29},
 						Value:   "Jumpi",
 					},
-					// Returning
+					// Exit
 					{
-						RawByte: []byte{0x26},
-						Value:   "Returning",
+						RawByte: []byte{0x32},
+						Value:   "Exit",
 					},
 				},
 			},
@@ -210,7 +210,7 @@ func TestCompileProgramEndPoint(t *testing.T) {
 	}
 }
 
-func TestCompileRevert(t *testing.T) {
+func TestCompileExit(t *testing.T) {
 	tests := []struct {
 		expect Asm
 	}{
@@ -218,8 +218,8 @@ func TestCompileRevert(t *testing.T) {
 			expect: Asm{
 				AsmCodes: []AsmCode{
 					{
-						RawByte: []byte{0x26},
-						Value:   "Returning",
+						RawByte: []byte{0x32},
+						Value:   "Exit",
 					},
 				},
 			},
@@ -231,10 +231,10 @@ func TestCompileRevert(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		compileRevert(asm)
+		compileExit(asm)
 
 		if !asm.Equal(test.expect) {
-			t.Fatalf("test[%d] - compileRevert() result wrong. expected=%v, got=%v", i, test.expect, asm)
+			t.Fatalf("test[%d] - compileExit() result wrong. expected=%v, got=%v", i, test.expect, asm)
 		}
 	}
 }
@@ -454,10 +454,10 @@ func TestCompileFuncJmpr(t *testing.T) {
 						RawByte: []byte{0x29},
 						Value:   "Jumpi",
 					},
-					// Returning
+					// Exit
 					{
-						RawByte: []byte{0x26},
-						Value:   "Returning",
+						RawByte: []byte{0x32},
+						Value:   "Exit",
 					},
 				},
 			},
