@@ -239,7 +239,7 @@ func TestCompileRevert(t *testing.T) {
 	}
 }
 
-func TestGenerateFuncJmpr(t *testing.T) {
+func TestCompileFuncJmpr(t *testing.T) {
 	tests := []struct {
 		contract  ast.Contract
 		asm       *Asm
@@ -472,14 +472,14 @@ func TestGenerateFuncJmpr(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		err := generateFuncJmpr(test.contract, test.asm, test.funcMap)
+		err := compileFuncJmpr(test.contract, test.asm, test.funcMap)
 
 		if !test.asm.Equal(*test.expectAsm) {
-			t.Fatalf("test[%d] - generateFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, test.asm)
+			t.Fatalf("test[%d] - compileFuncJmpr() bytecode result wrong.\nexpected=%v,\ngot=%v", i, test.expectAsm, test.asm)
 		}
 
 		if err != nil && err != test.err {
-			t.Fatalf("test[%d] - generateFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
+			t.Fatalf("test[%d] - compileFuncJmpr() error wrong.\nexpected=%v,\ngot=%v", i, test.err, err)
 		}
 	}
 }
@@ -803,6 +803,16 @@ func TestCompileFuncSel(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompileAbi(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileFunction(t *testing.T) {
+
+}
+
+// TODO: implement test cases :-)
+func TestCompileParameter(t *testing.T) {
 
 }
 
@@ -1438,11 +1448,6 @@ func TestCompileExpressionStatement(t *testing.T) {
 				i, test.expected, a)
 		}
 	}
-}
-
-// TODO: implement test cases :-)
-func TestCompileFunctionLiteral(t *testing.T) {
-
 }
 
 // TODO: implement test cases :-)
@@ -2485,11 +2490,6 @@ func TestCompileIdentifier(t *testing.T) {
 	}
 
 	runExpressionCompileTests(t, tests)
-}
-
-// TODO: implement test cases :-)
-func TestCompileParameterLiteral(t *testing.T) {
-
 }
 
 func runExpressionCompileTests(t *testing.T, tests []expressionCompileTestCase) {
