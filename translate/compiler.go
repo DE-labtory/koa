@@ -231,14 +231,28 @@ func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) err
 
 // compileParameter() compiles parameters in a function.
 func compileParameter(p ast.ParameterLiteral, argNum int, bytecode *Asm, tracer MemTracer) error {
-	tracer.Define(p.Identifier.String())
-
+	entry := tracer.Define(p.Identifier.String())
+	// Load an argument
 	operand, err := encoding.EncodeOperand(argNum)
 	if err != nil {
 		return err
 	}
 	bytecode.Emerge(opcode.Push, operand)
 	bytecode.Emerge(opcode.LoadArgs)
+	// Push size of the argument
+	size, err := encoding.EncodeOperand(entry.Size)
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, size)
+	// Push offset of the argument
+	offset, err := encoding.EncodeOperand(entry.Offset)
+	if err != nil {
+		return err
+	}
+	bytecode.Emerge(opcode.Push, offset)
+	// Save the argument in the memory
+	bytecode.Emerge(opcode.Mstore)
 
 	return nil
 }
