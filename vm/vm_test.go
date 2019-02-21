@@ -209,7 +209,7 @@ func TestExecute(t *testing.T) {
 			t.Error(err)
 		}
 
-		result := stack.pop()
+		result := stack.Pop()
 		if result != test.result {
 			t.Errorf("Invalid result - expected = %d, got = %d", test.result, result)
 		}
@@ -228,9 +228,9 @@ func TestAdd(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -246,9 +246,9 @@ func TestAdd_negative(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -264,9 +264,9 @@ func TestMul(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -282,9 +282,9 @@ func TestMul_negative(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -300,9 +300,9 @@ func TestSub(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -318,9 +318,9 @@ func TestSub_negative(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -337,9 +337,9 @@ func TestDiv(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -356,9 +356,9 @@ func TestDiv_negative(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -374,9 +374,9 @@ func TestMod(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -392,9 +392,9 @@ func TestMod_negative(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -410,9 +410,9 @@ func TestAnd(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -428,9 +428,9 @@ func TestOr(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	result := stack.pop()
+	result := stack.Pop()
 	if testExpected != result {
-		t.Errorf("stack.pop() result wrong - expected=%d, got=%d", testExpected, result)
+		t.Errorf("stack.Pop() result wrong - expected=%d, got=%d", testExpected, result)
 	}
 }
 
@@ -458,9 +458,9 @@ func TestLT(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		result := stack.pop()
+		result := stack.Pop()
 		if testExpected != result {
-			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+			t.Errorf("test[%d]:stack.Pop() result wrong - expected=%d, got=%d", i, testExpected, result)
 		}
 	}
 }
@@ -491,9 +491,9 @@ func TestLTE(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		result := stack.pop()
+		result := stack.Pop()
 		if testExpected != result {
-			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+			t.Errorf("test[%d]:stack.Pop() result wrong - expected=%d, got=%d", i, testExpected, result)
 		}
 	}
 }
@@ -522,9 +522,9 @@ func TestGT(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		result := stack.pop()
+		result := stack.Pop()
 		if testExpected != result {
-			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+			t.Errorf("test[%d]:stack.Pop() result wrong - expected=%d, got=%d", i, testExpected, result)
 		}
 	}
 }
@@ -555,9 +555,9 @@ func TestGTE(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		result := stack.pop()
+		result := stack.Pop()
 		if testExpected != result {
-			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+			t.Errorf("test[%d]:stack.Pop() result wrong - expected=%d, got=%d", i, testExpected, result)
 		}
 	}
 }
@@ -586,9 +586,9 @@ func TestEQ(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		result := stack.pop()
+		result := stack.Pop()
 		if testExpected != result {
-			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+			t.Errorf("test[%d]:stack.Pop() result wrong - expected=%d, got=%d", i, testExpected, result)
 		}
 	}
 }
@@ -613,9 +613,9 @@ func TestNOT(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		result := stack.pop()
+		result := stack.Pop()
 		if testExpected != result {
-			t.Errorf("test[%d]:stack.pop() result wrong - expected=%d, got=%d", i, testExpected, result)
+			t.Errorf("test[%d]:stack.Pop() result wrong - expected=%d, got=%d", i, testExpected, result)
 		}
 	}
 }
@@ -634,7 +634,7 @@ func TestPop(t *testing.T) {
 	}
 
 	if len(stack.items) != 1 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -658,7 +658,7 @@ func TestPush(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -718,12 +718,12 @@ func TestMload(t *testing.T) {
 		t.Error(err)
 	}
 
-	if stack.len() != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	if stack.Len() != 2 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.Len())
 	}
 
 	for _, test := range testExpected {
-		value := stack.pop()
+		value := stack.Pop()
 		if !bytes.Equal(int64ToBytes(int64(value)), test.value) {
 			t.Errorf("Invalid memory value - expected=%x, got=%x", test.value, value)
 		}
@@ -766,8 +766,8 @@ func TestMstore(t *testing.T) {
 		t.Error(err)
 	}
 
-	if stack.len() != 0 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	if stack.Len() != 0 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.Len())
 	}
 
 	for _, test := range testExpected {
@@ -794,11 +794,11 @@ func TestLoadFunc(t *testing.T) {
 		t.Error(err)
 	}
 
-	if stack.len() != 1 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	if stack.Len() != 1 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.Len())
 	}
 
-	if !bytes.Equal(int64ToBytes(int64(stack.pop())), testExpected) {
+	if !bytes.Equal(int64ToBytes(int64(stack.Pop())), testExpected) {
 		t.Error("Invalid")
 	}
 }
@@ -840,12 +840,12 @@ func TestLoadArgs(t *testing.T) {
 		t.Error(err)
 	}
 
-	if stack.len() != 3 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.len())
+	if stack.Len() != 3 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.Len())
 	}
 
 	for _, expected := range testExpected {
-		value := stack.pop()
+		value := stack.Pop()
 		if !bytes.Equal(int64ToBytes(int64(value)), expected.value) {
 			t.Errorf("Invalid bytes - expected = %x, got = %x", expected.value, value)
 		}
@@ -872,7 +872,7 @@ func TestReturning(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -900,7 +900,7 @@ func TestExit(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -937,7 +937,7 @@ func TestJumpOp(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -965,7 +965,7 @@ func TestJumpiJump(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -994,7 +994,7 @@ func TestJumpiNotJump(t *testing.T) {
 	}
 
 	if len(stack.items) != 1 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -1018,7 +1018,7 @@ func TestDUP(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {
@@ -1043,7 +1043,7 @@ func TestSWAP(t *testing.T) {
 	}
 
 	if len(stack.items) != 2 {
-		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.len())
+		t.Errorf("Invalid stack size - expected=%d, got =%d", len(testExpected), stack.Len())
 	}
 
 	for i, item := range stack.items {

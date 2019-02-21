@@ -299,7 +299,7 @@ func TestFunctionLiteral_Signature(t *testing.T) {
 			input: FunctionLiteral{
 				Name: &Identifier{Name: "foo"},
 			},
-			expected: "func foo()",
+			expected: "foo()",
 		},
 		{
 			input: FunctionLiteral{
@@ -311,7 +311,7 @@ func TestFunctionLiteral_Signature(t *testing.T) {
 					},
 				},
 			},
-			expected: "func foo(Parameter : (Identifier: a, Type: int))",
+			expected: "foo(int)",
 		},
 		{
 			input: FunctionLiteral{
@@ -327,7 +327,7 @@ func TestFunctionLiteral_Signature(t *testing.T) {
 					},
 				},
 			},
-			expected: "func foo(Parameter : (Identifier: a, Type: int), Parameter : (Identifier: b, Type: string))",
+			expected: "foo(int,string)",
 		},
 	}
 

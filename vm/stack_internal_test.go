@@ -30,7 +30,7 @@ func TestStack_new(t *testing.T) {
 func TestStack_pushN(t *testing.T) {
 	stack := newStack()
 
-	stack.pushN(item(1), item(2), item(3))
+	stack.PushN(item(1), item(2), item(3))
 
 	if len(stack.items) != 3 {
 		t.Fatalf("PushN did not work properly")
@@ -40,9 +40,9 @@ func TestStack_pushN(t *testing.T) {
 func TestStack_push(t *testing.T) {
 	stack := newStack()
 
-	stack.push(item(1))
-	stack.push(item(2))
-	stack.push(item(3))
+	stack.Push(item(1))
+	stack.Push(item(2))
+	stack.Push(item(3))
 	if len(stack.items) != 3 {
 		t.Fatalf("Push did not work properly")
 	}
@@ -51,12 +51,12 @@ func TestStack_push(t *testing.T) {
 func TestStack_pop(t *testing.T) {
 	stack := newStack()
 
-	stack.push(item(1))
-	stack.push(item(2))
-	stack.push(item(3))
+	stack.Push(item(1))
+	stack.Push(item(2))
+	stack.Push(item(3))
 
 	for i := len(stack.items); i > 0; i-- {
-		if stack.pop() != item(i) {
+		if stack.Pop() != item(i) {
 			t.Fatalf("Pop error at stack point %d", i)
 		}
 	}
@@ -69,11 +69,11 @@ func TestStack_pop(t *testing.T) {
 func TestStack_len(t *testing.T) {
 	stack := newStack()
 
-	stack.push(item(1))
-	stack.push(item(2))
-	stack.push(item(3))
+	stack.Push(item(1))
+	stack.Push(item(2))
+	stack.Push(item(3))
 
-	if len(stack.items) != stack.len() {
+	if len(stack.items) != stack.Len() {
 		t.Fatal("function len is invalid")
 	}
 }
@@ -81,9 +81,9 @@ func TestStack_len(t *testing.T) {
 func TestStack_print(t *testing.T) {
 	stack := newStack()
 
-	stack.push(item(1))
-	stack.push(item(2))
-	stack.push(item(3))
+	stack.Push(item(1))
+	stack.Push(item(2))
+	stack.Push(item(3))
 
 	//	### stack ###
 	//	0    1
@@ -91,5 +91,5 @@ func TestStack_print(t *testing.T) {
 	//	2    3
 	//	#############
 
-	stack.print()
+	stack.Print()
 }

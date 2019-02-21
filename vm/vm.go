@@ -37,18 +37,18 @@ var ErrInvalidOpcode = errors.New("invalid opcode")
 
 // The Execute function assemble the rawByteCode into an assembly code,
 // which in turn executes the assembly logic.
-func Execute(rawByteCode []byte, memory *Memory, callFunc *CallFunc) (*stack, error) {
+func Execute(rawByteCode []byte, memory *Memory, callFunc *CallFunc) (*Stack, error) {
 
 	s := newStack()
 	asm, err := disassemble(rawByteCode)
 	if err != nil {
-		return &stack{}, err
+		return &Stack{}, err
 	}
 
 	for h := asm.code[0]; h != nil; h = asm.next() {
 		op, ok := h.(opCode)
 		if !ok {
-			return &stack{}, ErrInvalidOpcode
+			return &Stack{}, ErrInvalidOpcode
 		}
 
 		err := op.Do(s, asm, memory, callFunc)
@@ -99,7 +99,7 @@ func (cf CallFunc) arguments(n int) []byte {
 }
 
 type opCode interface {
-	Do(*stack, asmReader, *Memory, *CallFunc) error
+	Do(*Stack, asmReader, *Memory, *CallFunc) error
 	hexer
 }
 
@@ -138,11 +138,11 @@ type dup struct{}
 type swap struct{}
 type exit struct{}
 
-func (add) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (add) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
-	stack.push(x + y)
+	stack.Push(x + y)
 
 	return nil
 }
@@ -151,11 +151,11 @@ func (add) hex() []uint8 {
 	return []uint8{uint8(opcode.Add)}
 }
 
-func (mul) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (mul) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
-	stack.push(x * y)
+	stack.Push(x * y)
 
 	return nil
 }
@@ -164,11 +164,11 @@ func (mul) hex() []uint8 {
 	return []uint8{uint8(opcode.Mul)}
 }
 
-func (sub) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (sub) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
-	stack.push(x - y)
+	stack.Push(x - y)
 
 	return nil
 }
@@ -178,13 +178,13 @@ func (sub) hex() []uint8 {
 }
 
 // Be careful! int.Div and int.Quo is different
-func (div) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (div) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
 	item, _ := euclidean_div(x, y)
 
-	stack.push(item)
+	stack.Push(item)
 
 	return nil
 }
@@ -193,13 +193,13 @@ func (div) hex() []uint8 {
 	return []uint8{uint8(opcode.Div)}
 }
 
-func (mod) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (mod) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
 	_, item := euclidean_div(x, y)
 
-	stack.push(item)
+	stack.Push(item)
 
 	return nil
 }
@@ -208,13 +208,13 @@ func (mod) hex() []uint8 {
 	return []uint8{uint8(opcode.Mod)}
 }
 
-func (and) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (and) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
 	ret := x & y
 
-	stack.push(ret)
+	stack.Push(ret)
 
 	return nil
 }
@@ -223,13 +223,13 @@ func (and) hex() []uint8 {
 	return []uint8{uint8(opcode.And)}
 }
 
-func (or) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y := stack.pop()
-	x := stack.pop()
+func (or) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y := stack.Pop()
+	x := stack.Pop()
 
 	ret := x | y
 
-	stack.push(ret)
+	stack.Push(ret)
 
 	return nil
 }
@@ -238,13 +238,13 @@ func (or) hex() []uint8 {
 	return []uint8{uint8(opcode.Or)}
 }
 
-func (lt) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y, x := stack.pop(), stack.pop()
+func (lt) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.Pop(), stack.Pop()
 
 	if x < y { // x < y
-		stack.push(item(1))
+		stack.Push(item(1))
 	} else {
-		stack.push(item(0))
+		stack.Push(item(0))
 	}
 
 	return nil
@@ -254,13 +254,13 @@ func (lt) hex() []uint8 {
 	return []uint8{uint8(opcode.LT)}
 }
 
-func (lte) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y, x := stack.pop(), stack.pop()
+func (lte) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.Pop(), stack.Pop()
 
 	if x <= y { // x <= y
-		stack.push(item(1))
+		stack.Push(item(1))
 	} else {
-		stack.push(item(0))
+		stack.Push(item(0))
 	}
 
 	return nil
@@ -270,13 +270,13 @@ func (lte) hex() []uint8 {
 	return []uint8{uint8(opcode.LTE)}
 }
 
-func (gt) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y, x := stack.pop(), stack.pop()
+func (gt) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.Pop(), stack.Pop()
 
 	if x > y { // x > y
-		stack.push(item(1))
+		stack.Push(item(1))
 	} else {
-		stack.push(item(0))
+		stack.Push(item(0))
 	}
 
 	return nil
@@ -286,13 +286,13 @@ func (gt) hex() []uint8 {
 	return []uint8{uint8(opcode.GT)}
 }
 
-func (gte) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y, x := stack.pop(), stack.pop()
+func (gte) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.Pop(), stack.Pop()
 
 	if x >= y { // x >= y
-		stack.push(item(1))
+		stack.Push(item(1))
 	} else {
-		stack.push(item(0))
+		stack.Push(item(0))
 	}
 
 	return nil
@@ -302,13 +302,13 @@ func (gte) hex() []uint8 {
 	return []uint8{uint8(opcode.GTE)}
 }
 
-func (eq) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	y, x := stack.pop(), stack.pop()
+func (eq) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	y, x := stack.Pop(), stack.Pop()
 
 	if x == y { // x == y
-		stack.push(item(1))
+		stack.Push(item(1))
 	} else {
-		stack.push(item(0))
+		stack.Push(item(0))
 	}
 
 	return nil
@@ -318,8 +318,8 @@ func (eq) hex() []uint8 {
 	return []uint8{uint8(opcode.EQ)}
 }
 
-func (not) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	x := stack.pop()
+func (not) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	x := stack.Pop()
 
 	if x == 1 {
 		x = 0
@@ -327,7 +327,7 @@ func (not) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
 		x = 1
 	}
 
-	stack.push(x)
+	stack.Push(x)
 	return nil
 }
 
@@ -335,8 +335,8 @@ func (not) hex() []uint8 {
 	return []uint8{uint8(opcode.NOT)}
 }
 
-func (pop) Do(stack *stack, _ asmReader, _ *Memory, _ *CallFunc) error {
-	_ = stack.pop()
+func (pop) Do(stack *Stack, _ asmReader, _ *Memory, _ *CallFunc) error {
+	_ = stack.Pop()
 	return nil
 }
 
@@ -344,14 +344,14 @@ func (pop) hex() []uint8 {
 	return []uint8{uint8(opcode.Pop)}
 }
 
-func (push) Do(stack *stack, asm asmReader, _ *Memory, contract *CallFunc) error {
+func (push) Do(stack *Stack, asm asmReader, _ *Memory, contract *CallFunc) error {
 	code := asm.next()
 	data, ok := code.(Data)
 	if !ok {
 		return ErrInvalidData
 	}
 	item := bytesToItem(data.hex())
-	stack.push(item)
+	stack.Push(item)
 
 	return nil
 }
@@ -360,11 +360,11 @@ func (push) hex() []uint8 {
 	return []uint8{uint8(opcode.Push)}
 }
 
-func (mload) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
-	offset, size := stack.pop(), stack.pop()
+func (mload) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	offset, size := stack.Pop(), stack.Pop()
 	value := memory.GetVal(uint64(offset), uint64(size))
 
-	stack.push(bytesToItem(value))
+	stack.Push(bytesToItem(value))
 	return nil
 }
 
@@ -372,8 +372,8 @@ func (mload) hex() []uint8 {
 	return []uint8{uint8(opcode.Mload)}
 }
 
-func (mstore) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
-	offset, size, value := stack.pop(), stack.pop(), stack.pop()
+func (mstore) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	offset, size, value := stack.Pop(), stack.Pop(), stack.Pop()
 
 	memSize := uint64(memory.Len()) + uint64(size)
 	memory.Resize(memSize)
@@ -387,7 +387,7 @@ func (mstore) hex() []uint8 {
 	return []uint8{uint8(opcode.Mstore)}
 }
 
-func (loadfunc) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
+func (loadfunc) Do(stack *Stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
 	function := callfunc.function()
 
 	convertedFunc, err := encoding.EncodeOperand(function)
@@ -395,7 +395,7 @@ func (loadfunc) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) err
 		return err
 	}
 
-	stack.push(bytesToItem(convertedFunc))
+	stack.Push(bytesToItem(convertedFunc))
 	return nil
 }
 
@@ -403,11 +403,11 @@ func (loadfunc) hex() []uint8 {
 	return []uint8{uint8(opcode.LoadFunc)}
 }
 
-func (loadargs) Do(stack *stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
-	index := stack.pop()
+func (loadargs) Do(stack *Stack, _ asmReader, _ *Memory, callfunc *CallFunc) error {
+	index := stack.Pop()
 	argument := callfunc.arguments(int(index))
 
-	stack.push(bytesToItem(argument))
+	stack.Push(bytesToItem(argument))
 
 	return nil
 }
@@ -416,12 +416,12 @@ func (loadargs) hex() []uint8 {
 	return []uint8{uint8(opcode.LoadArgs)}
 }
 
-func (returning) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
-	value, _, pos := stack.pop(), stack.pop(), stack.pop()
+func (returning) Do(stack *Stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+	value, _, pos := stack.Pop(), stack.Pop(), stack.Pop()
 
 	asm.jump(uint64(pos - 1))
 
-	stack.push(value)
+	stack.Push(value)
 	return nil
 }
 
@@ -429,8 +429,8 @@ func (returning) hex() []uint8 {
 	return []uint8{uint8(opcode.Returning)}
 }
 
-func (jump) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
-	pos := stack.pop()
+func (jump) Do(stack *Stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+	pos := stack.Pop()
 	asm.jump(uint64(pos - 1))
 	return nil
 }
@@ -439,7 +439,7 @@ func (jump) hex() []uint8 {
 	return []uint8{uint8(opcode.Jump)}
 }
 
-func (jumpDst) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+func (jumpDst) Do(stack *Stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	return nil
 }
 
@@ -447,8 +447,8 @@ func (jumpDst) hex() []uint8 {
 	return []uint8{uint8(opcode.JumpDst)}
 }
 
-func (jumpi) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
-	pos, cond := stack.pop(), stack.pop()
+func (jumpi) Do(stack *Stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+	pos, cond := stack.Pop(), stack.Pop()
 	if cond == item(0) { // cond == false
 		asm.jump(uint64(pos - 1))
 	}
@@ -459,8 +459,8 @@ func (jumpi) hex() []uint8 {
 	return []uint8{uint8(opcode.Jumpi)}
 }
 
-func (dup) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
-	stack.dup()
+func (dup) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	stack.Dup()
 	return nil
 }
 
@@ -468,8 +468,8 @@ func (dup) hex() []uint8 {
 	return []uint8{uint8(opcode.DUP)}
 }
 
-func (swap) Do(stack *stack, _ asmReader, memory *Memory, _ *CallFunc) error {
-	stack.swap()
+func (swap) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	stack.Swap()
 	return nil
 }
 
@@ -477,7 +477,7 @@ func (swap) hex() []uint8 {
 	return []uint8{uint8(opcode.SWAP)}
 }
 
-func (exit) Do(stack *stack, asm asmReader, memory *Memory, _ *CallFunc) error {
+func (exit) Do(stack *Stack, asm asmReader, memory *Memory, _ *CallFunc) error {
 	for asm.next() != nil {
 	}
 	return nil
