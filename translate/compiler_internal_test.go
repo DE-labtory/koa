@@ -290,8 +290,8 @@ func TestCompileFuncJmpr(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
-						Value:   "c5d2460100000000",
+						RawByte: abi.Selector(string([]byte("foo()")[:])),
+						Value:   string(abi.Selector(string([]byte("foo()")[:]))[:]),
 					},
 					// EQ
 					{
@@ -328,8 +328,8 @@ func TestCompileFuncJmpr(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
-						Value:   "c5d2460100000000",
+						RawByte: abi.Selector(string([]byte("sam()")[:])),
+						Value:   string(abi.Selector(string([]byte("sam()")[:]))[:]),
 					},
 					// EQ
 					{
@@ -428,7 +428,7 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					{
 						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x7e, 0xdb, 0xa6, 0xc8},
-						Value:   "000000007edba6c8 ",
+						Value:   "000000007edba6c8",
 					},
 					// EQ
 					{
@@ -462,10 +462,10 @@ func TestCompileFuncJmpr(t *testing.T) {
 				},
 			},
 			funcMap: FuncMap{
-				string(abi.Selector("FuncJmpr")):   3,
-				string(abi.Selector("Revert")):     10,
-				string(abi.Selector("func foo()")): 19,
-				string(abi.Selector("func sam()")): 24,
+				string(abi.Selector("FuncJmpr")): 3,
+				string(abi.Selector("Revert")):   10,
+				string(abi.Selector("foo()")):    19,
+				string(abi.Selector("sam()")):    24,
 			},
 			err: nil,
 		},

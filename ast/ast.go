@@ -233,12 +233,12 @@ func (f *FunctionLiteral) String() string {
 
 func (f *FunctionLiteral) Signature() string {
 
-	params := []string{}
+	paramTypes := []string{}
 	for _, p := range f.Parameters {
-		params = append(params, p.String())
+		paramTypes = append(paramTypes, p.Type.String())
 	}
 
-	return fmt.Sprintf("%s(%s)", f.Name.String(), strings.Join(params, ","))
+	return fmt.Sprintf("%s(%s)", f.Name.String(), strings.Join(paramTypes, ","))
 }
 
 // Represent block statement
