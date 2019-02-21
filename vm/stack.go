@@ -24,46 +24,46 @@ const (
 
 type item int64
 
-// Stack is an object for basic stack operations. Items popped to the stack are
+// Stack is an object for basic Stack operations. Items popped to the Stack are
 // expected not to be changed and modified.
-type stack struct {
+type Stack struct {
 	items []item
 }
 
-func newStack() *stack {
-	return &stack{items: make([]item, 0, stackMaxSize)}
+func newStack() *Stack {
+	return &Stack{items: make([]item, 0, stackMaxSize)}
 }
 
-func (s *stack) push(d item) {
+func (s *Stack) Push(d item) {
 	s.items = append(s.items, d)
 }
 
-// Push n number of data([]data) to stack
-func (s *stack) pushN(ds ...item) {
+// Push n number of data([]data) to Stack
+func (s *Stack) PushN(ds ...item) {
 	s.items = append(s.items, ds...)
 }
 
-func (s *stack) pop() item {
+func (s *Stack) Pop() item {
 	item := s.items[len(s.items)-1]
 	s.items = s.items[:len(s.items)-1]
 	return item
 }
 
-func (s *stack) len() int {
+func (s *Stack) Len() int {
 	return len(s.items)
 }
 
-func (s *stack) dup() {
-	s.push(s.items[s.len()-1])
+func (s *Stack) Dup() {
+	s.Push(s.items[s.Len()-1])
 }
 
-func (s *stack) swap() {
-	s.items[s.len()-2], s.items[s.len()-1] = s.items[s.len()-1], s.items[s.len()-2]
+func (s *Stack) Swap() {
+	s.items[s.Len()-2], s.items[s.Len()-1] = s.items[s.Len()-1], s.items[s.Len()-2]
 }
 
-// Print dumps the content of the stack
-func (s *stack) print() {
-	fmt.Println("### stack ###")
+// Print dumps the content of the Stack
+func (s *Stack) Print() {
+	fmt.Println("### Stack ###")
 	if len(s.items) > 0 {
 		for i, val := range s.items {
 			fmt.Printf("%-3d  %v\n", i, val)
