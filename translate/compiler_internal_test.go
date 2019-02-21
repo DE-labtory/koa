@@ -89,8 +89,8 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0xc5, 0xd2, 0x46, 0x01, 0x00, 0x00, 0x00, 0x00},
-						Value:   "c5d2460100000000",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0xc5, 0xd2, 0x46, 0x01},
+						Value:   "00000000c5d24601",
 					},
 					// EQ
 					{
@@ -383,14 +383,14 @@ func TestCompileFuncJmpr(t *testing.T) {
 						RawByte: []byte{0x30},
 						Value:   "DUP",
 					},
-					// Push 1b24aabc00000000
+					// Push 00000000c2985578
 					{
 						RawByte: []byte{0x21},
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x1b, 0x24, 0xaa, 0xbc, 0x00, 0x00, 0x00, 0x00},
-						Value:   "1b24aabc00000000",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0xc2, 0x98, 0x55, 0x78},
+						Value:   "00000000c2985578",
 					},
 					// EQ
 					{
@@ -421,14 +421,14 @@ func TestCompileFuncJmpr(t *testing.T) {
 						RawByte: []byte{0x30},
 						Value:   "DUP",
 					},
-					// Push 9f24b46700000000
+					// Push 000000007edba6c8
 					{
 						RawByte: []byte{0x21},
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0x9f, 0x24, 0xb4, 0x67, 0x00, 0x00, 0x00, 0x00},
-						Value:   "9f24b46700000000",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x7e, 0xdb, 0xa6, 0xc8},
+						Value:   "000000007edba6c8 ",
 					},
 					// EQ
 					{
@@ -730,13 +730,13 @@ func TestFillFuncJmpr(t *testing.T) {
 
 func TestCompileFuncSel(t *testing.T) {
 	tests := []struct {
-		funcSel string
+		funcSel []byte
 		funcDst int
 		expect  *Asm
 		err     error
 	}{
 		{
-			funcSel: string(abi.Selector("func Foo()")),
+			funcSel: abi.Selector("Foo()"),
 			funcDst: 15,
 			expect: &Asm{
 				AsmCodes: []AsmCode{
@@ -751,8 +751,8 @@ func TestCompileFuncSel(t *testing.T) {
 						Value:   "Push",
 					},
 					{
-						RawByte: []byte{0xe3, 0x17, 0x0d, 0xe1, 0x00, 0x00, 0x00, 0x00},
-						Value:   "e3170de100000000",
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0xbf, 0xb4, 0xeb, 0xcf},
+						Value:   "00000000bfb4ebcf",
 					},
 					// EQ
 					{
