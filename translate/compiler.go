@@ -82,14 +82,14 @@ func createFuncJmprPlaceholder(c ast.Contract, asm *Asm, funcMap FuncMap) error 
 	// Adds the logic to compare and find the corresponding function selector with the unmeaningful value.
 	funcMap.Declare("FuncJmpr", *asm)
 	for range c.Functions {
-		if err := compileFuncSel(asm, string(abi.Selector("")), 0); err != nil {
+		if err := compileFuncSel(asm, abi.Selector(""), 0); err != nil {
 			return err
 		}
 	}
 
 	// No match to any function selector, Revert!
 	funcMap.Declare("Revert", *asm)
-	compileRevert(asm)
+	compileExit(asm)
 
 	return nil
 }
@@ -105,10 +105,10 @@ func compileProgramEndPoint(asm *Asm, revertDst int) error {
 	return nil
 }
 
-// compileRevert compiles exiting the program.
+// compileExit compiles exiting the program.
 // If jumps to here, exit the program.
-func compileRevert(asm *Asm) {
-	asm.Emerge(opcode.Returning)
+func compileExit(asm *Asm) {
+	asm.Emerge(opcode.Exit)
 }
 
 // Generates a bytecode of function jumper.
@@ -128,8 +128,8 @@ func compileFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 
 	// Adds the logic to compare and find the corresponding function selector.
 	for _, f := range c.Functions {
-		selector := string(abi.Selector(f.Signature()))
-		funcDst := funcMap[selector]
+		selector := abi.Selector(f.Signature())
+		funcDst := funcMap[string(selector)]
 
 		if err := compileFuncSel(funcJmpr, selector, funcDst); err != nil {
 			return err
@@ -137,7 +137,7 @@ func compileFuncJmpr(c ast.Contract, asm *Asm, funcMap FuncMap) error {
 	}
 
 	// No match to any function selector, Revert!
-	compileRevert(funcJmpr)
+	compileExit(funcJmpr)
 
 	// Replace expected function jumper with new function jumper.
 	if err := fillFuncJmpr(asm, *funcJmpr); err != nil {
@@ -161,7 +161,7 @@ func fillFuncJmpr(asm *Asm, funcJmpr Asm) error {
 }
 
 // Compiles function jumper logic to find a function with its function selector
-func compileFuncSel(asm *Asm, funcSel string, funcDst int) error {
+func compileFuncSel(asm *Asm, funcSel []byte, funcDst int) error {
 	// Duplicates the function selector to find.
 	asm.Emerge(opcode.DUP)
 	// Pushes the function selector of this function literal.

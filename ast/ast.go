@@ -238,7 +238,7 @@ func (f *FunctionLiteral) Signature() string {
 		params = append(params, p.String())
 	}
 
-	return fmt.Sprintf("func %s(%s)", f.Name.String(), strings.Join(params, ", "))
+	return fmt.Sprintf("%s(%s)", f.Name.String(), strings.Join(params, ","))
 }
 
 // Represent block statement
