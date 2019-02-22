@@ -133,6 +133,27 @@ func TestExtractAbiFromFunction(t *testing.T) {
 			},
 			err: nil,
 		},
+		// test void return function
+		{
+			f: ast.FunctionLiteral{
+				Name: &ast.Identifier{
+					Name: "add",
+				},
+				Parameters: []*ast.ParameterLiteral{},
+				ReturnType: ast.VoidType,
+			},
+			expect: abi.Method{
+				Name:      "add",
+				Arguments: []abi.Argument{},
+				Output: abi.Argument{
+					Name: "",
+					Type: abi.Type{
+						Type: "void",
+					},
+				},
+			},
+			err: nil,
+		},
 	}
 
 	for i, test := range tests {
