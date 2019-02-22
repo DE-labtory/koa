@@ -63,7 +63,7 @@ func CompileContract(c ast.Contract) (Asm, error) {
 			return *asm, err
 		}
 	}
-	
+
 	// Compile Memory size with updated memory table.
 	// And replace expected memory size with new memory size of the memory table.
 	if err := compileMemSize(asm, memTracer); err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-type CompileResult struct {
+type Result struct {
 	Abi     *abi.ABI
 	Asm     string
 	RawByte string
@@ -50,13 +50,21 @@ func compile(path string) error {
 		return err
 	}
 
-	abi, err := translate.ExtractAbi(*contract)
+	ab, err := translate.ExtractAbi(*contract)
 	if err != nil {
 		return err
 	}
 
-	result := CompileResult{
-		Abi:     abi,
+	if err := PrintCompileResult(asm, ab); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func PrintCompileResult(asm translate.Asm, ab *abi.ABI) error {
+	result := Result{
+		Abi:     ab,
 		Asm:     asm.String(),
 		RawByte: fmt.Sprintf("%x", asm.ToRawByteCode()),
 	}
@@ -67,6 +75,5 @@ func compile(path string) error {
 	}
 
 	fmt.Println(string(b))
-
 	return nil
 }

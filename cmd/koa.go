@@ -42,7 +42,7 @@ const koa = `
 	####   #    # #    #
 	#  #   #    # ######
 	#   #  #    # #    #       
-	#    #  ####  #    #       @DE-labtory/koa v0.0.1
+	#    #  ####  #    #       @DE-labtory/koa v0.1.0
 
 
 `
@@ -50,7 +50,9 @@ const koa = `
 func PrintLogo() {
 	color.Yellow(koa)
 	bold := color.New(color.Bold)
+	hiBlack := color.New(color.BgHiBlack)
 	fmt.Printf("The project is inspired by the simplicity and the ivy-bitcoin. The koa project is to create \na high-level language that has more expressions than the bitcoin script and is simpler and easy to analyze than soldity(ethereum).\n\n")
+	hiBlack.Printf("https://github.com/DE-labtory/koa \n")
 	bold.Print("Use exit() or Ctrl-c to exit \n")
 }
 

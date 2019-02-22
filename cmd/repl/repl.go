@@ -20,9 +20,13 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/DE-labtory/koa/translate"
+
 	"bufio"
 	"os"
 
+	compile_cmd "github.com/DE-labtory/koa/cmd/compile"
+	lex_cmd "github.com/DE-labtory/koa/cmd/lex"
 	parse_cmd "github.com/DE-labtory/koa/cmd/parse"
 	"github.com/DE-labtory/koa/parse"
 	"github.com/fatih/color"
@@ -39,7 +43,7 @@ const koa = `
 	####   #    # #    #
 	#  #   #    # ######
 	#   #  #    # #    #       
-	#    #  ####  #    #       @DE-labtory/koa v0.0.1
+	#    #  ####  #    #       @DE-labtory/koa v0.1.0
 
 
 `
@@ -47,6 +51,7 @@ const koa = `
 func PrintLogo() {
 	color.Yellow(koa)
 	bold := color.New(color.Bold)
+	bold.Printf("github: https://github.com/DE-labtory/koa \n\n")
 	fmt.Printf("The project is inspired by the simplicity and the ivy-bitcoin. The koa project is to create \na high-level language that has more expressions than the bitcoin script and is simpler and easy to analyze than soldity(ethereum).\n\n")
 	bold.Print("Use exit() or Ctrl-c to exit \n")
 }
@@ -58,6 +63,8 @@ func Run() {
 
 func run(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+
+	bold := color.New(color.Bold)
 
 	for {
 		fmt.Printf(PROMPT)
@@ -73,13 +80,40 @@ func run(in io.Reader, out io.Writer) {
 		}
 
 		l := parse.NewLexer(line)
+		l2 := parse.NewLexer(line)
+
 		buf := parse.NewTokenBuffer(l)
 		contract, err := parse.Parse(buf)
+
+		asm, err := translate.CompileContract(*contract)
 		if err != nil {
-			fmt.Println(err.Error())
+			color.Red(err.Error())
 			continue
 		}
 
+		ab, err := translate.ExtractAbi(*contract)
+		if err != nil {
+			color.Red(err.Error())
+		}
+
+		if err != nil {
+			color.Red(err.Error())
+			continue
+		}
+
+		bold.Println("-->>   LEX RESULT   <<-----------------------------------------------")
+		lex_cmd.PrintTokens(l2)
+		fmt.Println()
+
+		bold.Println("-->>  PARSE RESULT  <<-----------------------------------------------")
 		fmt.Println(parse_cmd.PrintContract(contract))
+		fmt.Println()
+
+		bold.Println("-->> COMPILE RESULT <<-----------------------------------------------")
+		if err := compile_cmd.PrintCompileResult(asm, ab); err != nil {
+			color.Red(err.Error())
+			continue
+		}
+		fmt.Println()
 	}
 }
