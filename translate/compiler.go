@@ -63,21 +63,18 @@ func CompileContract(c ast.Contract) (Asm, error) {
 			return *asm, err
 		}
 	}
-	println("!!! : " + asm.String())
+	
 	// Compile Memory size with updated memory table.
 	// And replace expected memory size with new memory size of the memory table.
 	if err := compileMemSize(asm, memTracer); err != nil {
 		return *asm, err
 	}
 
-	println("!!! : " + asm.String())
-
 	// Compile Function jumper with updated FuncMap.
 	// And replace expected function jumper with new function jumper
 	if err := compileFuncJmpr(c, asm, funcMap); err != nil {
 		return *asm, err
 	}
-	println("!!! : " + asm.String())
 
 	return *asm, nil
 }
