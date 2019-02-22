@@ -102,6 +102,8 @@ func convertAstTypeToAbi(p ast.DataStructure) (Type, error) {
 		return NewType("string")
 	case ast.BoolType:
 		return NewType("bool")
+	case ast.VoidType:
+		return NewType("void")
 	default:
 		return Type{}, fmt.Errorf("Unknown paramter type. got=%v", p)
 	}
