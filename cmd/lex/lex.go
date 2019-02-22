@@ -43,11 +43,11 @@ func lex(path string) error {
 		return err
 	}
 	l := parse.NewLexer(string(file))
-	printTokens(l)
+	PrintTokens(l)
 	return nil
 }
 
-func printTokens(l *parse.Lexer) {
+func PrintTokens(l *parse.Lexer) {
 	for token := l.NextToken(); token.Type != parse.Eof; {
 		fmt.Println(token)
 		token = l.NextToken()

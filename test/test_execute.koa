@@ -1,0 +1,15 @@
+contract {
+    func addVariable() int {
+        int a = 5
+        int b = 10
+        return a + b
+    }
+
+    func addNative() int {
+        return 5 + 10
+    }
+
+    func addArgs(a int, b int) int {
+        return a + b
+    }
+}
