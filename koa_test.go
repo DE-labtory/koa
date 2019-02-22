@@ -21,6 +21,10 @@ import (
 	"os"
 	"testing"
 
+	"bytes"
+	"encoding/hex"
+
+	"github.com/DE-labtory/koa/abi"
 	"github.com/DE-labtory/koa/translate"
 )
 
@@ -372,85 +376,85 @@ func TestCompile(t *testing.T) {
 }
 
 func TestExecute(t *testing.T) {
-	///*
-	//contract {
-	//	func addVariable() int {
-	//		int a = 5
-	//		int b = 10
-	//		return a + b
-	//	}
-	//
-	//	func addNative() int {
-	//		return 5 + 10
-	//	}
-	//
-	//	func addArgs(a int, b int) int {
-	//		return a + b
-	//	}
-	//}
-	// */
-	//firstContractRawBytecode, err := hex.DecodeString("21000000000000001b24302100000000652f6077141521000000000000001c29302100000000a82ed9f7141521000000000000003629302100000000bdbaf70e141521000000000000003c29322100000000000000052100000000000000082100000000000000002321000000000000000a210000000000000008210000000000000008232100000000000000082100000000000000002221000000000000000821000000000000000822012621000000000000000521000000000000000a01262100000000000000002521000000000000000821000000000000001023210000000000000001252100000000000000082100000000000000182321000000000000000821000000000000001022210000000000000008210000000000000018220126")
-	//if err != nil {
-	//	t.Error(err)
-	//}
-	//
-	///*
-	//contract {
-	//	func hello() string{
-	//		return "hello!"
-	//	}
-	//}
-	// */
-	//secondContractRawBytecode, err := hex.DecodeString("21000000000000000b2430210000000019ff1d21141521000000000000000c2932212268656c6c6f212226")
-	//if err != nil {
-	//	t.Error(err)
-	//}
-	//
-	//firstArgs1, err := abi.Encode()
-	//firstArgs2, err := abi.Encode()
-	//firstArgs3, err := abi.Encode(5, 10)
-	//second1, err := abi.Encode()
-	//
-	//tests := []struct {
-	//	RawBytecode []byte
-	//	Func []byte
-	//	Args []byte
-	//	output []byte
-	//}{
-	//	{
-	//		RawBytecode: firstContractRawBytecode,
-	//		Func: abi.Selector("addVariable()"),
-	//		Args: firstArgs1,
-	//		output: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
-	//	},
-	//	{
-	//		RawBytecode: firstContractRawBytecode,
-	//		Func: abi.Selector("addNative()"),
-	//		Args: firstArgs2,
-	//		output: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
-	//	},
-	//	{
-	//		RawBytecode: firstContractRawBytecode,
-	//		Func: abi.Selector("addArgs(int,int)"),
-	//		Args: firstArgs3,
-	//		output: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
-	//	},
-	//	{
-	//		RawBytecode: secondContractRawBytecode,
-	//		Func: abi.Selector("hello()"),
-	//		Args: second1,
-	//		output: []byte{0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0x22},
-	//	},
-	//}
-	//
-	//for _, test := range tests {
-	//	output, err := Execute(test.RawBytecode, test.Func, test.Args)
-	//	if err != nil {
-	//		t.Error(err)
-	//	}
-	//
-	//	if !bytes.Equal(test.output, output) {
-	//		t.Errorf("Invalid output - expected=%x, got=%x ", test.output, output)
-	//	}
-	//}
+	/*
+		contract {
+			func addVariable() int {
+				int a = 5
+				int b = 10
+				return a + b
+			}
+
+			func addNative() int {
+				return 5 + 10
+			}
+
+			func addArgs(a int, b int) int {
+				return a + b
+			}
+		}
+	*/
+	firstContractRawBytecode, err := hex.DecodeString("2100000000000000202421000000000000001e25312100000000652f6077141521000000000000001f30312100000000a82ed9f7141521000000000000003930312100000000c6be6f42141521000000000000003f30332100000000000000052100000000000000082100000000000000002321000000000000000a210000000000000008210000000000000008232100000000000000082100000000000000002221000000000000000821000000000000000822012721000000000000000521000000000000000a01272100000000000000002621000000000000000821000000000000001023210000000000000001262100000000000000082100000000000000182321000000000000000821000000000000001022210000000000000008210000000000000018220127")
+	if err != nil {
+		t.Error(err)
+	}
+
+	/*
+		contract {
+			func hello() string{
+				return "hello!"
+			}
+		}
+	*/
+	secondContractRawBytecode, err := hex.DecodeString("2100000000000000002421000000000000000e2531210000000019ff1d21141521000000000000000f3033212268656c6c6f212227")
+	if err != nil {
+		t.Error(err)
+	}
+
+	firstArgs1, err := abi.Encode()
+	firstArgs2, err := abi.Encode()
+	firstArgs3, err := abi.Encode(5, 10)
+	second1, err := abi.Encode()
+
+	tests := []struct {
+		RawBytecode []byte
+		Func        []byte
+		Args        []byte
+		output      []byte
+	}{
+		{
+			RawBytecode: firstContractRawBytecode,
+			Func:        abi.Selector("addVariable()"),
+			Args:        firstArgs1,
+			output:      []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
+		},
+		{
+			RawBytecode: firstContractRawBytecode,
+			Func:        abi.Selector("addNative()"),
+			Args:        firstArgs2,
+			output:      []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
+		},
+		{
+			RawBytecode: firstContractRawBytecode,
+			Func:        abi.Selector("addArgs(int,int)"),
+			Args:        firstArgs3,
+			output:      []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
+		},
+		{
+			RawBytecode: secondContractRawBytecode,
+			Func:        abi.Selector("hello()"),
+			Args:        second1,
+			output:      []byte{0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0x22},
+		},
+	}
+
+	for _, test := range tests {
+		output, err := Execute(test.RawBytecode, test.Func, test.Args)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if !bytes.Equal(test.output, output) {
+			t.Errorf("Invalid output - expected=%x, got=%x ", test.output, output)
+		}
+	}
 }

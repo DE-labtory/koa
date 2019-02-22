@@ -75,15 +75,15 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 					},
 					// LoadFunc
 					{
-						RawByte: []byte{0x24},
+						RawByte: []byte{0x25},
 						Value:   "LoadFunc",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
-					// Push c5d2460100000000
+					// Push 00000000c5d24601
 					{
 						RawByte: []byte{0x21},
 						Value:   "Push",
@@ -113,12 +113,12 @@ func TestCreateFuncJmprPlaceholder(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// Exit
 					{
-						RawByte: []byte{0x32},
+						RawByte: []byte{0x33},
 						Value:   "Exit",
 					},
 				},
@@ -218,7 +218,7 @@ func TestCompileExit(t *testing.T) {
 			expect: Asm{
 				AsmCodes: []AsmCode{
 					{
-						RawByte: []byte{0x32},
+						RawByte: []byte{0x33},
 						Value:   "Exit",
 					},
 				},
@@ -265,6 +265,18 @@ func TestCompileFuncJmpr(t *testing.T) {
 			},
 			asm: &Asm{
 				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x24},
+						Value:   "Msize",
+					},
 					// Push 0000000000000000
 					{
 						RawByte: []byte{0x21},
@@ -276,12 +288,12 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					// LoadFunc
 					{
-						RawByte: []byte{0x24},
+						RawByte: []byte{0x25},
 						Value:   "LoadFunc",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push c5d2460100000000
@@ -314,12 +326,12 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push c5d2460100000000
@@ -352,18 +364,30 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// Returning
 					{
-						RawByte: []byte{0x26},
+						RawByte: []byte{0x27},
 						Value:   "Returning",
 					},
 				},
 			},
 			expectAsm: &Asm{
 				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x24},
+						Value:   "Msize",
+					},
 					// Push 000000000000000a
 					{
 						RawByte: []byte{0x21},
@@ -375,12 +399,12 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					// LoadFunc
 					{
-						RawByte: []byte{0x24},
+						RawByte: []byte{0x25},
 						Value:   "LoadFunc",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push 00000000c2985578
@@ -413,12 +437,12 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push 000000007edba6c8
@@ -451,12 +475,12 @@ func TestCompileFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// Exit
 					{
-						RawByte: []byte{0x32},
+						RawByte: []byte{0x33},
 						Value:   "Exit",
 					},
 				},
@@ -494,6 +518,18 @@ func TestFillFuncJmpr(t *testing.T) {
 		{
 			asm: &Asm{
 				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x24},
+						Value:   "Msize",
+					},
 					// Push 0000000000000000
 					{
 						RawByte: []byte{0x21},
@@ -505,12 +541,12 @@ func TestFillFuncJmpr(t *testing.T) {
 					},
 					// LoadFunc
 					{
-						RawByte: []byte{0x24},
+						RawByte: []byte{0x25},
 						Value:   "LoadFunc",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push 0000000000000000
@@ -543,12 +579,12 @@ func TestFillFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// Returning
 					{
-						RawByte: []byte{0x26},
+						RawByte: []byte{0x27},
 						Value:   "Returning",
 					},
 					// Push 0000000000000000
@@ -584,12 +620,12 @@ func TestFillFuncJmpr(t *testing.T) {
 					},
 					// LoadFunc
 					{
-						RawByte: []byte{0x24},
+						RawByte: []byte{0x25},
 						Value:   "LoadFunc",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push 0000000012345678
@@ -622,18 +658,30 @@ func TestFillFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// Returning
 					{
-						RawByte: []byte{0x26},
+						RawByte: []byte{0x27},
 						Value:   "Returning",
 					},
 				},
 			},
 			expect: &Asm{
 				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x24},
+						Value:   "Msize",
+					},
 					// Push 0000000000000000
 					{
 						RawByte: []byte{0x21},
@@ -645,12 +693,12 @@ func TestFillFuncJmpr(t *testing.T) {
 					},
 					// LoadFunc
 					{
-						RawByte: []byte{0x24},
+						RawByte: []byte{0x25},
 						Value:   "LoadFunc",
 					},
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push 0000000012345678
@@ -683,12 +731,12 @@ func TestFillFuncJmpr(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 					// Returning
 					{
-						RawByte: []byte{0x26},
+						RawByte: []byte{0x27},
 						Value:   "Returning",
 					},
 					// Push 0000000000000000
@@ -742,7 +790,7 @@ func TestCompileFuncSel(t *testing.T) {
 				AsmCodes: []AsmCode{
 					// DUP
 					{
-						RawByte: []byte{0x30},
+						RawByte: []byte{0x31},
 						Value:   "DUP",
 					},
 					// Push e3170de100000000
@@ -775,7 +823,7 @@ func TestCompileFuncSel(t *testing.T) {
 					},
 					// Jumpi
 					{
-						RawByte: []byte{0x29},
+						RawByte: []byte{0x30},
 						Value:   "Jumpi",
 					},
 				},

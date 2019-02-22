@@ -100,6 +100,10 @@ func TestType_String(t *testing.T) {
 			"Mstore",
 		},
 		{
+			opcode.Msize,
+			"Msize",
+		},
+		{
 			opcode.LoadFunc,
 			"LoadFunc",
 		},

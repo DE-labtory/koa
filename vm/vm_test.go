@@ -109,65 +109,68 @@ func TestExecute(t *testing.T) {
 	funcSel3, err := encoding.EncodeOperand(ABI.Methods[2].ID())
 
 	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int64ToBytes(32), // 0 , 1
+		uint8(opcode.Msize), // 2
+
 		// Exit position
-		uint8(opcode.Push), int64ToBytes(27), // 0, 1
+		uint8(opcode.Push), int64ToBytes(30), // 3, 4
 
 		// Function Jumper
-		uint8(opcode.LoadFunc),       // 2
-		uint8(opcode.DUP),            // 3
-		uint8(opcode.Push), funcSel1, // 4, 5
-		uint8(opcode.EQ),                     // 6
-		uint8(opcode.NOT),                    // 7
-		uint8(opcode.Push), int64ToBytes(28), // 8, 9
-		uint8(opcode.Jumpi), // 10
+		uint8(opcode.LoadFunc),       // 5
+		uint8(opcode.DUP),            // 6
+		uint8(opcode.Push), funcSel1, // 7, 8
+		uint8(opcode.EQ),                     // 9
+		uint8(opcode.NOT),                    // 10
+		uint8(opcode.Push), int64ToBytes(31), // 11, 12
+		uint8(opcode.Jumpi), // 13
 
-		uint8(opcode.DUP),            // 11
-		uint8(opcode.Push), funcSel2, // 12, 13
-		uint8(opcode.EQ),                     // 14
-		uint8(opcode.NOT),                    //15
-		uint8(opcode.Push), int64ToBytes(54), // 16, 17
-		uint8(opcode.Jumpi), // 18
+		uint8(opcode.DUP),            // 14
+		uint8(opcode.Push), funcSel2, // 15, 16
+		uint8(opcode.EQ),                     // 17
+		uint8(opcode.NOT),                    // 18
+		uint8(opcode.Push), int64ToBytes(57), // 19, 20
+		uint8(opcode.Jumpi), // 21
 
-		uint8(opcode.DUP),            // 19
-		uint8(opcode.Push), funcSel3, // 20, 21
-		uint8(opcode.EQ),                     // 22
-		uint8(opcode.NOT),                    // 23
-		uint8(opcode.Push), int64ToBytes(60), // 24, 25
-		uint8(opcode.Jumpi), // 26
+		uint8(opcode.DUP),            // 22
+		uint8(opcode.Push), funcSel3, // 23, 24
+		uint8(opcode.EQ),                     // 25
+		uint8(opcode.NOT),                    // 26
+		uint8(opcode.Push), int64ToBytes(63), // 27, 28
+		uint8(opcode.Jumpi), // 29
 
-		uint8(opcode.Exit), // 27
+		uint8(opcode.Exit), // 30
 
 		// Function 'addVariable'
-		uint8(opcode.Push), int64ToBytes(5), // 28, 29
-		uint8(opcode.Push), int64ToBytes(8), // 30, 31
-		uint8(opcode.Push), int64ToBytes(0), // 32, 33
-		uint8(opcode.Mstore),                 // 34
-		uint8(opcode.Push), int64ToBytes(10), // 35, 36
-		uint8(opcode.Push), int64ToBytes(8), // 37, 38
-		uint8(opcode.Push), int64ToBytes(8), // 39, 40
-		uint8(opcode.Mstore),                // 41
+		uint8(opcode.Push), int64ToBytes(5), // 31, 32
+		uint8(opcode.Push), int64ToBytes(8), // 33, 34
+		uint8(opcode.Push), int64ToBytes(0), // 35, 36
+		uint8(opcode.Mstore),                 // 37
+		uint8(opcode.Push), int64ToBytes(10), // 38, 39
+		uint8(opcode.Push), int64ToBytes(8), // 40, 41
 		uint8(opcode.Push), int64ToBytes(8), // 42, 43
-		uint8(opcode.Push), int64ToBytes(0), // 44, 45
-		uint8(opcode.Mload),                 // 46
-		uint8(opcode.Push), int64ToBytes(8), // 47, 48
-		uint8(opcode.Push), int64ToBytes(8), // 49, 50
-		uint8(opcode.Mload),     // 51
-		uint8(opcode.Add),       // 52
-		uint8(opcode.Returning), // 53
+		uint8(opcode.Mstore),                // 44
+		uint8(opcode.Push), int64ToBytes(8), // 45, 46
+		uint8(opcode.Push), int64ToBytes(0), // 47, 48
+		uint8(opcode.Mload),                 // 49
+		uint8(opcode.Push), int64ToBytes(8), // 50, 51
+		uint8(opcode.Push), int64ToBytes(8), // 52, 53
+		uint8(opcode.Mload),     // 54
+		uint8(opcode.Add),       // 55
+		uint8(opcode.Returning), // 56
 
 		// Function 'addNative'
-		uint8(opcode.Push), int64ToBytes(5), // 54, 55
-		uint8(opcode.Push), int64ToBytes(10), // 56, 57
-		uint8(opcode.Add),       // 58
-		uint8(opcode.Returning), // 59
+		uint8(opcode.Push), int64ToBytes(5), // 57, 58
+		uint8(opcode.Push), int64ToBytes(10), // 59, 60
+		uint8(opcode.Add),       // 61
+		uint8(opcode.Returning), // 62
 
 		// Function 'addArgs'
-		uint8(opcode.Push), int64ToBytes(0), // 60, 61
-		uint8(opcode.LoadArgs),              // 62
-		uint8(opcode.Push), int64ToBytes(1), // 63, 64
-		uint8(opcode.LoadArgs),  // 65
-		uint8(opcode.Add),       // 66
-		uint8(opcode.Returning), // 67
+		uint8(opcode.Push), int64ToBytes(0), // 63, 64
+		uint8(opcode.LoadArgs),              // 65
+		uint8(opcode.Push), int64ToBytes(1), // 66, 67
+		uint8(opcode.LoadArgs),  // 68
+		uint8(opcode.Add),       // 69
+		uint8(opcode.Returning), // 70
 	)
 
 	encodedParams, err := abi.Encode(5, 10)
@@ -732,6 +735,8 @@ func TestMload(t *testing.T) {
 
 func TestMstore(t *testing.T) {
 	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int64ToBytes(16),
+		uint8(opcode.Msize),
 		uint8(opcode.Push), int64ToBytes(20), // value
 		uint8(opcode.Push), int64ToBytes(8), // size
 		uint8(opcode.Push), int64ToBytes(0), // offset
@@ -774,6 +779,41 @@ func TestMstore(t *testing.T) {
 		value := memory.GetVal(test.offset, test.size)
 		if !bytes.Equal(value, test.value) {
 			t.Errorf("Invalid memory value - expected=%x, got=%x", test.value, value)
+		}
+	}
+}
+
+func TestMsize(t *testing.T) {
+	testByteCode := makeTestByteCode(
+		uint8(opcode.Push), int64ToBytes(20), // size
+		uint8(opcode.Msize),
+	)
+
+	testExpected := []struct {
+		size   uint64
+		result uint64
+	}{
+		{
+			size:   20,
+			result: 20,
+		},
+	}
+
+	memory := NewMemory()
+
+	stack, err := Execute(testByteCode, memory, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if stack.Len() != 0 {
+		t.Errorf("Invalid stack size - expected=%d, got =%d", 0, stack.Len())
+	}
+
+	for _, test := range testExpected {
+		size := memory.Len()
+		if uint64(size) != test.result {
+			t.Errorf("Invalid memory size - expected=%x, got=%x", test.result, size)
 		}
 	}
 }

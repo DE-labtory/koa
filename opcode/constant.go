@@ -208,6 +208,16 @@ const (
 	// memory[offset:offset+size] = value
 	Mstore Type = 0x23
 
+	// Set memory size
+	//
+	// Ex)
+	//
+	// [size]  ==>
+	// [y]            [y]
+	//
+	// memory[offset:offset+size] = value
+	Msize Type = 0x24
+
 	// Get the function selector information in the CallFunc.
 	// `Func` data is 4bytes of Keccak(function(params))
 	//
@@ -216,7 +226,7 @@ const (
 	// [x]  ==>  [x]
 	// [y]       [y]
 	// [x] is 4byte which encoded as function selector
-	LoadFunc Type = 0x24
+	LoadFunc Type = 0x25
 
 	// Get the function arguments in the CallFunc.
 	// 'Args' is arguments encoded as a bytes value according to abi.
@@ -225,7 +235,7 @@ const (
 	//
 	// [index]  ==>  [Callfunc.Args[index]]
 	// [y]           [y]
-	LoadArgs Type = 0x25
+	LoadArgs Type = 0x26
 
 	// Jump to position at which function was called
 	// Ex)
@@ -233,20 +243,20 @@ const (
 	// [funcSel]
 	// [position]  ==>  [value]
 	// [y]              [y]
-	Returning Type = 0x26
+	Returning Type = 0x27
 
 	// pop the data which present specific pc to jump
 	// The opcode pointed to by pc must be JumpDst.
-	Jump Type = 0x27
+	Jump Type = 0x28
 
 	// jumpDst should be where the jump will be.
-	JumpDst Type = 0x28
+	JumpDst Type = 0x29
 
 	// Pop the first two items in the stack.
 	// First item pointed to where to jump.
 	// Second item should be bool data that decide to jump.
 	// If second item is false, jump to first item(pc) pointed to
-	Jumpi Type = 0x29
+	Jumpi Type = 0x30
 
 	// Duplicate data that exists at the top of the stack.
 	//
@@ -254,7 +264,7 @@ const (
 	//           [a]
 	// [a]  ==>  [a]
 	// [b]       [b]
-	DUP Type = 0x30
+	DUP Type = 0x31
 
 	// Swap the first two items in the stack
 	//
@@ -263,10 +273,10 @@ const (
 	// [a]       [b]
 	// [b]  ==>  [a]
 	// [c]       [c]
-	SWAP Type = 0x31
+	SWAP Type = 0x32
 
 	// Jump to last position (Terminate the contract)
-	Exit Type = 0x32
+	Exit Type = 0x33
 )
 
 // Change the bytecode of an opcode to string.
@@ -309,22 +319,24 @@ func (p Type) String() (string, error) {
 	case 0x23:
 		return "Mstore", nil
 	case 0x24:
-		return "LoadFunc", nil
+		return "Msize", nil
 	case 0x25:
-		return "LoadArgs", nil
+		return "LoadFunc", nil
 	case 0x26:
-		return "Returning", nil
+		return "LoadArgs", nil
 	case 0x27:
-		return "Jump", nil
+		return "Returning", nil
 	case 0x28:
-		return "JumpDst", nil
+		return "Jump", nil
 	case 0x29:
-		return "Jumpi", nil
+		return "JumpDst", nil
 	case 0x30:
-		return "DUP", nil
+		return "Jumpi", nil
 	case 0x31:
-		return "SWAP", nil
+		return "DUP", nil
 	case 0x32:
+		return "SWAP", nil
+	case 0x33:
 		return "Exit", nil
 
 	default:
