@@ -42,6 +42,11 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		AsmCodes: make([]AsmCode, 0),
 	}
 
+	// Keep the size of the memory with createMemSizePlaceholder.
+	if err := createMemSizePlaceholder(asm); err != nil {
+		return *asm, err
+	}
+
 	// Keep the size of the jumper with createFuncJmprPlaceholder.
 	funcMap := FuncMap{}
 	if err := createFuncJmprPlaceholder(c, asm, funcMap); err != nil {
@@ -59,6 +64,12 @@ func CompileContract(c ast.Contract) (Asm, error) {
 		}
 	}
 
+	// Compile Memory size with updated memory table.
+	// And replace expected memory size with new memory size of the memory table.
+	if err := compileMemSize(asm, memTracer); err != nil {
+		return *asm, err
+	}
+
 	// Compile Function jumper with updated FuncMap.
 	// And replace expected function jumper with new function jumper
 	if err := compileFuncJmpr(c, asm, funcMap); err != nil {
@@ -66,6 +77,19 @@ func CompileContract(c ast.Contract) (Asm, error) {
 	}
 
 	return *asm, nil
+}
+
+// TODO: implement test cases :-)
+// Create a placeholder to calculate a size of the memory.
+// It emerges with the unmeaningful value.
+func createMemSizePlaceholder(asm *Asm) error {
+	operand, err := encoding.EncodeOperand(0)
+	if err != nil {
+		return err
+	}
+	asm.Emerge(opcode.Push, operand)
+
+	return nil
 }
 
 // Create a placeholder to calculate a size of the function jumper.
@@ -109,6 +133,21 @@ func compileProgramEndPoint(asm *Asm, revertDst int) error {
 // If jumps to here, exit the program.
 func compileExit(asm *Asm) {
 	asm.Emerge(opcode.Exit)
+}
+
+// TODO: implement test cases :-)
+// Generates a bytecode of memory size.
+func compileMemSize(asm *Asm, tracer MemTracer) error {
+	operand, err := encoding.EncodeOperand(tracer.MemSize())
+	if err != nil {
+		return err
+	}
+
+	if err := asm.ReplaceOperandAt(0, operand); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Generates a bytecode of function jumper.
@@ -557,7 +596,7 @@ func compilePrimitive(value interface{}, asm *Asm) error {
 }
 
 func compileIdentifier(e *ast.Identifier, asm *Asm, tracer MemTracer) error {
-	memEntry, err := tracer.GetEntry(e.Name)
+	memEntry, err := tracer.Entry(e.Name)
 	if err != nil {
 		return err
 	}

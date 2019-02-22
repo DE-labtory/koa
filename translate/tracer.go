@@ -32,7 +32,7 @@ func (e EntryError) Error() string {
 
 type MemTracer interface {
 	MemDefiner
-	MemEntryGetter
+	MemGetter
 }
 
 // Define() saves an variable to EntryMap and increase the MemoryCounter.
@@ -44,11 +44,13 @@ type MemDefiner interface {
 	Define(id string) MemEntry
 }
 
-// MemEntryGetter gets the data of the memory entry.
+// MemGetter gets the data of the memory entry.
 // GetOffsetOfEntry() returns the offset of the memory entry corresponding the Id.
 // GetSizeOfEntry() returns the size of the memory entry corresponding the Id.
-type MemEntryGetter interface {
-	GetEntry(id string) (MemEntry, error)
+type MemGetter interface {
+	Entry(id string) (MemEntry, error)
+	Counter() int
+	MemSize() int
 }
 
 // MemEntry saves size and offset of the value which the variable has.
@@ -82,7 +84,7 @@ func (m *MemEntryTable) Define(id string) MemEntry {
 	return entry
 }
 
-func (m MemEntryTable) GetEntry(id string) (MemEntry, error) {
+func (m MemEntryTable) Entry(id string) (MemEntry, error) {
 	entry, ok := m.EntryMap[id]
 	if !ok {
 		return MemEntry{}, EntryError{
@@ -91,4 +93,14 @@ func (m MemEntryTable) GetEntry(id string) (MemEntry, error) {
 	}
 
 	return entry, nil
+}
+
+// TODO: implement test cases :-)
+func (m MemEntryTable) Counter() int {
+	return m.MemoryCounter
+}
+
+// TODO: implement test cases :-)
+func (m MemEntryTable) MemSize() int {
+	return m.MemoryCounter
 }
