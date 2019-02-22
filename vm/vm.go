@@ -126,14 +126,15 @@ type pop struct{}
 type push struct{}
 type mload struct{}
 type mstore struct{}
+type msize struct{}
 type loadfunc struct{}
 type loadargs struct{}
 type returning struct{}
 type jump struct{}
 type jumpDst struct{}
-type jumpi struct{}
 
 // 0x30 range
+type jumpi struct{}
 type dup struct{}
 type swap struct{}
 type exit struct{}
@@ -375,8 +376,8 @@ func (mload) hex() []uint8 {
 func (mstore) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
 	offset, size, value := stack.Pop(), stack.Pop(), stack.Pop()
 
-	memSize := uint64(memory.Len()) + uint64(size)
-	memory.Resize(memSize)
+	//memSize := uint64(memory.Len()) + uint64(size)
+	//memory.Resize(memSize)
 
 	convertedValue := int64ToBytes(int64(value))
 	memory.Sets(uint64(offset), uint64(size), convertedValue)
@@ -384,6 +385,16 @@ func (mstore) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
 }
 
 func (mstore) hex() []uint8 {
+	return []uint8{uint8(opcode.Mstore)}
+}
+
+func (msize) Do(stack *Stack, _ asmReader, memory *Memory, _ *CallFunc) error {
+	size := stack.Pop()
+	memory.Resize(uint64(size))
+	return nil
+}
+
+func (msize) hex() []uint8 {
 	return []uint8{uint8(opcode.Mstore)}
 }
 
