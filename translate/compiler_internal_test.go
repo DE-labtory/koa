@@ -18,6 +18,7 @@ package translate
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/DE-labtory/koa/abi"
@@ -1942,6 +1943,35 @@ func TestCompileInfixExpression(t *testing.T) {
 					},
 				},
 			},
+		},
+		// Error
+		{
+			expression: &ast.InfixExpression{
+				Left:     &ast.IntegerLiteral{Value: 1},
+				Operator: ast.Bang,
+				Right:    &ast.IntegerLiteral{Value: 2},
+			},
+			expected: Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						Value:   "0000000000000001",
+					},
+					{
+						RawByte: []byte{byte(opcode.Push)},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+						Value:   "0000000000000002",
+					},
+				},
+			},
+			expectedErr: fmt.Errorf("Undefined operator %s", ast.Bang.String()),
 		},
 		//
 		// 2. test rather complex expression

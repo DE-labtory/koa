@@ -564,6 +564,9 @@ func compileInfixExpression(e *ast.InfixExpression, asm *Asm, tracer MemTracer) 
 		asm.Emerge(opcode.And)
 	case ast.LOR:
 		asm.Emerge(opcode.Or)
+
+	default:
+		return fmt.Errorf("Undefined operator %s", e.Operator.String())
 	}
 
 	return nil
