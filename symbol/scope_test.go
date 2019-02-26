@@ -22,6 +22,12 @@ import (
 	"testing"
 )
 
+type setupScopeFn func() *Scope
+
+func defaultScope() *Scope {
+	return &Scope{}
+}
+
 func TestNewScope(t *testing.T) {
 
 }
@@ -72,4 +78,78 @@ func TestGenerateScope(t *testing.T) {
 			t.Fatalf("")
 		}
 	}
+}
+
+func TestScopingAssignStatement(t *testing.T) {
+	tests := []struct {
+		setupScopeFn
+		input    *ast.AssignStatement
+		expected *Scope
+	}{
+		{
+			setupScopeFn: defaultScope,
+			input: &ast.AssignStatement{
+				Type:     ast.IntType,
+				Variable: ast.Identifier{Name: "a"},
+				Value: &ast.IntegerLiteral{
+					Value: 0,
+				},
+			},
+			expected: &Scope{
+				store: map[string]Symbol{
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+				},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		s := test.setupScopeFn()
+		ScopingAssignStatement(test.input, s)
+		if test.expected != s {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed", i)
+		}
+	}
+}
+
+func TestScopingIfStatement(t *testing.T) {
+	tests := []struct {
+		setupScopeFn
+		input    *ast.IfStatement
+		expected *Scope
+	}{
+		{
+			setupScopeFn: defaultScope,
+			input: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.AssignStatement{
+							Type:     ast.IntType,
+							Variable: ast.Identifier{Name: "a"},
+							Value: &ast.IntegerLiteral{
+								Value: 0,
+							},
+						},
+					},
+				},
+			},
+			expected: &Scope{
+				store: map[string]Symbol{
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+				},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		s := test.setupScopeFn()
+		ScopingIfStatement(test.input, s)
+		if test.expected != s {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed", i)
+		}
+	}
+
 }

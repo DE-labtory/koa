@@ -70,41 +70,37 @@ func ScopingFunctionParameter(f *ast.FunctionLiteral, s *Scope) {
 	}
 }
 
-func ScopingFunctionBody(b *ast.FunctionLiteral, s *Scope) {
-	for _, stmt := range b.Body.Statements {
-		switch implStmt := stmt.(type) {
-		case *ast.AssignStatement:
-			{
+func ScopingFunctionBody(f *ast.FunctionLiteral, scope *Scope) {
+	ScopingBlockStatement(f.Body, scope)
+}
 
-			}
-		case *ast.ReturnStatement:
-			{
+func ScopingStatement(stmt ast.Statement, scope *Scope) {
+	switch implStmt := stmt.(type) {
+	case *ast.AssignStatement:
+		ScopingAssignStatement(implStmt, scope)
+	case *ast.BlockStatement:
+		ScopingBlockStatement(implStmt, scope)
+	case *ast.ExpressionStatement:
+		{
 
-			}
-		case *ast.BlockStatement:
-			{
+		}
+	case *ast.IfStatement:
+		{
 
-			}
-		case *ast.ExpressionStatement:
-			{
-
-			}
-		case *ast.ReassignStatement:
-			{
-
-			}
-		case *ast.IfStatement:
-			{
-
-			}
 		}
 	}
 }
 
-func ScopingExpression(exp *ast.Expression, scope *Scope) {
+func ScopingAssignStatement(stmt *ast.AssignStatement, scope *Scope) {
 
 }
 
-func ScopingIdentifier(ident *ast.Identifier, scope *Scope) {
+func ScopingBlockStatement(bStmt *ast.BlockStatement, scope *Scope) {
+	for _, stmt := range bStmt.Statements {
+		ScopingStatement(stmt, scope)
+	}
+}
+
+func ScopingIfStatement(iStmt *ast.IfStatement, scope *Scope) {
 
 }
