@@ -16,8 +16,22 @@
 
 package symbol
 
-import "github.com/DE-labtory/koa/ast"
+import (
+	"fmt"
 
+	"github.com/DE-labtory/koa/ast"
+)
+
+// Define scope errors
+type DupError struct {
+	Identifier ast.Identifier
+}
+
+func (e DupError) Error() string {
+	return fmt.Sprintf("%s is already defined.", e.Identifier.Name)
+}
+
+// Define scope structure
 type Scope struct {
 	store map[string]Symbol
 
@@ -42,17 +56,30 @@ func NewEnclosedScope(p *Scope) *Scope {
 	return s
 }
 
-func GenerateScope(c *ast.Contract) *Scope {
-	s := NewScope()
+func ScopingContract(c *ast.Contract, s *Scope) error {
 	for _, f := range c.Functions {
-		ScopingFunctionParameter(f, s)
-		ScopingFunctionBody(f, s)
+		if err := ScopingFunction(f, s); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func ScopingFunctionParameter(f *ast.FunctionLiteral, s *Scope) {
-	for _, p := range f.Parameters {
+func ScopingFunction(f *ast.FunctionLiteral, s *Scope) error {
+	s = NewEnclosedScope(s)
+	if err := ScopingFunctionParameter(f.Parameters, s); err != nil {
+		return nil
+	}
+
+	if err := ScopingFunctionBody(f.Body, s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ScopingFunctionParameter(f []*ast.ParameterLiteral, s *Scope) error {
+	for _, p := range f {
 		switch p.Type {
 		case ast.IntType:
 			{
@@ -68,18 +95,23 @@ func ScopingFunctionParameter(f *ast.FunctionLiteral, s *Scope) {
 			}
 		}
 	}
+	return nil
 }
 
-func ScopingFunctionBody(f *ast.FunctionLiteral, scope *Scope) {
-	ScopingBlockStatement(f.Body, scope)
+func ScopingFunctionBody(f *ast.BlockStatement, scope *Scope) error {
+	if err := ScopingBlockStatement(f, scope); err != nil {
+		return err
+	}
+	return nil
 }
 
-func ScopingStatement(stmt ast.Statement, scope *Scope) {
+func ScopingStatement(stmt ast.Statement, scope *Scope) error {
+	var err error
 	switch implStmt := stmt.(type) {
 	case *ast.AssignStatement:
-		ScopingAssignStatement(implStmt, scope)
+		err = ScopingAssignStatement(implStmt, scope)
 	case *ast.BlockStatement:
-		ScopingBlockStatement(implStmt, scope)
+		err = ScopingBlockStatement(implStmt, scope)
 	case *ast.ExpressionStatement:
 		{
 
@@ -89,18 +121,54 @@ func ScopingStatement(stmt ast.Statement, scope *Scope) {
 
 		}
 	}
-}
 
-func ScopingAssignStatement(stmt *ast.AssignStatement, scope *Scope) {
-
-}
-
-func ScopingBlockStatement(bStmt *ast.BlockStatement, scope *Scope) {
-	for _, stmt := range bStmt.Statements {
-		ScopingStatement(stmt, scope)
+	if err != nil {
+		return err
 	}
+	return nil
+}
+
+func ScopingAssignStatement(stmt *ast.AssignStatement, scope *Scope) error {
+	if ok := scope.store[stmt.Variable.Name]; ok != nil {
+		return DupError{
+			Identifier: stmt.Variable,
+		}
+	}
+
+	if err := ScopingIdentifier(stmt.Variable, stmt.Type, scope); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ScopingBlockStatement(bStmt *ast.BlockStatement, scope *Scope) error {
+	scope = NewEnclosedScope(scope)
+	for _, stmt := range bStmt.Statements {
+		if err := ScopingStatement(stmt, scope); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ScopingIfStatement(iStmt *ast.IfStatement, scope *Scope) {
 
+}
+
+func ScopingIdentifier(identifier ast.Identifier, ds ast.DataStructure, scope *Scope) error {
+	if ok := scope.store[identifier.Name]; ok != nil {
+		return DupError{Identifier: identifier}
+	}
+
+	name := identifier.Name
+	switch ds {
+	case ast.IntType:
+		scope.store[name] = &Integer{Name: &ast.Identifier{Name: name}}
+	case ast.StringType:
+		scope.store[name] = &String{Name: &ast.Identifier{Name: name}}
+	case ast.BoolType:
+		scope.store[name] = &Boolean{Name: &ast.Identifier{Name: name}}
+	}
+
+	return nil
 }

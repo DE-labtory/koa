@@ -17,15 +17,16 @@
 package symbol
 
 import (
-	"github.com/DE-labtory/koa/ast"
 	"reflect"
 	"testing"
+
+	"github.com/DE-labtory/koa/ast"
 )
 
 type setupScopeFn func() *Scope
 
 func defaultScope() *Scope {
-	return &Scope{}
+	return NewScope()
 }
 
 func TestNewScope(t *testing.T) {
@@ -36,48 +37,103 @@ func TestNewEnclosedScope(t *testing.T) {
 
 }
 
-func TestGenerateScope(t *testing.T) {
+func TestScopingFunction(t *testing.T) {
+
+}
+
+func TestScopingFunctionParameter(t *testing.T) {
 	tests := []struct {
-		contract ast.Contract
-		expected Scope
+		setupScopeFn
+		input    []*ast.ParameterLiteral
+		expected *Scope
+		err      error
 	}{
 		{
-			// contract which has one function named "foo", and it has one integer parameter named "a"
-			contract: ast.Contract{
-				Functions: []*ast.FunctionLiteral{
-					{
-						Name: &ast.Identifier{Name: "foo"},
-						Parameters: []*ast.ParameterLiteral{
-							{
-								Type:       ast.IntType,
-								Identifier: &ast.Identifier{Name: "a"},
-							},
-						},
+			setupScopeFn: defaultScope,
+			input: []*ast.ParameterLiteral{
+				{
+					Identifier: &ast.Identifier{
+						Name: "a",
 					},
+					Type: ast.IntType,
 				},
 			},
-			expected: Scope{
+			expected: &Scope{
 				store: map[string]Symbol{
-					"foo": &Function{Name: "foo"},
-				},
-				parent: nil,
-				child: []*Scope{
-					{
-						store: map[string]Symbol{
-							"a": &Integer{Name: &ast.Identifier{Name: "a"}},
-						},
-					},
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
 				},
 			},
+			err: nil,
+		},
+		{
+			setupScopeFn: defaultScope,
+			input: []*ast.ParameterLiteral{
+				{
+					Identifier: &ast.Identifier{
+						Name: "a",
+					},
+					Type: ast.IntType,
+				},
+				{
+					Identifier: &ast.Identifier{
+						Name: "b",
+					},
+					Type: ast.BoolType,
+				},
+				{
+					Identifier: &ast.Identifier{
+						Name: "c",
+					},
+					Type: ast.StringType,
+				},
+			},
+			expected: &Scope{
+				store: map[string]Symbol{
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+					"b": &Boolean{Name: &ast.Identifier{Name: "b"}},
+					"c": &String{Name: &ast.Identifier{Name: "c"}},
+				},
+			},
+			err: nil,
+		},
+		{
+			setupScopeFn: defaultScope,
+			input: []*ast.ParameterLiteral{
+				{
+					Identifier: &ast.Identifier{
+						Name: "a",
+					},
+					Type: ast.IntType,
+				},
+				{
+					Identifier: &ast.Identifier{
+						Name: "a",
+					},
+					Type: ast.IntType,
+				},
+			},
+			expected: nil,
+			err:      DupError{Identifier: ast.Identifier{Name: "a"}},
 		},
 	}
 
-	for _, test := range tests {
-		scope := GenerateScope(&test.contract)
-		if !reflect.DeepEqual(test.expected, scope) {
-			t.Fatalf("")
+	for i, test := range tests {
+		s := test.setupScopeFn()
+		err := ScopingFunctionParameter(test.input, s)
+
+		if err == nil && !reflect.DeepEqual(test.expected, s) {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed.\nexpected=%v\ngot=%v",
+				i, test.expected, s)
+		}
+		if err != nil && reflect.DeepEqual(test.err, err) {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed (err case).\nexpected=%v\ngot=%v",
+				i, test.err, err)
 		}
 	}
+}
+
+func TestScopingFunctionBody(t *testing.T) {
+
 }
 
 func TestScopingAssignStatement(t *testing.T) {
@@ -85,6 +141,7 @@ func TestScopingAssignStatement(t *testing.T) {
 		setupScopeFn
 		input    *ast.AssignStatement
 		expected *Scope
+		err      error
 	}{
 		{
 			setupScopeFn: defaultScope,
@@ -101,13 +158,54 @@ func TestScopingAssignStatement(t *testing.T) {
 				},
 			},
 		},
+		{
+			setupScopeFn: defaultScope,
+			input: &ast.AssignStatement{
+				Type:     ast.StringType,
+				Variable: ast.Identifier{Name: "str"},
+				Value: &ast.StringLiteral{
+					Value: "testString",
+				},
+			},
+			expected: &Scope{
+				store: map[string]Symbol{
+					"str": &String{Name: &ast.Identifier{Name: "str"}},
+				},
+			},
+		},
+		{
+			setupScopeFn: func() *Scope {
+				return &Scope{
+					store: map[string]Symbol{
+						"str": &String{Name: &ast.Identifier{Name: "str"}},
+					},
+				}
+			},
+			input: &ast.AssignStatement{
+				Type:     ast.StringType,
+				Variable: ast.Identifier{Name: "str"},
+				Value: &ast.StringLiteral{
+					Value: "testString",
+				},
+			},
+			expected: nil,
+			err: DupError{
+				Identifier: ast.Identifier{Name: "str"},
+			},
+		},
 	}
 
 	for i, test := range tests {
 		s := test.setupScopeFn()
-		ScopingAssignStatement(test.input, s)
-		if test.expected != s {
-			t.Fatalf("test [%d] - TestScopingAssignStatement failed", i)
+		err := ScopingAssignStatement(test.input, s)
+
+		if err == nil && !reflect.DeepEqual(s, test.expected) {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed.\nexpected=%v\ngot=%v",
+				i, test.expected, s)
+		}
+		if err != nil && !reflect.DeepEqual(err, test.err) {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed (err case).\nexpected=%v\ngot=%v",
+				i, test.err, err)
 		}
 	}
 }
@@ -117,6 +215,7 @@ func TestScopingIfStatement(t *testing.T) {
 		setupScopeFn
 		input    *ast.IfStatement
 		expected *Scope
+		err      error
 	}{
 		{
 			setupScopeFn: defaultScope,
@@ -142,6 +241,70 @@ func TestScopingIfStatement(t *testing.T) {
 				},
 			},
 		},
+		{
+			setupScopeFn: defaultScope,
+			input: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.AssignStatement{
+							Type:     ast.IntType,
+							Variable: ast.Identifier{Name: "a"},
+							Value: &ast.IntegerLiteral{
+								Value: 0,
+							},
+						},
+						&ast.AssignStatement{
+							Type:     ast.IntType,
+							Variable: ast.Identifier{Name: "b"},
+							Value: &ast.IntegerLiteral{
+								Value: 0,
+							},
+						},
+					},
+				},
+			},
+			expected: &Scope{
+				store: map[string]Symbol{
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+					"b": &Integer{Name: &ast.Identifier{Name: "b"}},
+				},
+			},
+		},
+		{
+			setupScopeFn: defaultScope,
+			input: &ast.IfStatement{
+				Condition: &ast.BooleanLiteral{
+					Value: true,
+				},
+				Consequence: &ast.BlockStatement{
+					Statements: []ast.Statement{
+						&ast.AssignStatement{
+							Type:     ast.IntType,
+							Variable: ast.Identifier{Name: "a"},
+							Value: &ast.IntegerLiteral{
+								Value: 0,
+							},
+						},
+						&ast.AssignStatement{
+							Type:     ast.IntType,
+							Variable: ast.Identifier{Name: "b"},
+							Value: &ast.IntegerLiteral{
+								Value: 0,
+							},
+						},
+					},
+				},
+			},
+			expected: &Scope{
+				store: map[string]Symbol{
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+					"b": &Integer{Name: &ast.Identifier{Name: "b"}},
+				},
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -151,5 +314,58 @@ func TestScopingIfStatement(t *testing.T) {
 			t.Fatalf("test [%d] - TestScopingAssignStatement failed", i)
 		}
 	}
+}
 
+func TestScopingIdentifier(t *testing.T) {
+	tests := []struct {
+		setupScopeFn
+		idf      ast.Identifier
+		ds       ast.DataStructure
+		expected *Scope
+		err      error
+	}{
+		{
+			setupScopeFn: defaultScope,
+			idf: ast.Identifier{
+				Name: "a",
+			},
+			ds: ast.IntType,
+			expected: &Scope{
+				store: map[string]Symbol{
+					"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+				},
+			},
+			err: nil,
+		},
+		{
+			setupScopeFn: func() *Scope {
+				return &Scope{
+					store: map[string]Symbol{
+						"a": &Boolean{Name: &ast.Identifier{Name: "a"}},
+					},
+				}
+			},
+			idf: ast.Identifier{
+				Name: "a",
+			},
+			ds:       ast.IntType,
+			expected: nil,
+			err: DupError{
+				Identifier: ast.Identifier{Name: "a"},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		s := test.setupScopeFn()
+		err := ScopingIdentifier(test.idf, test.ds, s)
+		if err == nil && !reflect.DeepEqual(s, test.expected) {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed.\nexpected=%v\ngot=%v",
+				i, test.expected, s)
+		}
+		if err != nil && !reflect.DeepEqual(err, test.err) {
+			t.Fatalf("test [%d] - TestScopingAssignStatement failed (err case).\nexpected=%v\ngot=%v",
+				i, test.err, err)
+		}
+	}
 }
