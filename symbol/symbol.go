@@ -22,17 +22,19 @@ import (
 	"github.com/DE-labtory/koa/ast"
 )
 
-type SymbolType string
+type ObjectType string
 
 const (
-	IntegerSymbol  = "INTEGER"
-	BooleanSymbol  = "BOOLEAN"
-	StringSymbol   = "STRING"
-	FunctionSymbol = "FUNCTION"
+	IntegerObject  = "INTEGER"
+	BooleanObject  = "BOOLEAN"
+	StringObject   = "STRING"
+	FunctionObject = "FUNCTION"
+	VoidObject     = "VOID"
+	InvalidSymbol  = "INVALID"
 )
 
-type Symbol interface {
-	Type() SymbolType
+type Object interface {
+	Type() ObjectType
 	String() string
 }
 
@@ -41,8 +43,8 @@ type Integer struct {
 	Name *ast.Identifier
 }
 
-func (i *Integer) Type() SymbolType {
-	return IntegerSymbol
+func (i *Integer) Type() ObjectType {
+	return IntegerObject
 }
 
 // String() returns symbol's name
@@ -55,8 +57,8 @@ type Boolean struct {
 	Name *ast.Identifier
 }
 
-func (b *Boolean) Type() SymbolType {
-	return BooleanSymbol
+func (b *Boolean) Type() ObjectType {
+	return BooleanObject
 }
 
 func (b *Boolean) String() string {
@@ -68,8 +70,8 @@ type String struct {
 	Name *ast.Identifier
 }
 
-func (s *String) Type() SymbolType {
-	return StringSymbol
+func (s *String) Type() ObjectType {
+	return StringObject
 }
 
 func (s *String) String() string {
@@ -80,12 +82,11 @@ func (s *String) String() string {
 // Name represents function's name.
 // Scope represents function value's scope.
 type Function struct {
-	Name  string
-	Scope *Scope
+	Name string
 }
 
-func (f *Function) Type() SymbolType {
-	return FunctionSymbol
+func (f *Function) Type() ObjectType {
+	return FunctionObject
 }
 
 func (f *Function) String() string {

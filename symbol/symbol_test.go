@@ -24,13 +24,13 @@ import (
 
 func TestInteger(t *testing.T) {
 	tests := []struct {
-		input          Symbol
+		input          Object
 		expectedStr    string
-		expectedSymbol SymbolType
+		expectedSymbol ObjectType
 	}{
-		{&Integer{&ast.Identifier{Name: "testName"}}, "testName", IntegerSymbol},
-		{&Integer{&ast.Identifier{Name: "a"}}, "a", IntegerSymbol},
-		{&Integer{&ast.Identifier{Name: "b"}}, "b", IntegerSymbol},
+		{&Integer{&ast.Identifier{Name: "testName"}}, "testName", IntegerObject},
+		{&Integer{&ast.Identifier{Name: "a"}}, "a", IntegerObject},
+		{&Integer{&ast.Identifier{Name: "b"}}, "b", IntegerObject},
 	}
 
 	for i, test := range tests {
@@ -53,13 +53,13 @@ func TestInteger(t *testing.T) {
 
 func TestString(t *testing.T) {
 	tests := []struct {
-		input          Symbol
+		input          Object
 		expectedStr    string
-		expectedSymbol SymbolType
+		expectedSymbol ObjectType
 	}{
-		{&String{&ast.Identifier{Name: "testName"}}, "testName", StringSymbol},
-		{&String{&ast.Identifier{Name: "a"}}, "a", StringSymbol},
-		{&String{&ast.Identifier{Name: "b"}}, "b", StringSymbol},
+		{&String{&ast.Identifier{Name: "testName"}}, "testName", StringObject},
+		{&String{&ast.Identifier{Name: "a"}}, "a", StringObject},
+		{&String{&ast.Identifier{Name: "b"}}, "b", StringObject},
 	}
 
 	for i, test := range tests {
@@ -82,12 +82,12 @@ func TestString(t *testing.T) {
 
 func TestBoolean(t *testing.T) {
 	tests := []struct {
-		input       Symbol
+		input       Object
 		expectedStr string
-		expectedObj SymbolType
+		expectedObj ObjectType
 	}{
-		{&Boolean{&ast.Identifier{Name: "testName"}}, "testName", BooleanSymbol},
-		{&Boolean{&ast.Identifier{Name: "a"}}, "a", BooleanSymbol},
+		{&Boolean{&ast.Identifier{Name: "testName"}}, "testName", BooleanObject},
+		{&Boolean{&ast.Identifier{Name: "a"}}, "a", BooleanObject},
 	}
 
 	for i, test := range tests {
@@ -110,17 +110,16 @@ func TestBoolean(t *testing.T) {
 
 func TestFunction(t *testing.T) {
 	tests := []struct {
-		input          Symbol
+		input          Object
 		expectedStr    string
-		expectedSymbol SymbolType
+		expectedSymbol ObjectType
 	}{
 		{
 			&Function{
 				"add",
-				&Scope{},
 			},
 			"add",
-			FunctionSymbol,
+			FunctionObject,
 		},
 	}
 

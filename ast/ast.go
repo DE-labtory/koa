@@ -124,13 +124,15 @@ const (
 	StringType
 	BoolType
 	VoidType
+	InvalidType
 )
 
 var DataStructureMap = map[DataStructure]string{
-	IntType:    "int",
-	StringType: "string",
-	BoolType:   "bool",
-	VoidType:   "void",
+	IntType:     "int",
+	StringType:  "string",
+	BoolType:    "bool",
+	VoidType:    "void",
+	InvalidType: "invalid",
 }
 
 func (ds DataStructure) String() string {
