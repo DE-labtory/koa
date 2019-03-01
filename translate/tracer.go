@@ -63,13 +63,27 @@ type MemEntry struct {
 type MemEntryTable struct {
 	EntryMap      map[string]MemEntry
 	MemoryCounter int
+	Outer         *MemEntryTable
 }
 
 func NewMemEntryTable() *MemEntryTable {
 	return &MemEntryTable{
 		EntryMap:      make(map[string]MemEntry),
 		MemoryCounter: 0,
+		Outer:         nil,
 	}
+}
+
+func NewEnclosedMemEntryTable(memEntryTable *MemEntryTable) *MemEntryTable {
+	m := NewMemEntryTable()
+	m.Outer = memEntryTable
+	m.MemoryCounter = memEntryTable.MemoryCounter
+	return m
+}
+
+func (m *MemEntryTable) Out() *MemEntryTable {
+	m.Outer.MemoryCounter = m.MemoryCounter
+	return m.Outer
 }
 
 func (m *MemEntryTable) Define(id string) MemEntry {

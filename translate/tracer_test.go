@@ -22,6 +22,67 @@ import (
 	"github.com/DE-labtory/koa/translate"
 )
 
+func TestNewEnclosedMemEntryTable(t *testing.T) {
+
+	memEntryTable := &translate.MemEntryTable{
+		Outer:         nil,
+		MemoryCounter: 0,
+		EntryMap:      make(map[string]translate.MemEntry),
+	}
+
+	memEntryTable.Define("a")
+	memEntryTable.Define("b")
+
+	closedMemEntryTable := translate.NewEnclosedMemEntryTable(memEntryTable)
+
+	if closedMemEntryTable.Outer != memEntryTable {
+		t.Fatalf("outer is wrong. expected=%x, got=%x", memEntryTable, closedMemEntryTable.Outer)
+	}
+
+	if closedMemEntryTable.MemoryCounter != memEntryTable.MemoryCounter {
+		t.Fatalf("MemoryCounter is wrong. expected=%d, got=%d", closedMemEntryTable.MemoryCounter, memEntryTable.MemoryCounter)
+	}
+
+	_, ok := closedMemEntryTable.EntryMap["a"]
+	if ok {
+		t.Fatalf("memEntry should not exist")
+	}
+
+	_, ok = closedMemEntryTable.EntryMap["b"]
+	if ok {
+		t.Fatalf("memEntry should not exist")
+	}
+}
+
+func TestMemEntryTable_Out(t *testing.T) {
+	memEntryTable := &translate.MemEntryTable{
+		Outer:         nil,
+		MemoryCounter: 0,
+		EntryMap:      make(map[string]translate.MemEntry),
+	}
+
+	memEntryTable.Define("a")
+	memEntryTable.Define("b")
+
+	closedMemEntryTable := translate.NewEnclosedMemEntryTable(memEntryTable)
+	closedMemEntryTable.Define("a")
+	closedMemEntryTable.Define("c")
+	m := closedMemEntryTable.Out()
+
+	if m.MemoryCounter != closedMemEntryTable.MemoryCounter {
+		t.Fatalf("MemoryCounter is wrong. expected=%d, got=%d", m.MemoryCounter, closedMemEntryTable.MemoryCounter)
+	}
+
+	if m.Outer != nil {
+		t.Fatalf("outer is wrong. expected=nil, got=%x", m.Outer)
+	}
+
+	_, ok := m.EntryMap["c"]
+	if ok {
+		t.Fatalf("memEntry should not exist")
+	}
+}
+
 func TestMemEntryTable_Define(t *testing.T) {
 	tests := []struct {
 		id           string
