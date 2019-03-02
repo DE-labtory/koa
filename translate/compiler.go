@@ -252,20 +252,22 @@ func toAbiMethods(functions []*ast.FunctionLiteral) ([]abi.Method, error) {
 
 // compileFunction() compiles a function in contract.
 // Generates and adds output to bytecode.
-func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer MemTracer) error {
+func compileFunction(f ast.FunctionLiteral, bytecode *Asm, tracer *MemEntryTable) error {
+	closedTracer := NewEnclosedMemEntryTable(tracer)
 	for i, param := range f.Parameters {
-		if err := compileParameter(*param, i, bytecode, tracer); err != nil {
+		if err := compileParameter(*param, i, bytecode, closedTracer); err != nil {
 			return err
 		}
 	}
 
 	statements := f.Body.Statements
 	for _, s := range statements {
-		if err := compileStatement(s, bytecode, tracer); err != nil {
+		if err := compileStatement(s, bytecode, closedTracer); err != nil {
 			return err
 		}
 	}
 
+	tracer = closedTracer.Out()
 	return nil
 }
 

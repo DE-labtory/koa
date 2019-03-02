@@ -857,7 +857,234 @@ func TestCompileAbi(t *testing.T) {
 
 // TODO: implement test cases :-)
 func TestCompileFunction(t *testing.T) {
+	tests := []struct {
+		contract       ast.Contract
+		expectedAsm    *Asm
+		expectedTracer *MemEntryTable
+	}{
+		{
+			//
+			// contract{
+			//    func foo(a int){
+			//       int b = 5
+			//    }
+			//    func foo2(a int){
+			//       int b = 5
+			//    }
+			// }
+			//
+			contract: ast.Contract{
+				Functions: []*ast.FunctionLiteral{
+					{
+						Name: &ast.Identifier{
+							Name: "foo",
+						},
+						Body: &ast.BlockStatement{
+							Statements: []ast.Statement{
+								&ast.AssignStatement{
+									Value: &ast.IntegerLiteral{
+										Value: 5,
+									},
+									Variable: ast.Identifier{
+										Name: "b",
+									},
+									Type: ast.IntType,
+								},
+							},
+						},
+						Parameters: []*ast.ParameterLiteral{
+							{
+								Type: ast.IntType,
+								Identifier: &ast.Identifier{
+									Name: "a",
+								},
+							},
+						},
+					},
+					{
+						Name: &ast.Identifier{
+							Name: "foo2",
+						},
+						Body: &ast.BlockStatement{
+							Statements: []ast.Statement{
+								&ast.AssignStatement{
+									Value: &ast.IntegerLiteral{
+										Value: 5,
+									},
+									Variable: ast.Identifier{
+										Name: "b",
+									},
+									Type: ast.IntType,
+								},
+							},
+						},
+						Parameters: []*ast.ParameterLiteral{
+							{
+								Type: ast.IntType,
+								Identifier: &ast.Identifier{
+									Name: "a",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedAsm: &Asm{
+				AsmCodes: []AsmCode{
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x26},
+						Value:   "LoadArgs",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x23},
+						Value:   "Mstore",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
+						Value:   "0000000000000005",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{0x23},
+						Value:   "Mstore",
+					},
+					/////////
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						Value:   "0000000000000000",
+					},
+					{
+						RawByte: []byte{0x26},
+						Value:   "LoadArgs",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10},
+						Value:   "0000000000000010",
+					},
+					{
+						RawByte: []byte{0x23},
+						Value:   "Mstore",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
+						Value:   "0000000000000005",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08},
+						Value:   "0000000000000008",
+					},
+					{
+						RawByte: []byte{0x21},
+						Value:   "Push",
+					},
+					{
+						RawByte: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18},
+						Value:   "0000000000000018",
+					},
+					{
+						RawByte: []byte{0x23},
+						Value:   "Mstore",
+					},
+				},
+			},
+			expectedTracer: &MemEntryTable{
+				MemoryCounter: 32,
+				Outer:         nil,
+				EntryMap:      make(map[string]MemEntry),
+			},
+		},
+	}
 
+	for i, test := range tests {
+		a := &Asm{
+			AsmCodes: make([]AsmCode, 0),
+		}
+
+		memTracer := NewMemEntryTable()
+		for _, f := range test.contract.Functions {
+			compileFunction(*f, a, memTracer)
+		}
+
+		if memTracer.MemoryCounter != test.expectedTracer.MemoryCounter {
+			t.Fatalf("test[%d] - MemoryCounter is wrong. expected=%d, got=%d", i, memTracer.MemoryCounter, test.expectedTracer.MemoryCounter)
+		}
+
+		if memTracer.Outer != nil {
+			t.Fatalf("test[%d] - outer is wrong. expected=nil, got=%x", i, memTracer.Outer)
+		}
+
+		if !a.Equal(*test.expectedAsm) {
+			t.Fatalf("test[%d] - result wrong. \nexpected %x, \ngot=%x",
+				i, test.expectedAsm, a)
+		}
+	}
 }
 
 // TODO: implement test cases :-)
