@@ -41,7 +41,7 @@ type Resolver struct {
 	defs map[*ast.Identifier]Object
 
 	// fns manager function its own type
-	fns map[*ast.FunctionLiteral]ObjectType
+	fns map[string]*ast.FunctionLiteral
 }
 
 // Define scope error
@@ -103,17 +103,17 @@ func NewResolver() *Resolver {
 		scope: s,
 		types: make(map[ast.Expression]ObjectType),
 		defs:  make(map[*ast.Identifier]Object),
-		fns:   make(map[*ast.FunctionLiteral]ObjectType),
+		fns:   make(map[string]*ast.FunctionLiteral),
 	}
 }
 
 // typeof returns the type of expression exp,
-// or return InvalidSymbol if not found
+// or return InvalidObject if not found
 func (r *Resolver) typeOf(exp ast.Expression) ObjectType {
 	if st, ok := r.types[exp]; ok {
 		return st
 	}
-	return InvalidSymbol
+	return InvalidObject
 }
 
 // objectOf returns the object denoted by the specified identifier
@@ -150,7 +150,7 @@ func ResolveContract(c *ast.Contract) error {
 		obj := &Function{Name: name}
 
 		r.scope.store[name] = obj
-		r.fns[f] = FunctionObject
+		r.fns[f.Name.Name] = f
 		r.defs[f.Name] = obj
 	}
 
@@ -306,7 +306,7 @@ func ResolveIdentifier(identifier *ast.Identifier, r *Resolver) (ObjectType, err
 		return obj.Type(), nil
 	}
 
-	return InvalidSymbol, NoExistError{
+	return InvalidObject, NoExistError{
 		identifier: identifier,
 	}
 }
@@ -328,15 +328,36 @@ func ResolveExpression(exp ast.Expression, r *Resolver) (ObjectType, error) {
 	case *ast.StringLiteral:
 		return StringObject, nil
 	}
-	return InvalidSymbol, nil
+	return InvalidObject, nil
 }
 
 func ResolveCallExpression(exp *ast.CallExpression, r *Resolver) (ObjectType, error) {
-	return InvalidSymbol, nil
+	// check function is defined or not
+	if _, ok := r.fns[exp.Function.(*ast.Identifier).Name]; !ok {
+		return InvalidObject, NoExistError{
+			identifier: exp.Function.(*ast.Identifier),
+		}
+	}
+
+	// check function parameters is right
+	f := r.fns[exp.Function.(*ast.Identifier).Name]
+	for i, p := range f.Parameters {
+		t1 := objTypeMap[p.Type]
+		t2 := r.typeOf(exp.Arguments[i])
+		if t1 != t2 {
+			//if objTypeMap[p.Type] != r.typeOf(p) {
+			return InvalidObject, TypeError{
+				target: objTypeMap[p.Type],
+				object: r.typeOf(p),
+			}
+		}
+	}
+
+	return InvalidObject, nil
 }
 
 func ResolvePrefixExpression(exp ast.Expression, r *Resolver) (ObjectType, error) {
-	return InvalidSymbol, nil
+	return InvalidObject, nil
 }
 
 func ResolveInfixExpression(exp *ast.InfixExpression, r *Resolver) (ObjectType, error) {
@@ -348,5 +369,5 @@ func ResolveInfixExpression(exp *ast.InfixExpression, r *Resolver) (ObjectType, 
 		return ot, err
 	}
 
-	return InvalidSymbol, nil
+	return InvalidObject, nil
 }

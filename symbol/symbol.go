@@ -30,7 +30,7 @@ const (
 	StringObject   = "STRING"
 	FunctionObject = "FUNCTION"
 	VoidObject     = "VOID"
-	InvalidSymbol  = "INVALID"
+	InvalidObject  = "INVALID"
 )
 
 type Object interface {

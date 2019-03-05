@@ -144,7 +144,7 @@ func TestResolveFunction(t *testing.T) {
 				},
 				types: map[ast.Expression]ObjectType{},
 				defs:  map[*ast.Identifier]Object{},
-				fns:   map[*ast.FunctionLiteral]ObjectType{},
+				fns:   map[string]*ast.FunctionLiteral{},
 			},
 			err: nil,
 		},
@@ -179,7 +179,7 @@ func TestResolveFunction(t *testing.T) {
 					vars[1].fl.Parameters[0].Identifier: &Integer{Name: &ast.Identifier{Name: "a"}},
 					vars[1].fl.Parameters[1].Identifier: &Integer{Name: &ast.Identifier{Name: "b"}},
 				},
-				fns: map[*ast.FunctionLiteral]ObjectType{},
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 		},
 	}
@@ -270,7 +270,7 @@ func TestResolveFunctionParameter(t *testing.T) {
 				defs: map[*ast.Identifier]Object{
 					vars[0].pls[0].Identifier: &Integer{Name: &ast.Identifier{Name: "a"}},
 				},
-				fns: make(map[*ast.FunctionLiteral]ObjectType),
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 			err: nil,
 		},
@@ -297,7 +297,7 @@ func TestResolveFunctionParameter(t *testing.T) {
 					vars[1].pls[1].Identifier: &Boolean{Name: &ast.Identifier{Name: "b"}},
 					vars[1].pls[2].Identifier: &String{Name: &ast.Identifier{Name: "c"}},
 				},
-				fns: make(map[*ast.FunctionLiteral]ObjectType),
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 			err: nil,
 		},
@@ -544,7 +544,7 @@ func TestResolveBlockStatement(t *testing.T) {
 					&vars[0].bs.Statements[0].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "a"}},
 					&vars[0].bs.Statements[1].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "b"}},
 				},
-				fns: make(map[*ast.FunctionLiteral]ObjectType),
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 			err: nil,
 		},
@@ -696,7 +696,7 @@ func TestResolveIfStatement(t *testing.T) {
 				defs: map[*ast.Identifier]Object{
 					&vars[0].Consequence.Statements[0].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "a"}},
 				},
-				fns: make(map[*ast.FunctionLiteral]ObjectType),
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 		},
 		{
@@ -728,7 +728,7 @@ func TestResolveIfStatement(t *testing.T) {
 					&vars[1].Consequence.Statements[0].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "a"}},
 					&vars[1].Consequence.Statements[1].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "b"}},
 				},
-				fns: make(map[*ast.FunctionLiteral]ObjectType),
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 		},
 		{
@@ -770,7 +770,7 @@ func TestResolveIfStatement(t *testing.T) {
 					&vars[2].Consequence.Statements[1].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "b"}},
 					&vars[2].Consequence.Statements[0].(*ast.AssignStatement).Variable: &Integer{Name: &ast.Identifier{Name: "a"}},
 				},
-				fns: make(map[*ast.FunctionLiteral]ObjectType),
+				fns: map[string]*ast.FunctionLiteral{},
 			},
 		},
 	}
@@ -794,72 +794,126 @@ func TestResolveIfStatement(t *testing.T) {
 }
 
 func TestResolveCallExpression(t *testing.T) {
-	//vars := []*
-}
-
-/*
-func TestResolveIdentifier() {
-	tests := []struct {
-		setupResolverFn
-		idf      ast.Identifier
-		ds       ast.DataStructure
-		expected *Resolver
-		err      error
+	vars := []struct {
+		fl *ast.FunctionLiteral
+		ce *ast.CallExpression
 	}{
 		{
-			setupResolverFn: defaultResolver,
-			idf: ast.Identifier{
-				Name: "a",
-			},
-			ds: ast.IntType,
-			expected: &Resolver{
-				scope: &Scope{
-					store: map[string]Object{
-						"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+			// case 1
+			fl: &ast.FunctionLiteral{
+				Name: &ast.Identifier{Name: "add"},
+				Parameters: []*ast.ParameterLiteral{
+					{
+						Identifier: &ast.Identifier{Name: "a"},
+						Type:       ast.IntType,
+					},
+					{
+						Identifier: &ast.Identifier{Name: "b"},
+						Type:       ast.IntType,
 					},
 				},
-				types: make(map[ast.Expression]ObjectType),
-				defs:  make(map[*ast.Identifier]Object),
-				fns:   make(map[*ast.FunctionLiteral]ObjectType),
+				Body:       nil,
+				ReturnType: ast.IntType,
 			},
-			err: nil,
+			ce: &ast.CallExpression{
+				Function: &ast.Identifier{
+					Name: "add",
+				},
+				Arguments: []ast.Expression{
+					&ast.Identifier{Name: "a"},
+					&ast.Identifier{Name: "b"},
+				},
+			},
 		},
+	}
+
+	tests := []struct {
+		setupResolverFn
+		input        *ast.CallExpression
+		expected     *Resolver
+		expectedType ObjectType
+		err          error
+	}{
 		{
+			// test case 1
+			// function add(int a, int b)
+			// ...
+			// add(a, b)
 			setupResolverFn: func() *Resolver {
 				return &Resolver{
 					scope: &Scope{
 						store: map[string]Object{
-							"a": &Boolean{Name: &ast.Identifier{Name: "a"}},
+							"add": &Function{Name: "add"},
 						},
+					},
+					types: map[ast.Expression]ObjectType{
+						&ast.Identifier{Name: "a"}: IntegerObject,
+						&ast.Identifier{Name: "b"}: IntegerObject,
+					},
+					defs: map[*ast.Identifier]Object{
+						vars[0].fl.Name: &Function{Name: "add"},
+					},
+					fns: map[string]*ast.FunctionLiteral{
+						"add": vars[0].fl,
 					},
 				}
 			},
-			idf: ast.Identifier{
-				Name: "a",
-			},
-			ds:       ast.IntType,
-			expected: nil,
-			err: DupError{
-				object: &Boolean{
-					Name: &ast.Identifier{
-						Name: "a",
+			input: vars[0].ce,
+			expected: &Resolver{
+				scope: &Scope{
+					store: map[string]Object{
+						"add": &Function{Name: "add"},
+					},
+					child: []*Scope{
+						{
+							store: map[string]Object{
+								"a": &Integer{Name: &ast.Identifier{Name: "a"}},
+								"b": &Integer{Name: &ast.Identifier{Name: "b"}},
+							},
+							child: []*Scope{
+								{
+									store: map[string]Object{},
+									child: []*Scope{},
+								},
+							},
+						},
 					},
 				},
+				types: map[ast.Expression]ObjectType{
+					vars[0].ce.Arguments[0].(*ast.Identifier): IntegerObject,
+					vars[0].ce.Arguments[1].(*ast.Identifier): IntegerObject,
+				},
+				defs: map[*ast.Identifier]Object{
+					vars[0].ce.Arguments[0].(*ast.Identifier): &Integer{Name: &ast.Identifier{Name: "a"}},
+					vars[0].ce.Arguments[1].(*ast.Identifier): &Integer{Name: &ast.Identifier{Name: "b"}},
+				},
+				fns: map[string]*ast.FunctionLiteral{
+					"add": vars[0].fl,
+				},
 			},
+			expectedType: IntegerObject,
+			err:          nil,
 		},
 	}
 
 	for i, test := range tests {
 		r := test.setupResolverFn()
-		_, err := ResolveIdentifier(test.idf, test.ds, r)
+		if test.expected != nil {
+			postMakeScope(test.expected.scope)
+		}
+		objType, err := ResolveCallExpression(test.input, r)
+		if err == nil && objType != test.expectedType {
+			t.Fatalf("[test %d] - TestResolveCallExpression failed.(wrong obj type).\n"+
+				"expected: %v\ngot:%v", i, test.expectedType, objType)
+		}
 		if err == nil && !reflect.DeepEqual(r, test.expected) {
-			t.Fatalf("test [%d] - TestScopingIdentifier failed.\nexpected=%v\ngot=%v",
-				i, test.expected, r)
+			t.Fatalf("[test %d] - TestResolveCallExpression failed.(wrong resolver).\n"+
+				"expected: %v\ngot:%v", i, test.expected, r)
 		}
 		if err != nil && !reflect.DeepEqual(err, test.err) {
-			t.Fatalf("test [%d] - TestScopingIdentifier failed (err case).\nexpected=%v\ngot=%v",
-				i, test.err, err)
+			t.Fatalf("[test %d] - TestResolveCallExpression failed.(wrong err).\n"+
+				"expected: %v\ngot:%v", i, test.err, err)
 		}
+
 	}
 }
-*/
