@@ -14,6 +14,11 @@ is simpler and easy to analyze than soldity(ethereum).
 A more detailed explanation is given below.
 - [Doc](https://github.com/DE-labtory/koa/blob/develop/docs/doc.md)
 
+Also, koa project is published in [Mobisys 2019](https://www.sigmobile.org/mobisys/2019/)! You can see the paper and poster below.
+###### **Title: "Demo: Light-Weight Programming Language for Blockchain"**
+- [Paper](docs/MobiSys2019-demo-paper.pdf)
+- [Poster](docs/MobiSys2019-demo-poster.pdf)
+
 ### Architecture
 
 ![koa architecture](image/koa-architecture.png)
