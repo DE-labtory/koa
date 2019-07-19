@@ -2194,7 +2194,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -2228,7 +2228,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -2262,7 +2262,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -2297,7 +2297,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -2332,7 +2332,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -2428,7 +2428,7 @@ func TestParseAssignStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -2812,7 +2812,7 @@ func TestParseIfStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -2865,7 +2865,7 @@ func TestParseIfStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -2878,7 +2878,7 @@ func TestParseIfStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -3018,7 +3018,7 @@ func TestParseBlockStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3057,7 +3057,7 @@ string b = abc`,
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3070,7 +3070,7 @@ string b = abc`,
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -3115,7 +3115,7 @@ bool c = true`,
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3128,7 +3128,7 @@ bool c = true`,
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -3141,7 +3141,7 @@ bool c = true`,
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -3231,7 +3231,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3265,7 +3265,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3301,7 +3301,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3333,7 +3333,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3367,7 +3367,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -3399,7 +3399,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -3431,7 +3431,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -3465,7 +3465,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -3497,7 +3497,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -3529,7 +3529,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -3639,7 +3639,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3681,7 +3681,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3728,7 +3728,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -3741,7 +3741,7 @@ func TestParseStatement(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -4140,7 +4140,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.IntegerSymbol {
+				if sym.Type() != symbol.IntegerObject {
 					return false
 				}
 
@@ -4162,7 +4162,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.BooleanSymbol {
+				if sym.Type() != symbol.BooleanObject {
 					return false
 				}
 
@@ -4184,7 +4184,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.StringSymbol {
+				if sym.Type() != symbol.StringObject {
 					return false
 				}
 
@@ -4206,7 +4206,7 @@ func TestUpdateScopeSymbol(t *testing.T) {
 					return false
 				}
 
-				if sym.Type() != symbol.FunctionSymbol {
+				if sym.Type() != symbol.FunctionObject {
 					return false
 				}
 
