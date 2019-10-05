@@ -24,6 +24,7 @@ import (
 
 	"github.com/DE-labtory/koa/cmd/compile"
 
+	"github.com/DE-labtory/koa/cmd/execute"
 	"github.com/DE-labtory/koa/cmd/lex"
 	"github.com/DE-labtory/koa/cmd/parse"
 	"github.com/DE-labtory/koa/cmd/repl"
@@ -83,6 +84,8 @@ func main() {
 	app.Commands = append(app.Commands, lex.Cmd())
 	app.Commands = append(app.Commands, parse.Cmd())
 	app.Commands = append(app.Commands, compile.Cmd())
+	app.Commands = append(app.Commands, execute.Cmd())
+
 	app.Action = func(c *cli.Context) error {
 		repl.Run()
 		return nil

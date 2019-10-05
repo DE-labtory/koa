@@ -1,0 +1,13 @@
+contract {
+	func hello() string{
+		return "hello!"
+	}
+
+	func checkMoney(money int) string{
+		if (money >= 1000){
+			return "good"
+		}
+
+		return "bad"
+	}
+}
